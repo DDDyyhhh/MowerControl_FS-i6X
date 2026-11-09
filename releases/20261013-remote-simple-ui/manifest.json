@@ -1,0 +1,25 @@
+{
+  "date": "2026-10-13",
+  "status": "software_verified_hardware_pending",
+  "target": "FS-i6X",
+  "chassis_firmware_update_required": false,
+  "flash_used_bytes": 129424,
+  "flash_total_bytes": 131072,
+  "ram_used_including_reserved_stack_bytes": 15672,
+  "ram_total_bytes": 16384,
+  "firmware_sha256": "104001e472f4d3163d55d1b092c0b6e20c231904e27fbb9deffd72f3be21d407",
+  "firmware_size_bytes": 129424,
+  "protocol_changed": false,
+  "device_flashed": false,
+  "source_files_changed": [
+    "OpenI6X/FS-I6X/opentx/radio/src/gui/128x64/view_main.cpp",
+    "OpenI6X/FS-I6X/opentx/radio/src/gui/128x64/mower_ui.h",
+    "OpenI6X/FS-I6X/opentx/radio/src/gui/128x64/mower_user_ui.h",
+    "OpenI6X/FS-I6X/opentx/radio/src/gui/128x64/mower_zh_font.h",
+    "OpenI6X/FS-I6X/opentx/radio/src/gui/128x64/mower_zh_font.md",
+    "OpenI6X/FS-I6X/opentx/radio/src/gui/128x64/mower_zh_font.LICENSE",
+    "tools/test_blade_ok_ui.py",
+    "tools/build_mower_user_ui.sh",
+    "tools/generate_mower_zh_font.py"
+  ]
+}

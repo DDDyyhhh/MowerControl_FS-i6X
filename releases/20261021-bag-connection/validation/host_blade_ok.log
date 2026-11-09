@@ -1,0 +1,11 @@
+PASS controller decision required before reply; rejected Confirm is not Accepted
+PASS full controller Confirm/Result, fresh-frame PWM 45/50/55, safety zero, duplicate no reauthorization
+PASS grass bag AA/AC feedback, unplug/reconnect, frozen replay, timeout, heartbeat/time wrap
+PASS new binding clears fresh grass bag cache and waits for new heartbeat
+PASS OpenI6X RF adapter auto binds and replaces rebooted controller session
+PASS production backend CH6 cannot create confirmation; CH7 mapping preserved
+PASS release SENS addr11 connection, addr10 output/gear and unchanged addr1-8
+PASS release SENS addr11 connection, addr10 output/gear and unchanged addr1-8
+PASS Chinese production UI, live provider, actual main-view route, CH9/CH6 boundaries, scrolling and pixel bounds: UNKNOWN inhibits OK/prompt; 2s modal limit, deferred Cancel, late matching receipt, no repeat authorization; runtime home
+PASS production PD10 source: low=connected, always sampled while locked/offline/in safety fault
+PASS independent Python/C Confirm/Cancel/Query/Result golden vectors

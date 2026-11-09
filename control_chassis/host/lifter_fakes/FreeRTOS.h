@@ -1,0 +1,3 @@
+#ifndef LIFTER_TEST_FREERTOS_H
+#define LIFTER_TEST_FREERTOS_H
+#endif

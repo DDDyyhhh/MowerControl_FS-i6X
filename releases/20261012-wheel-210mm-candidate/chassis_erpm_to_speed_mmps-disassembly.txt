@@ -1,0 +1,43 @@
+
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/releases/20261012-wheel-210mm-candidate/control_chassis.elf:     file format elf32-littlearm
+
+
+Disassembly of section .text:
+
+08007ee0 <chassis_erpm_to_speed_mmps>:
+ 8007ee0:	ee07 0a90 	vmov	s15, r0
+ 8007ee4:	ee07 1a10 	vmov	s14, r1
+ 8007ee8:	eef8 7ae7 	vcvt.f32.s32	s15, s15
+ 8007eec:	eeb8 7ac7 	vcvt.f32.s32	s14, s14
+ 8007ef0:	eddf 6a16 	vldr	s13, [pc, #88]	; 8007f4c <chassis_erpm_to_speed_mmps+0x6c>
+ 8007ef4:	ee27 7a87 	vmul.f32	s14, s15, s14
+ 8007ef8:	eddf 7a15 	vldr	s15, [pc, #84]	; 8007f50 <chassis_erpm_to_speed_mmps+0x70>
+ 8007efc:	ee27 7a27 	vmul.f32	s14, s14, s15
+ 8007f00:	eddf 7a14 	vldr	s15, [pc, #80]	; 8007f54 <chassis_erpm_to_speed_mmps+0x74>
+ 8007f04:	ee27 7a27 	vmul.f32	s14, s14, s15
+ 8007f08:	eec7 7a26 	vdiv.f32	s15, s14, s13
+ 8007f0c:	ed9f 7a12 	vldr	s14, [pc, #72]	; 8007f58 <chassis_erpm_to_speed_mmps+0x78>
+ 8007f10:	ee67 7a87 	vmul.f32	s15, s15, s14
+ 8007f14:	eeb6 7a00 	vmov.f32	s14, #96	; 0x3f000000  0.5
+ 8007f18:	eef5 7ac0 	vcmpe.f32	s15, #0.0
+ 8007f1c:	eef1 fa10 	vmrs	APSR_nzcv, fpscr
+ 8007f20:	bfac      	ite	ge
+ 8007f22:	ee77 7a87 	vaddge.f32	s15, s15, s14
+ 8007f26:	ee77 7ac7 	vsublt.f32	s15, s15, s14
+ 8007f2a:	eefd 7ae7 	vcvt.s32.f32	s15, s15
+ 8007f2e:	ee17 0a90 	vmov	r0, s15
+ 8007f32:	f5b0 4f00 	cmp.w	r0, #32768	; 0x8000
+ 8007f36:	da04      	bge.n	8007f42 <chassis_erpm_to_speed_mmps+0x62>
+ 8007f38:	f510 4f00 	cmn.w	r0, #32768	; 0x8000
+ 8007f3c:	db04      	blt.n	8007f48 <chassis_erpm_to_speed_mmps+0x68>
+ 8007f3e:	b200      	sxth	r0, r0
+ 8007f40:	4770      	bx	lr
+ 8007f42:	f647 70ff 	movw	r0, #32767	; 0x7fff
+ 8007f46:	4770      	bx	lr
+ 8007f48:	4804      	ldr	r0, [pc, #16]	; (8007f5c <chassis_erpm_to_speed_mmps+0x7c>)
+ 8007f4a:	4770      	bx	lr
+ 8007f4c:	45262000 	.word	0x45262000
+ 8007f50:	40490fdb 	.word	0x40490fdb
+ 8007f54:	3e570a3d 	.word	0x3e570a3d
+ 8007f58:	447a0000 	.word	0x447a0000
+ 8007f5c:	ffff8000 	.word	0xffff8000

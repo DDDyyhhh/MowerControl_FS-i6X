@@ -1,0 +1,24 @@
+{
+  "date": "2026-10-08",
+  "status": "release candidate; physical acceptance pending",
+  "wire_version": "0x32",
+  "radio_flash_bytes": 127312,
+  "radio_static_ram_bytes": 15668,
+  "images": {
+    "openi6x-blade-ok-rc1.bin": {
+      "source": "OpenI6X/FS-I6X/opentx/build-mower-ok-release/firmware.bin",
+      "size_bytes": 127312,
+      "sha256": "193a74bb087634d1f2ab9f7c80fe1029fd259791705e69777810fb16582555e7"
+    },
+    "control-chassis-blade-ok-rc1.bin": {
+      "source": "control_chassis/build/mower-ok-release/control_chassis.bin",
+      "size_bytes": 81332,
+      "sha256": "16b55f8ff37db54167931166e31d2972a952bf87f1826c6bb5650784cd7a6a09"
+    },
+    "control-chassis-blade-ok-rc1.hex": {
+      "source": "control_chassis/build/mower-ok-release/control_chassis.hex",
+      "size_bytes": 228839,
+      "sha256": "49021c10a910d0f61f45e80e1bd84ec82f82f8ccd0f8379bd74ca3912954c7bb"
+    }
+  }
+}

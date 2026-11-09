@@ -1,0 +1,394 @@
+Preset CMake variables:
+
+  CMAKE_BUILD_TYPE="Release"
+  CMAKE_TOOLCHAIN_FILE="/tmp/mobileess-wheel-baseline-sd7tocor/control_chassis/cmake/arm-none-eabi-gcc.cmake"
+  MOWER_BLADE_OK="ON"
+  TICKET03_EXP3_HIL="OFF"
+  TICKET03_EXP3_PWM_HIL="OFF"
+
+-- The C compiler identification is GNU 10.3.1
+-- The ASM compiler identification is GNU
+-- Found assembler: /usr/bin/arm-none-eabi-gcc
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: /usr/bin/arm-none-eabi-gcc - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Configuring done
+CMake Error at CMakeLists.txt:124 (add_executable):
+  Cannot find source file:
+
+    ../experiments/ticket03/exp3.c
+
+
+-- Generating done
+CMake Generate step failed.  Build files cannot be regenerated correctly.
+Preset CMake variables:
+
+  CMAKE_BUILD_TYPE="Release"
+  CMAKE_TOOLCHAIN_FILE="/tmp/mobileess-wheel-baseline-sd7tocor/control_chassis/cmake/arm-none-eabi-gcc.cmake"
+  MOWER_BLADE_OK="ON"
+  TICKET03_EXP3_HIL="OFF"
+  TICKET03_EXP3_PWM_HIL="OFF"
+
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /tmp/mobileess-wheel-baseline-sd7tocor/control_chassis/build/mower-ok-release
+[1/96] Building C object CMakeFiles/control_chassis.dir/Core/Src/system_stm32f4xx.c.obj
+[2/96] Building C object CMakeFiles/control_chassis.dir/Core/Src/dma.c.obj
+[3/96] Building C object CMakeFiles/control_chassis.dir/Core/Src/flash_storage.c.obj
+/tmp/mobileess-wheel-baseline-sd7tocor/control_chassis/Core/Src/flash_storage.c:14:22: warning: 'g_app_settings' defined but not used [-Wunused-variable]
+   14 | static AppSettings_t g_app_settings;
+      |                      ^~~~~~~~~~~~~~
+[4/96] Building C object CMakeFiles/control_chassis.dir/Core/Src/gpio.c.obj
+[5/96] Building C object CMakeFiles/control_chassis.dir/Core/Src/adc.c.obj
+[6/96] Building C object CMakeFiles/control_chassis.dir/Core/Src/can.c.obj
+[7/96] Building C object CMakeFiles/control_chassis.dir/Core/Src/freertos.c.obj
+In file included from /tmp/mobileess-wheel-baseline-sd7tocor/control_chassis/Core/Src/freertos.c:34:
+/tmp/mobileess-wheel-baseline-sd7tocor/control_chassis/Core/Inc/rs485.h:46:13: warning: 'RS485_Start_Receive' declared 'static' but never defined [-Wunused-function]
+   46 | static void RS485_Start_Receive(void);
+      |             ^~~~~~~~~~~~~~~~~~~
+[8/96] Building C object CMakeFiles/control_chassis.dir/Core/UserApp/app_Report.c.obj
+[9/96] Building C object CMakeFiles/control_chassis.dir/Core/Src/stm32f4xx_hal_msp.c.obj
+[10/96] Building C object CMakeFiles/control_chassis.dir/Core/Src/usart.c.obj
+[11/96] Building C object CMakeFiles/control_chassis.dir/Core/UserApp/app_BMS_Sensor.c.obj
+In file included from /tmp/mobileess-wheel-baseline-sd7tocor/control_chassis/Core/Inc/AXEBMS_RS485.h:4,
+                 from /tmp/mobileess-wheel-baseline-sd7tocor/control_chassis/Core/UserApp/app_BMS_Sensor.c:113:
+/tmp/mobileess-wheel-baseline-sd7tocor/control_chassis/Core/Inc/rs485.h:46:13: warning: 'RS485_Start_Receive' declared 'static' but never defined [-Wunused-function]
+   46 | static void RS485_Start_Receive(void);
+      |             ^~~~~~~~~~~~~~~~~~~
+[12/96] Building C object CMakeFiles/control_chassis.dir/Core/Src/stm32f4xx_it.c.obj
+In file included from /tmp/mobileess-wheel-baseline-sd7tocor/control_chassis/Core/Src/stm32f4xx_it.c:30:
+/tmp/mobileess-wheel-baseline-sd7tocor/control_chassis/Core/Inc/rs485.h:46:13: warning: 'RS485_Start_Receive' declared 'static' but never defined [-Wunused-function]
+   46 | static void RS485_Start_Receive(void);
+      |             ^~~~~~~~~~~~~~~~~~~
+[13/96] Building C object CMakeFiles/control_chassis.dir/Core/Src/stm32f4xx_hal_timebase_tim.c.obj
+[14/96] Building C object CMakeFiles/control_chassis.dir/Core/UserApp/app_Comm.c.obj
+[15/96] Building C object CMakeFiles/control_chassis.dir/Core/Src/main.c.obj
+/tmp/mobileess-wheel-baseline-sd7tocor/control_chassis/Core/Src/main.c: In function 'main':
+/tmp/mobileess-wheel-baseline-sd7tocor/control_chassis/Core/Src/main.c:201:9: warning: unused variable 'angles' [-Wunused-variable]
+  201 |   float angles[3];
+      |         ^~~~~~
+In file included from /tmp/mobileess-wheel-baseline-sd7tocor/control_chassis/Core/Src/main.c:57:
+/tmp/mobileess-wheel-baseline-sd7tocor/control_chassis/Core/Src/main.c: At top level:
+/tmp/mobileess-wheel-baseline-sd7tocor/control_chassis/Core/Inc/rs485.h:46:13: warning: 'RS485_Start_Receive' declared 'static' but never defined [-Wunused-function]
+   46 | static void RS485_Start_Receive(void);
+      |             ^~~~~~~~~~~~~~~~~~~
+/tmp/mobileess-wheel-baseline-sd7tocor/control_chassis/Core/Src/main.c:170:17: warning: 'obstacle_clear_timestamp' defined but not used [-Wunused-variable]
+  170 | static uint32_t obstacle_clear_timestamp = 0; // 鐢ㄤ簬寤惰繜娓呴櫎鐨勮鏃跺櫒
+      |                 ^~~~~~~~~~~~~~~~~~~~~~~~
+/tmp/mobileess-wheel-baseline-sd7tocor/control_chassis/Core/Src/main.c:168:17: warning: 'g_key_press_time' defined but not used [-Wunused-variable]
+  168 | static uint32_t g_key_press_time[8] = {0}; // 淇濆瓨8涓寜閿殑鎸変笅璧峰鏃堕棿
+      |                 ^~~~~~~~~~~~~~~~
+/tmp/mobileess-wheel-baseline-sd7tocor/control_chassis/Core/Src/main.c:165:16: warning: 'key1_was_pressed' defined but not used [-Wunused-variable]
+  165 | static uint8_t key1_was_pressed = 0;
+      |                ^~~~~~~~~~~~~~~~
+/tmp/mobileess-wheel-baseline-sd7tocor/control_chassis/Core/Src/main.c:164:16: warning: 'key0_was_pressed' defined but not used [-Wunused-variable]
+  164 | static uint8_t key0_was_pressed = 0;
+      |                ^~~~~~~~~~~~~~~~
+/tmp/mobileess-wheel-baseline-sd7tocor/control_chassis/Core/Src/main.c:159:16: warning: 'g_stopwatch_running' defined but not used [-Wunused-variable]
+  159 | static uint8_t g_stopwatch_running = 0;
+      |                ^~~~~~~~~~~~~~~~~~~
+/tmp/mobileess-wheel-baseline-sd7tocor/control_chassis/Core/Src/main.c:158:17: warning: 'g_stopwatch_start_time' defined but not used [-Wunused-variable]
+  158 | static uint32_t g_stopwatch_start_time = 0;
+      |                 ^~~~~~~~~~~~~~~~~~~~~~
+/tmp/mobileess-wheel-baseline-sd7tocor/control_chassis/Core/Src/main.c:106:14: warning: 'g_ultrasonic_distance_cm' defined but not used [-Wunused-variable]
+  106 | static float g_ultrasonic_distance_cm = -1.0f; // 鐢ㄤ簬淇濆瓨鏈€鏂扮殑鏈夋晥璺濈
+      |              ^~~~~~~~~~~~~~~~~~~~~~~~
+[16/96] Building C object CMakeFiles/control_chassis.dir/Core/UserApp/app_context.c.obj
+[17/96] Building C object CMakeFiles/control_chassis.dir/Core/Src/spi.c.obj
+[18/96] Building C object CMakeFiles/control_chassis.dir/Core/UserApp/app_SerialTX.c.obj
+[19/96] Building C object CMakeFiles/control_chassis.dir/Core/UserApp/safety_ownership_gate.c.obj
+[20/96] Building C object CMakeFiles/control_chassis.dir/Core/UserApp/telemetry_snapshot.c.obj
+[21/96] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/blade_confirm_ch6_adapter.c.obj
+[22/96] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/A28.c.obj
+[23/96] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/blade_hil_uart_debug.c.obj
+[24/96] Building C object CMakeFiles/control_chassis.dir/Core/UserApp/blade_manual_control.c.obj
+[25/96] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/BladeMotor.c.obj
+[26/96] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/AXEBMS_RS485.c.obj
+/tmp/mobileess-wheel-baseline-sd7tocor/control_chassis/Core/UserDev/AXEBMS_RS485.c: In function 'AXEBMS_RS485_Process':
+/tmp/mobileess-wheel-baseline-sd7tocor/control_chassis/Core/UserDev/AXEBMS_RS485.c:235:21: warning: unused variable 'lastRequestTime' [-Wunused-variable]
+  235 |     static uint32_t lastRequestTime = 0;
+      |                     ^~~~~~~~~~~~~~~
+In file included from /tmp/mobileess-wheel-baseline-sd7tocor/control_chassis/Core/Inc/AXEBMS_RS485.h:4,
+                 from /tmp/mobileess-wheel-baseline-sd7tocor/control_chassis/Core/UserDev/AXEBMS_RS485.c:21:
+/tmp/mobileess-wheel-baseline-sd7tocor/control_chassis/Core/UserDev/AXEBMS_RS485.c: At top level:
+/tmp/mobileess-wheel-baseline-sd7tocor/control_chassis/Core/Inc/rs485.h:46:13: warning: 'RS485_Start_Receive' declared 'static' but never defined [-Wunused-function]
+   46 | static void RS485_Start_Receive(void);
+      |             ^~~~~~~~~~~~~~~~~~~
+/tmp/mobileess-wheel-baseline-sd7tocor/control_chassis/Core/UserDev/AXEBMS_RS485.c:235:21: warning: 'lastRequestTime' defined but not used [-Wunused-variable]
+  235 |     static uint32_t lastRequestTime = 0;
+      |                     ^~~~~~~~~~~~~~~
+/tmp/mobileess-wheel-baseline-sd7tocor/control_chassis/Core/UserDev/AXEBMS_RS485.c:206:13: warning: 'parseResponseData' defined but not used [-Wunused-function]
+  206 | static void parseResponseData(AXEBMS_RS485* bms) {
+      |             ^~~~~~~~~~~~~~~~~
+/tmp/mobileess-wheel-baseline-sd7tocor/control_chassis/Core/UserDev/AXEBMS_RS485.c:180:13: warning: 'receiveResponseFrame' defined but not used [-Wunused-function]
+  180 | static bool receiveResponseFrame(AXEBMS_RS485* bms) {
+      |             ^~~~~~~~~~~~~~~~~~~~
+/tmp/mobileess-wheel-baseline-sd7tocor/control_chassis/Core/UserDev/AXEBMS_RS485.c:140:13: warning: 'sendRequestFrame' defined but not used [-Wunused-function]
+  140 | static void sendRequestFrame(AXEBMS_RS485* bms) {
+      |             ^~~~~~~~~~~~~~~~
+[27/96] Building C object CMakeFiles/control_chassis.dir/Core/Src/tim.c.obj
+[28/96] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/E34.C.obj
+[29/96] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/bsp_imu_solver.c.obj
+/tmp/mobileess-wheel-baseline-sd7tocor/control_chassis/Core/UserDev/bsp_imu_solver.c: In function 'invSqrt':
+/tmp/mobileess-wheel-baseline-sd7tocor/control_chassis/Core/UserDev/bsp_imu_solver.c:35:15: warning: dereferencing type-punned pointer will break strict-aliasing rules [-Wstrict-aliasing]
+   35 |     long i = *(long *)&y;
+      |               ^~~~~~~~~~
+/tmp/mobileess-wheel-baseline-sd7tocor/control_chassis/Core/UserDev/bsp_imu_solver.c:37:10: warning: dereferencing type-punned pointer will break strict-aliasing rules [-Wstrict-aliasing]
+   37 |     y = *(float *)&i;
+      |          ^~~~~~~~~~~
+[30/96] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/buzzer.c.obj
+[31/96] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/connet_check.c.obj
+[32/96] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/grass_bag_control.c.obj
+[33/96] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/EG2104.c.obj
+[34/96] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/car_Control.c.obj
+/tmp/mobileess-wheel-baseline-sd7tocor/control_chassis/Core/UserDev/car_Control.c: In function 'v_ctl_uart':
+/tmp/mobileess-wheel-baseline-sd7tocor/control_chassis/Core/UserDev/car_Control.c:448:17: warning: unused variable 'current_sign' [-Wunused-variable]
+  448 |     const char *current_sign = (current_int < 0) ? "-" : "";
+      |                 ^~~~~~~~~~~~
+/tmp/mobileess-wheel-baseline-sd7tocor/control_chassis/Core/UserDev/car_Control.c:447:9: warning: unused variable 'current_abs' [-Wunused-variable]
+  447 |     int current_abs = (current_int < 0) ? -current_int : current_int;
+      |         ^~~~~~~~~~~
+/tmp/mobileess-wheel-baseline-sd7tocor/control_chassis/Core/UserDev/car_Control.c:444:17: warning: unused variable 'speed_sign' [-Wunused-variable]
+  444 |     const char *speed_sign = (speed_int < 0) ? "-" : "";
+      |                 ^~~~~~~~~~
+/tmp/mobileess-wheel-baseline-sd7tocor/control_chassis/Core/UserDev/car_Control.c:443:9: warning: unused variable 'speed_abs' [-Wunused-variable]
+  443 |     int speed_abs = (speed_int < 0) ? -speed_int : speed_int;
+      |         ^~~~~~~~~
+/tmp/mobileess-wheel-baseline-sd7tocor/control_chassis/Core/UserDev/car_Control.c:422:20: warning: unused variable 'reset_counter' [-Wunused-variable]
+  422 |     static uint8_t reset_counter[4] = {0, 0, 0, 0};
+      |                    ^~~~~~~~~~~~~
+/tmp/mobileess-wheel-baseline-sd7tocor/control_chassis/Core/UserDev/car_Control.c:420:18: warning: variable 'last_speed' set but not used [-Wunused-but-set-variable]
+  420 |     static float last_speed[4] = {0.0f, 0.0f, 0.0f, 0.0f};
+      |                  ^~~~~~~~~~
+/tmp/mobileess-wheel-baseline-sd7tocor/control_chassis/Core/UserDev/car_Control.c:416:13: warning: variable 'motor_axis_id' set but not used [-Wunused-but-set-variable]
+  416 |     uint8_t motor_axis_id;
+      |             ^~~~~~~~~~~~~
+/tmp/mobileess-wheel-baseline-sd7tocor/control_chassis/Core/UserDev/car_Control.c: In function 'MotionControl_Parking':
+/tmp/mobileess-wheel-baseline-sd7tocor/control_chassis/Core/UserDev/car_Control.c:529:11: warning: unused variable 'hold_rpm' [-Wunused-variable]
+  529 |     float hold_rpm = 0.0f;
+      |           ^~~~~~~~
+/tmp/mobileess-wheel-baseline-sd7tocor/control_chassis/Core/UserDev/car_Control.c: In function 'Send_Motor_Command':
+/tmp/mobileess-wheel-baseline-sd7tocor/control_chassis/Core/UserDev/car_Control.c:585:17: warning: unused variable 'current_sign' [-Wunused-variable]
+  585 |     const char *current_sign = (current_int < 0) ? "-" : "";
+      |                 ^~~~~~~~~~~~
+/tmp/mobileess-wheel-baseline-sd7tocor/control_chassis/Core/UserDev/car_Control.c:584:9: warning: unused variable 'current_abs' [-Wunused-variable]
+  584 |     int current_abs = (current_int < 0) ? -current_int : current_int;
+      |         ^~~~~~~~~~~
+/tmp/mobileess-wheel-baseline-sd7tocor/control_chassis/Core/UserDev/car_Control.c:581:17: warning: unused variable 'speed_sign' [-Wunused-variable]
+  581 |     const char *speed_sign = (speed_int < 0) ? "-" : "";
+      |                 ^~~~~~~~~~
+/tmp/mobileess-wheel-baseline-sd7tocor/control_chassis/Core/UserDev/car_Control.c:580:9: warning: unused variable 'speed_abs' [-Wunused-variable]
+  580 |     int speed_abs = (speed_int < 0) ? -speed_int : speed_int;
+      |         ^~~~~~~~~
+/tmp/mobileess-wheel-baseline-sd7tocor/control_chassis/Core/UserDev/car_Control.c:561:13: warning: variable 'motor_axis_id' set but not used [-Wunused-but-set-variable]
+  561 |     uint8_t motor_axis_id;
+      |             ^~~~~~~~~~~~~
+At top level:
+/tmp/mobileess-wheel-baseline-sd7tocor/control_chassis/Core/UserDev/car_Control.c:422:20: warning: 'reset_counter' defined but not used [-Wunused-variable]
+  422 |     static uint8_t reset_counter[4] = {0, 0, 0, 0};
+      |                    ^~~~~~~~~~~~~
+[35/96] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/icm42688.c.obj
+[36/96] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/flysky_ibus_servo.c.obj
+[37/96] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/cruise_control.c.obj
+/tmp/mobileess-wheel-baseline-sd7tocor/control_chassis/Core/UserDev/cruise_control.c:73:14: warning: 'Yaw_PID_Compute' defined but not used [-Wunused-function]
+   73 | static float Yaw_PID_Compute(float target, float current)
+      |              ^~~~~~~~~~~~~~~
+/tmp/mobileess-wheel-baseline-sd7tocor/control_chassis/Core/UserDev/cruise_control.c:62:14: warning: 'Get_Angle_Diff' defined but not used [-Wunused-function]
+   62 | static float Get_Angle_Diff(float start_angle, float current_angle)
+      |              ^~~~~~~~~~~~~~
+/tmp/mobileess-wheel-baseline-sd7tocor/control_chassis/Core/UserDev/cruise_control.c:42:14: warning: 'Normalize_Angle' defined but not used [-Wunused-function]
+   42 | static float Normalize_Angle(float angle)
+      |              ^~~~~~~~~~~~~~~
+/tmp/mobileess-wheel-baseline-sd7tocor/control_chassis/Core/UserDev/cruise_control.c:33:16: warning: 'obstacle_filter_count' defined but not used [-Wunused-variable]
+   33 | static uint8_t obstacle_filter_count = 0;
+      |                ^~~~~~~~~~~~~~~~~~~~~
+/tmp/mobileess-wheel-baseline-sd7tocor/control_chassis/Core/UserDev/cruise_control.c:30:14: warning: 'g_u_turn_start_yaw' defined but not used [-Wunused-variable]
+   30 | static float g_u_turn_start_yaw = 0.0f;  // 掉头起始航向
+      |              ^~~~~~~~~~~~~~~~~~
+[38/96] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/heartbeat.c.obj
+[39/96] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/modbus_rtu_bus.c.obj
+In file included from /tmp/mobileess-wheel-baseline-sd7tocor/control_chassis/Core/UserDev/modbus_rtu_bus.c:17:
+/tmp/mobileess-wheel-baseline-sd7tocor/control_chassis/Core/Inc/rs485.h:46:13: warning: 'RS485_Start_Receive' declared 'static' but never defined [-Wunused-function]
+   46 | static void RS485_Start_Receive(void);
+      |             ^~~~~~~~~~~~~~~~~~~
+[40/96] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/flipsky_can.c.obj
+[41/96] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/mssd_can.c.obj
+[42/96] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/read_adc.c.obj
+[43/96] Building C object CMakeFiles/control_chassis.dir/Core/UserApp/app_Motion.c.obj
+/tmp/mobileess-wheel-baseline-sd7tocor/control_chassis/Core/UserApp/app_Motion.c: In function 'StartTask_Motion':
+/tmp/mobileess-wheel-baseline-sd7tocor/control_chassis/Core/UserApp/app_Motion.c:382:12: warning: unused variable 'is_joystick_active' [-Wunused-variable]
+  382 |       bool is_joystick_active = (abs((int)mapped_throttle - 2048) > 200) ||
+      |            ^~~~~~~~~~~~~~~~~~
+/tmp/mobileess-wheel-baseline-sd7tocor/control_chassis/Core/UserApp/app_Motion.c:169:19: warning: unused variable 'cruise_toggle_tick' [-Wunused-variable]
+  169 |   static uint32_t cruise_toggle_tick = 0;
+      |                   ^~~~~~~~~~~~~~~~~~
+/tmp/mobileess-wheel-baseline-sd7tocor/control_chassis/Core/UserApp/app_Motion.c:167:18: warning: unused variable 'cruise_key_lock' [-Wunused-variable]
+  167 |   static uint8_t cruise_key_lock = 0;
+      |                  ^~~~~~~~~~~~~~~
+/tmp/mobileess-wheel-baseline-sd7tocor/control_chassis/Core/UserApp/app_Motion.c:165:18: warning: unused variable 'us_toggle_lock' [-Wunused-variable]
+  165 |   static uint8_t us_toggle_lock = 0;
+      |                  ^~~~~~~~~~~~~~
+/tmp/mobileess-wheel-baseline-sd7tocor/control_chassis/Core/UserApp/app_Motion.c:153:16: warning: unused variable 'last_blade_command' [-Wunused-variable]
+  153 |   static float last_blade_command = -1.0f;
+      |                ^~~~~~~~~~~~~~~~~~
+/tmp/mobileess-wheel-baseline-sd7tocor/control_chassis/Core/UserApp/app_Motion.c:152:18: warning: unused variable 'last_blade_knob' [-Wunused-variable]
+  152 |   static uint8_t last_blade_knob = 0xFF;
+      |                  ^~~~~~~~~~~~~~~
+/tmp/mobileess-wheel-baseline-sd7tocor/control_chassis/Core/UserApp/app_Motion.c:149:15: warning: variable 'last_key_state' set but not used [-Wunused-but-set-variable]
+  149 |   static bool last_key_state[8] = {0};
+      |               ^~~~~~~~~~~~~~
+In file included from /tmp/mobileess-wheel-baseline-sd7tocor/control_chassis/Core/Inc/AXEBMS_RS485.h:4,
+                 from /tmp/mobileess-wheel-baseline-sd7tocor/control_chassis/Core/UserApp/app_Motion.c:37:
+/tmp/mobileess-wheel-baseline-sd7tocor/control_chassis/Core/UserApp/app_Motion.c: At top level:
+/tmp/mobileess-wheel-baseline-sd7tocor/control_chassis/Core/Inc/rs485.h:46:13: warning: 'RS485_Start_Receive' declared 'static' but never defined [-Wunused-function]
+   46 | static void RS485_Start_Receive(void);
+      |             ^~~~~~~~~~~~~~~~~~~
+/tmp/mobileess-wheel-baseline-sd7tocor/control_chassis/Core/UserApp/app_Motion.c:152:18: warning: 'last_blade_knob' defined but not used [-Wunused-variable]
+  152 |   static uint8_t last_blade_knob = 0xFF;
+      |                  ^~~~~~~~~~~~~~~
+/tmp/mobileess-wheel-baseline-sd7tocor/control_chassis/Core/UserApp/app_Motion.c:153:16: warning: 'last_blade_command' defined but not used [-Wunused-variable]
+  153 |   static float last_blade_command = -1.0f;
+      |                ^~~~~~~~~~~~~~~~~~
+/tmp/mobileess-wheel-baseline-sd7tocor/control_chassis/Core/UserApp/app_Motion.c:165:18: warning: 'us_toggle_lock' defined but not used [-Wunused-variable]
+  165 |   static uint8_t us_toggle_lock = 0;
+      |                  ^~~~~~~~~~~~~~
+/tmp/mobileess-wheel-baseline-sd7tocor/control_chassis/Core/UserApp/app_Motion.c:167:18: warning: 'cruise_key_lock' defined but not used [-Wunused-variable]
+  167 |   static uint8_t cruise_key_lock = 0;
+      |                  ^~~~~~~~~~~~~~~
+/tmp/mobileess-wheel-baseline-sd7tocor/control_chassis/Core/UserApp/app_Motion.c:169:19: warning: 'cruise_toggle_tick' defined but not used [-Wunused-variable]
+  169 |   static uint32_t cruise_toggle_tick = 0;
+      |                   ^~~~~~~~~~~~~~~~~~
+[44/96] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/rs485.c.obj
+[45/96] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/lifter.c.obj
+[46/96] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/sens_ibus_responder.c.obj
+[47/96] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/oid_can.c.obj
+/tmp/mobileess-wheel-baseline-sd7tocor/control_chassis/Core/UserDev/oid_can.c:70:13: warning: 'oid_send_cmd_int16' defined but not used [-Wunused-function]
+   70 | static void oid_send_cmd_int16(uint8_t node_id, uint8_t cmd, int16_t value)
+      |             ^~~~~~~~~~~~~~~~~~
+[48/96] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/chassis_control.c.obj
+/tmp/mobileess-wheel-baseline-sd7tocor/control_chassis/Core/UserDev/chassis_control.c: In function 'chassis_control_parse_host_frame':
+/tmp/mobileess-wheel-baseline-sd7tocor/control_chassis/Core/UserDev/chassis_control.c:147:12: warning: unused variable 'vy_raw' [-Wunused-variable]
+  147 |     int8_t vy_raw = (int8_t)payload[2];
+      |            ^~~~~~
+At top level:
+/tmp/mobileess-wheel-baseline-sd7tocor/control_chassis/Core/UserDev/chassis_control.c:375:13: warning: 'chassis_control_send_oid_wheel_speed_feedback' defined but not used [-Wunused-function]
+  375 | static void chassis_control_send_oid_wheel_speed_feedback(void)
+      |             ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+[49/96] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/remote_authorization.c.obj
+[50/96] Building C object CMakeFiles/control_chassis.dir/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal.c.obj
+[51/96] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/pairing_receiver.c.obj
+[52/96] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/sr04_uart.c.obj
+/tmp/mobileess-wheel-baseline-sd7tocor/control_chassis/Core/UserDev/sr04_uart.c:133:14: warning: 'SR04_Filter' defined but not used [-Wunused-function]
+  133 | static float SR04_Filter(float current, float last)
+      |              ^~~~~~~~~~~
+[53/96] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/serial_port.c.obj
+[54/96] Building C object CMakeFiles/control_chassis.dir/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash_ramfunc.c.obj
+[55/96] Building C object CMakeFiles/control_chassis.dir/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_cortex.c.obj
+[56/96] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/odrive_can.c.obj
+/tmp/mobileess-wheel-baseline-sd7tocor/control_chassis/Core/UserDev/odrive_can.c: In function 'odrive_set_input_vel':
+/tmp/mobileess-wheel-baseline-sd7tocor/control_chassis/Core/UserDev/odrive_can.c:316:14: warning: unused variable 'can_id' [-Wunused-variable]
+  316 |     uint32_t can_id = (node_id << 5) | ODRIVE_MSG_SET_INPUT_VEL;
+      |              ^~~~~~
+[57/96] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/remote_backend.c.obj
+[58/96] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/tricolor_led.c.obj
+[59/96] Building C object CMakeFiles/control_chassis.dir/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash.c.obj
+[60/96] Building C object CMakeFiles/control_chassis.dir/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash_ex.c.obj
+[61/96] Building C object CMakeFiles/control_chassis.dir/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_exti.c.obj
+[62/96] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/sens_ibus_usart2.c.obj
+/tmp/mobileess-wheel-baseline-sd7tocor/control_chassis/Core/UserDev/sens_ibus_usart2.c: In function 'SensIbusUsart2_DiagTask':
+/tmp/mobileess-wheel-baseline-sd7tocor/control_chassis/Core/UserDev/sens_ibus_usart2.c:253:31: warning: 'sequence_after' may be used uninitialized in this function [-Wmaybe-uninitialized]
+  253 |              ((sequence_after & 1U) != 0U));
+      |               ~~~~~~~~~~~~~~~~^~~~~
+/tmp/mobileess-wheel-baseline-sd7tocor/control_chassis/Core/UserDev/sens_ibus_usart2.c:227:14: note: 'sequence_after' was declared here
+  227 |     uint32_t sequence_after;
+      |              ^~~~~~~~~~~~~~
+/tmp/mobileess-wheel-baseline-sd7tocor/control_chassis/Core/UserDev/sens_ibus_usart2.c:491:18: warning: 'source.fault_bitmap' may be used uninitialized in this function [-Wmaybe-uninitialized]
+  491 |         length = snprintf(
+      |                  ^~~~~~~~~
+  492 |             line, sizeof(line),
+      |             ~~~~~~~~~~~~~~~~~~~
+  493 |             "TELSRC bms_v=%lu bms_i=%ld soc=%u "
+      |             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  494 |             "wheel1=%ld wheel2=%ld wheel3=%ld wheel4=%ld "
+      |             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  495 |             "ground_cmps=%u work_mode=%u run_permission=%u "
+      |             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  496 |             "fault=0x%04X blade_rpm=%u\r\n",
+      |             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  497 |             (unsigned long)source.bms_voltage_centivolts,
+      |             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  498 |             (long)source.bms_current_deciamps,
+      |             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  499 |             source.bms_soc_percent,
+      |             ~~~~~~~~~~~~~~~~~~~~~~~
+  500 |             (long)source.wheel_mm_per_s[0],
+      |             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  501 |             (long)source.wheel_mm_per_s[1],
+      |             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  502 |             (long)source.wheel_mm_per_s[2],
+      |             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  503 |             (long)source.wheel_mm_per_s[3],
+      |             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  504 |             source.ground_speed_cm_per_s,
+      |             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  505 |             source.work_mode,
+      |             ~~~~~~~~~~~~~~~~~
+  506 |             source.run_permission,
+      |             ~~~~~~~~~~~~~~~~~~~~~~
+  507 |             source.fault_bitmap,
+      |             ~~~~~~~~~~~~~~~~~~~~
+  508 |             source.blade_rpm);
+      |             ~~~~~~~~~~~~~~~~~
+/tmp/mobileess-wheel-baseline-sd7tocor/control_chassis/Core/UserDev/sens_ibus_usart2.c:491:18: warning: 'source.run_permission' may be used uninitialized in this function [-Wmaybe-uninitialized]
+/tmp/mobileess-wheel-baseline-sd7tocor/control_chassis/Core/UserDev/sens_ibus_usart2.c:491:18: warning: 'source.work_mode' may be used uninitialized in this function [-Wmaybe-uninitialized]
+/tmp/mobileess-wheel-baseline-sd7tocor/control_chassis/Core/UserDev/sens_ibus_usart2.c:491:18: warning: 'source.blade_rpm' may be used uninitialized in this function [-Wmaybe-uninitialized]
+/tmp/mobileess-wheel-baseline-sd7tocor/control_chassis/Core/UserDev/sens_ibus_usart2.c:491:18: warning: 'source.ground_speed_cm_per_s' may be used uninitialized in this function [-Wmaybe-uninitialized]
+/tmp/mobileess-wheel-baseline-sd7tocor/control_chassis/Core/UserDev/sens_ibus_usart2.c:491:18: warning: 'source.wheel_mm_per_s[3]' may be used uninitialized in this function [-Wmaybe-uninitialized]
+/tmp/mobileess-wheel-baseline-sd7tocor/control_chassis/Core/UserDev/sens_ibus_usart2.c:491:18: warning: 'source.wheel_mm_per_s[2]' may be used uninitialized in this function [-Wmaybe-uninitialized]
+/tmp/mobileess-wheel-baseline-sd7tocor/control_chassis/Core/UserDev/sens_ibus_usart2.c:491:18: warning: 'source.wheel_mm_per_s[1]' may be used uninitialized in this function [-Wmaybe-uninitialized]
+/tmp/mobileess-wheel-baseline-sd7tocor/control_chassis/Core/UserDev/sens_ibus_usart2.c:491:18: warning: 'source.wheel_mm_per_s[0]' may be used uninitialized in this function [-Wmaybe-uninitialized]
+/tmp/mobileess-wheel-baseline-sd7tocor/control_chassis/Core/UserDev/sens_ibus_usart2.c:491:18: warning: 'source.bms_soc_percent' may be used uninitialized in this function [-Wmaybe-uninitialized]
+/tmp/mobileess-wheel-baseline-sd7tocor/control_chassis/Core/UserDev/sens_ibus_usart2.c:491:18: warning: 'source.bms_current_deciamps' may be used uninitialized in this function [-Wmaybe-uninitialized]
+/tmp/mobileess-wheel-baseline-sd7tocor/control_chassis/Core/UserDev/sens_ibus_usart2.c:491:18: warning: 'source.bms_voltage_centivolts' may be used uninitialized in this function [-Wmaybe-uninitialized]
+[63/96] Building C object CMakeFiles/control_chassis.dir/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_dma.c.obj
+[64/96] Building C object CMakeFiles/control_chassis.dir/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pwr_ex.c.obj
+[65/96] Building C object CMakeFiles/control_chassis.dir/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_ll_adc.c.obj
+[66/96] Building C object CMakeFiles/control_chassis.dir/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pwr.c.obj
+[67/96] Building C object CMakeFiles/control_chassis.dir/Middlewares/Third_Party/FreeRTOS/Source/croutine.c.obj
+[68/96] Building C object CMakeFiles/control_chassis.dir/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_can.c.obj
+[69/96] Building C object CMakeFiles/control_chassis.dir/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c.obj
+[70/96] Building C object CMakeFiles/control_chassis.dir/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc_ex.c.obj
+[71/96] Building C object CMakeFiles/control_chassis.dir/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_gpio.c.obj
+[72/96] Building C object CMakeFiles/control_chassis.dir/Middlewares/Third_Party/FreeRTOS/Source/list.c.obj
+[73/96] Building ASM object CMakeFiles/control_chassis.dir/startup_stm32f407xx.s.obj
+[74/96] Building C object CMakeFiles/control_chassis.dir/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc.c.obj
+[75/96] Building C object CMakeFiles/control_chassis.dir/Middlewares/Third_Party/FreeRTOS/Source/event_groups.c.obj
+[76/96] Building C object CMakeFiles/control_chassis.dir/Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F/port.c.obj
+[77/96] Building C object CMakeFiles/control_chassis.dir/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_dma_ex.c.obj
+[78/96] Building C object CMakeFiles/control_chassis.dir/Middlewares/Third_Party/FreeRTOS/Source/portable/MemMang/heap_4.c.obj
+[79/96] Building C object CMakeFiles/control_chassis.dir/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc.c.obj
+[80/96] Building C object CMakeFiles/control_chassis.dir/tmp/mobileess-wheel-baseline-sd7tocor/experiments/ticket03/exp3_hil.c.obj
+[81/96] Building C object CMakeFiles/control_chassis.dir/tmp/mobileess-wheel-baseline-sd7tocor/experiments/ticket03/exp3_link.c.obj
+[82/96] Building C object CMakeFiles/control_chassis.dir/Middlewares/Third_Party/FreeRTOS/Source/stream_buffer.c.obj
+[83/96] Building C object CMakeFiles/control_chassis.dir/tmp/mobileess-wheel-baseline-sd7tocor/experiments/ticket03/exp3.c.obj
+[84/96] Building C object CMakeFiles/control_chassis.dir/tmp/mobileess-wheel-baseline-sd7tocor/experiments/ticket03/exp3_blade_adapter.c.obj
+[85/96] Building C object CMakeFiles/control_chassis.dir/Middlewares/Third_Party/FreeRTOS/Source/timers.c.obj
+[86/96] Building C object CMakeFiles/control_chassis.dir/tmp/mobileess-wheel-baseline-sd7tocor/experiments/ticket03/exp3_auto_session.c.obj
+[87/96] Building C object CMakeFiles/control_chassis.dir/tmp/mobileess-wheel-baseline-sd7tocor/experiments/ticket03/stm32_adapter.c.obj
+[88/96] Building C object CMakeFiles/control_chassis.dir/tmp/mobileess-wheel-baseline-sd7tocor/experiments/ticket03/exp3_probe.c.obj
+[89/96] Building C object CMakeFiles/control_chassis.dir/Middlewares/Third_Party/FreeRTOS/Source/queue.c.obj
+[90/96] Building C object CMakeFiles/control_chassis.dir/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim_ex.c.obj
+[91/96] Building C object CMakeFiles/control_chassis.dir/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_spi.c.obj
+[92/96] Building C object CMakeFiles/control_chassis.dir/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_uart.c.obj
+[93/96] Building C object CMakeFiles/control_chassis.dir/Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/cmsis_os2.c.obj
+[94/96] Building C object CMakeFiles/control_chassis.dir/Middlewares/Third_Party/FreeRTOS/Source/tasks.c.obj
+[95/96] Building C object CMakeFiles/control_chassis.dir/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim.c.obj
+[96/96] Linking C executable control_chassis.elf
+Memory region         Used Size  Region Size  %age Used
+             RAM:       53080 B       128 KB     40.50%
+          CCMRAM:          0 GB        64 KB      0.00%
+           FLASH:       82704 B       512 KB     15.77%
+   text	   data	    bss	    dec	    hex	filename
+  82244	    452	  52628	 135324	  2109c	/tmp/mobileess-wheel-baseline-sd7tocor/control_chassis/build/mower-ok-release/control_chassis.elf

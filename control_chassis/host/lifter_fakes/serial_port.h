@@ -1,0 +1,1 @@
+/* No serial calls in the grass bag integration under test. */

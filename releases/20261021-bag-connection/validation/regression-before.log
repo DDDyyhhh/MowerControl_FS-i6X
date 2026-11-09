@@ -1,0 +1,9 @@
+Regression test against pre-task renderer, using the same live inputs and new assertions
+Assertion failed: (has("草袋未连接")), function main, file ui.cpp, line 735.
+Traceback (most recent call last):
+  File "<stdin>", line 8, in <module>
+  File "/Users/dyh/Documents/Codex/MowerControl/tools/test_blade_ok_ui.py", line 471, in <module>
+    subprocess.run([str(work/'ui')],check=True)
+  File "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/subprocess.py", line 528, in run
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command '['/var/folders/_c/62b23my53ds0lct_bdnhfhg00000gn/T/blade-ok-ui-7y035cq3/ui']' died with <Signals.SIGABRT: 6>.

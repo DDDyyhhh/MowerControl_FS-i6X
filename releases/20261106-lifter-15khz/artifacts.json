@@ -1,0 +1,74 @@
+{
+  "date": "2026-11-06",
+  "target": "STM32F407VETx",
+  "preset": "mower-ok-release",
+  "protocol": "0x33",
+  "baseline": {
+    "svn_working_copy_revision": "104",
+    "includes_existing_uncommitted_changes": true,
+    "release": "20261105-ch8-mode-ok",
+    "fresh_baseline_bin_matches_release": true
+  },
+  "pwm": {
+    "height": {
+      "timer": "TIM3",
+      "pins": [
+        "PB0",
+        "PB1"
+      ],
+      "clock_hz": 84000000,
+      "psc": 0,
+      "arr": 5599,
+      "frequency_hz": 15000,
+      "duty_percent": 20,
+      "active_ccr": 1120
+    },
+    "grass_bag_and_blade": {
+      "timer": "TIM2",
+      "psc": 0,
+      "arr": 8399,
+      "frequency_hz": 10000
+    }
+  },
+  "vehicle_estop_enabled": false,
+  "software_validation": "passed",
+  "hardware_validation": "not performed",
+  "flashed": false,
+  "svn_committed": false,
+  "warning_comparison": {
+    "debug": {
+      "baseline": 56,
+      "current": 56,
+      "added": 0
+    },
+    "mower-ok-release": {
+      "baseline": 57,
+      "current": 57,
+      "added": 0
+    }
+  },
+  "firmware": {
+    "control-chassis-lifter-15khz.elf": {
+      "bytes": 156124,
+      "sha256": "bec197b5f1cace5c4876b9b10ca9dc45b8de47d6d77927d8d558199ef8e7a9ba"
+    },
+    "control-chassis-lifter-15khz.hex": {
+      "bytes": 233768,
+      "sha256": "0e5087a7c59bff044647e78c1c8ee3bccc75280252771db33dfb24b92e0f93ad"
+    },
+    "control-chassis-lifter-15khz.bin": {
+      "bytes": 83084,
+      "sha256": "68b5aeda6afe65a596c79deea8a9df0da889def72c3cd69d671131dad7c7a22d"
+    }
+  },
+  "rollback": {
+    "rollback/control-chassis-ch8-ok.bin": {
+      "bytes": 83084,
+      "sha256": "e09bee86d7659823a7d2988e99d6a4109d37ac0e2a4098bc23b985f157701d79"
+    },
+    "rollback/control-chassis-ch8-ok.hex": {
+      "bytes": 233768,
+      "sha256": "1301cf1a39863775ef409515bb106932d75edab23840858b13714606217f7f51"
+    }
+  }
+}

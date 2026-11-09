@@ -1,0 +1,790 @@
+--- a/OpenI6X/FS-I6X/opentx/radio/src/gui/128x64/mower_ui.h
++++ b/OpenI6X/FS-I6X/opentx/radio/src/gui/128x64/mower_ui.h
+@@ -14,7 +14,8 @@
+   MOWER_UI_HEIGHT_ACTION = 1U << 7,
+   MOWER_UI_WORK_MODE = 1U << 8,
+   MOWER_UI_RUN_PERMISSION = 1U << 9,
+-  MOWER_UI_FAULT = 1U << 10
++  MOWER_UI_FAULT = 1U << 10,
++  MOWER_UI_BAG_CONNECTION = 1U << 11
+ };
+ 
+ // Read-only presentation snapshot. Each bit says that its value was observed;
+@@ -36,6 +37,7 @@
+   uint8_t radio_quality;
+   bool telemetry_online;
+   bool mock;
++  bool bag_connected;    // PD10 feedback, guarded by MOWER_UI_BAG_CONNECTION
+   // Local transmitted settings only; these do not imply controller acceptance.
+   uint8_t height_setting; // 1..5, zero is unknown
+   uint8_t bag_command;    // 1=open, 2=close, zero is unknown
+--- a/OpenI6X/FS-I6X/opentx/radio/src/gui/128x64/mower_user_ui.h
++++ b/OpenI6X/FS-I6X/opentx/radio/src/gui/128x64/mower_user_ui.h
+@@ -8,7 +8,7 @@
+ static MowerUserPage mowerUserPage = MOWER_USER_HOME;
+ static uint8_t mowerMaintenanceSelection;
+ static uint8_t mowerDebugFirstRow;
+-static const uint8_t MOWER_DEBUG_ROWS = 24;
++static const uint8_t MOWER_DEBUG_ROWS = 25;
+ 
+ // Font: 12px Chinese, 6px ASCII; fixed subset in flash, no allocation.
+ static coord_t mowerZhText(coord_t x, coord_t y, const char *text, bool inverse)
+@@ -77,6 +77,13 @@
+ static const char *mowerBagCommandName(uint8_t command)
+ {
+   return command == 1 ? "开" : command == 2 ? "关" : "--";
++}
++
++static const char *mowerBagDisplay(const MowerUiSnapshot &data)
++{
++  if (!data.telemetry_online || !(data.valid & MOWER_UI_BAG_CONNECTION)) return "草袋未知";
++  if (!data.bag_connected) return "草袋未连接";
++  return data.bag_command == 1 ? "草袋开" : data.bag_command == 2 ? "草袋关" : "草袋--";
+ }
+ 
+ static const char *mowerTransactionName(Exp3UiState state)
+@@ -126,8 +133,7 @@
+   mowerZhText(72, 36, !known ? "--" : (runtime&1U) ? "开" : "关");
+   mowerZhText(0, 48, "高度设");
+   mowerUserValue(36, 48, data.height_setting, data.height_setting != 0, "/5");
+-  mowerZhText(60, 48, "袋指令");
+-  mowerZhText(96, 48, mowerBagCommandName(data.bag_command));
++  mowerZhText(60, 48, mowerBagDisplay(data));
+ }
+ 
+ static void mowerUserDebugRow(uint8_t row, coord_t y, const MowerUiSnapshot &data,
+@@ -136,14 +142,14 @@
+   static const char *const labels[] = {
+     "整车电量", "整车电压", "行走设定", "实际速度", "割刀转速",
+     "割刀档位", "割刀输出", "高度设定", "草袋指令", "运行许可",
+-    "链路状态", "确认事务", "故障字", "停刀回执"
++    "链路状态", "确认事务", "故障字", "停刀回执", "草袋连接"
+   };
+   static const char *const faults[] = {
+     "急停", "碰撞", "倾斜", "遥控超时", "遥控停机锁存",
+     "控制权锁存", "电池反馈异常", "轮速反馈过期", "割刀反馈过期", "割刀校验异常"
+   };
+-  if (row >= 14) {
+-    const uint8_t bit=row-14;
++  if (row >= 15) {
++    const uint8_t bit=row-15;
+     mowerZhText(0, y, faults[bit]);
+     mowerZhText(108, y, !(data.valid & MOWER_UI_FAULT) ? "--" :
+         (data.fault_bits & (1U<<bit)) ? "!" : "-");
+@@ -174,6 +180,8 @@
+     }
+     case 13: mowerZhText(x, y, mowerExp3CancelFailed ? "失败" :
+         mowerExp3Probe.cancel_pending || mowerExp3Probe.state == EXP3_UI_CANCEL_WAIT ? "等待" : "空闲"); break;
++    case 14: mowerZhText(x, y, !data.telemetry_online || !(data.valid & MOWER_UI_BAG_CONNECTION) ?
++        "未知" : data.bag_connected ? "已连接" : "未连接"); break;
+   }
+ }
+ 
+--- a/OpenI6X/FS-I6X/opentx/radio/src/gui/128x64/view_main.cpp
++++ b/OpenI6X/FS-I6X/opentx/radio/src/gui/128x64/view_main.cpp
+@@ -361,7 +361,14 @@
+   // board status measurement, and retain per-field unknowns independently.
+   snapshot.telemetry_online = (snapshot.valid & (MOWER_UI_WORK_MODE |
+       MOWER_UI_RUN_PERMISSION | MOWER_UI_FAULT)) != 0;
+-  // Actual height and bag position are not reported by the existing protocol.
++#if defined(PCBI6X_MOWER_BLADE_OK)
++  if (TELEMETRY_STREAMING() && exp3_board_bag_connection(
++      static_cast<uint32_t>(get_tmr10ms())*10U, &snapshot.bag_connected)) {
++    snapshot.valid |= MOWER_UI_BAG_CONNECTION;
++    snapshot.telemetry_online = true;
++  }
++#endif
++  // Actual height and bag position remain unavailable; CH6 is a target only.
+ }
+ 
+ #if defined(PCBI6X_MOWER_UI_MOCK)
+--- a/control_chassis/Core/Inc/telemetry_snapshot.h
++++ b/control_chassis/Core/Inc/telemetry_snapshot.h
+@@ -30,6 +30,7 @@
+     TELEMETRY_VALUE_WORK_MODE,
+     TELEMETRY_VALUE_RUN_PERMISSION,
+     TELEMETRY_VALUE_DETAILED_FAULT,
++    TELEMETRY_VALUE_BAG_CONNECTION,
+     TELEMETRY_VALUE_COUNT
+ } TelemetryValueIndex_t;
+ 
+@@ -78,6 +79,8 @@
+     bool ibus_timeout_latched;
+     bool remote_stop_latched;
+     bool ownership_transition_latched;
++    bool bag_connection_valid;
++    bool bag_connected;
+ } TelemetrySources_t;
+ 
+ typedef struct
+--- a/control_chassis/Core/UserApp/app_Motion.c
++++ b/control_chassis/Core/UserApp/app_Motion.c
+@@ -1455,6 +1455,9 @@
+       (api_lockout != 0U) ||
+       (command->remote_recoverable_latched &&
+        (command->recoverable_latch_reason == REMOTE_LATCH_REASON_OWNERSHIP_TRANSITION));
++  /* Sample PD10 in every mode, independent of actuator permission. */
++  sources.bag_connected = HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_10) == GPIO_PIN_RESET;
++  sources.bag_connection_valid = true;
+   TelemetrySnapshot_Update(&sources, now_ms);
+ #if SENS_IBUS_HIL_DIAG_USART1_TX_ENABLED
+   if (TelemetrySnapshot_Read(&telemetry_snapshot))
+--- a/control_chassis/Core/UserApp/telemetry_snapshot.c
++++ b/control_chassis/Core/UserApp/telemetry_snapshot.c
+@@ -1,4 +1,5 @@
+ #include "telemetry_snapshot.h"
++#include "../../../experiments/ticket03/bag_connection.h"
+ 
+ #include <limits.h>
+ #include <string.h>
+@@ -182,6 +183,10 @@
+         TelemetrySnapshot_BuildFaults(sources, bms_fresh, wheels_fresh,
+                                       blade_fresh);
+     snapshot.generated_at_ms = now_ms;
++    snapshot.values[TELEMETRY_VALUE_BAG_CONNECTION] = (uint16_t)(
++        (((now_ms / MOWER_BAG_HEARTBEAT_MS) & MOWER_BAG_HEARTBEAT_MASK) << 2) |
++        (sources->bag_connection_valid ? MOWER_BAG_SAMPLE_VALID : 0U) |
++        (sources->bag_connection_valid && sources->bag_connected ? MOWER_BAG_CONNECTED : 0U));
+ 
+     TelemetrySnapshot_Publish(&snapshot);
+ }
+--- a/control_chassis/Core/UserDev/sens_ibus_responder.c
++++ b/control_chassis/Core/UserDev/sens_ibus_responder.c
+@@ -1,6 +1,7 @@
+ #include "sens_ibus_responder.h"
+ 
+ #include "../../../experiments/ticket03/exp3_board.h"
++#include "../../../experiments/ticket03/bag_connection.h"
+ 
+ #include <stddef.h>
+ #include <string.h>
+@@ -175,6 +176,26 @@
+         return true;
+     }
+ #endif
++#if MOWER_GRASS_BAG_CH6_ENABLED
++    if (address == MOWER_BAG_SENS_ADDRESS) {
++        if (command == SENS_IBUS_COMMAND_DISCOVERY) {
++            memcpy(response, responder->request, SENS_IBUS_REQUEST_SIZE);
++            SensIbusResponder_Send(responder, response, SENS_IBUS_REQUEST_SIZE);
++        } else if (command == SENS_IBUS_COMMAND_TYPE || command == SENS_IBUS_COMMAND_MEASUREMENT) {
++            TelemetrySnapshot_t snapshot;
++            uint16_t value = 0U; /* No snapshot means unknown, never disconnected. */
++            if (command == SENS_IBUS_COMMAND_TYPE)
++                value = (uint16_t)(0x0200U | MOWER_BAG_SENS_TYPE);
++            else if (responder->read_snapshot != NULL &&
++                     responder->read_snapshot(responder->snapshot_context, &snapshot))
++                value = snapshot.values[TELEMETRY_VALUE_BAG_CONNECTION];
++            response[0]=6U; response[1]=responder->request[1];
++            response[2]=(uint8_t)value; response[3]=(uint8_t)(value>>8);
++            SensIbusResponder_Send(responder, response, 6U);
++        }
++        return true;
++    }
++#endif
+     if ((address < SENS_IBUS_FIRST_ADDRESS) ||
+         (address > SENS_IBUS_LAST_ADDRESS))
+     {
+--- a/control_chassis/host/telemetry_snapshot_harness.c
++++ b/control_chassis/host/telemetry_snapshot_harness.c
+@@ -5,6 +5,32 @@
+ #include <string.h>
+ 
+ #include "telemetry_snapshot.h"
++#include "../../experiments/ticket03/bag_connection.h"
++
++static void TestBagConnection(void)
++{
++    TelemetrySources_t sources = {0};
++    TelemetrySnapshot_t snapshot;
++    TelemetrySnapshot_Update(&sources, 1000U);
++    assert(TelemetrySnapshot_Read(&snapshot));
++    assert(snapshot.values[TELEMETRY_VALUE_BAG_CONNECTION] == 40U);
++    sources.bag_connection_valid = true;
++    TelemetrySnapshot_Update(&sources, 1099U);
++    assert(TelemetrySnapshot_Read(&snapshot));
++    assert(snapshot.values[TELEMETRY_VALUE_BAG_CONNECTION] == 42U);
++    sources.bag_connected = true;
++    TelemetrySnapshot_Update(&sources, 1100U);
++    assert(TelemetrySnapshot_Read(&snapshot));
++    assert(snapshot.values[TELEMETRY_VALUE_BAG_CONNECTION] == 47U);
++    assert(snapshot.values[TELEMETRY_VALUE_RUN_PERMISSION] == 0U);
++    TelemetrySnapshot_Update(&sources, 1638400U);
++    assert(TelemetrySnapshot_Read(&snapshot));
++    assert(snapshot.values[TELEMETRY_VALUE_BAG_CONNECTION] == 3U);
++    sources.bag_connection_valid = false;
++    TelemetrySnapshot_Update(&sources, 1638500U);
++    assert(TelemetrySnapshot_Read(&snapshot));
++    assert(snapshot.values[TELEMETRY_VALUE_BAG_CONNECTION] == 4U);
++}
+ 
+ static TelemetrySources_t FreshSources(uint32_t now_ms)
+ {
+@@ -221,6 +247,7 @@
+ 
+ int main(void)
+ {
++    TestBagConnection();
+     TelemetrySnapshot_Reset();
+     TestScaledValuesAndModes();
+     TestBmsBoundariesAndFreshness();
+--- /dev/null
++++ b/docs/adr/0001-bag-connection-telemetry.md
+@@ -0,0 +1,5 @@
++# 草袋连接反馈使用独立 SENS 传感器
++
++底盘已有 PD10 连接检测，FS-i6X 首页原先只显示 CH6 指令，无法判断草袋是否连接。决定新增 SENS 地址 11、类型 0xE3 的只读连接反馈，保留地址 1～10、故障字与刀盘运行状态的现有含义，避免把连接状态混入故障或挤占刀盘心跳。
++
++草袋连接反馈自带运动任务心跳，遥控器确认心跳推进后才采用数据，冻结回放及断流显示未知。草袋“开/关”仍是连接条件下的 CH6 目标，不表示执行许可或物理到位；本改动不改变草袋动作和安全联锁。线格式、兼容行为和超时约定见 [协议说明](../protocols/sens-bag-connection.md)。
+--- /dev/null
++++ b/docs/protocols/sens-bag-connection.md
+@@ -0,0 +1,37 @@
++# FS-i6X 草袋连接反馈
++
++底盘与遥控器共享的只读契约；定义见 `experiments/ticket03/bag_connection.h`。
++
++## SENS 接口
++
++- 仅 `MOWER_GRASS_BAG_CH6_ENABLED=1` 的生产草袋配置响应地址 11。地址 1～10 的发现、类型、值和用途保持原样。
++- 发现请求 `04 8B 70 FF` 原样应答；类型应答 `06 9B E3 02 79 FE`：私有类型 0xE3、值宽两字节。
++- 测量请求 `04 AB 50 FF`；应答为 `06 AB low high checksum-low checksum-high`。
++- 校验和为 `0xFFFF - sum(除校验和外的各字节)`，16 位小端，与现有 SENS 一致。
++
++| 位 | 含义 |
++|---|---|
++| bit0 | 已连接：1；未连接：0。取自 PD10，低电平表示已连接。 |
++| bit1 | GPIO 采样有效：1。未初始化或无法读取原子快照时为 0。 |
++| bit2～15 | `floor(now_ms / 100) & 0x3FFF`，由运动任务采样并随遥测快照发布。 |
++
++连接采样不依赖控制模式、遥控解锁或草袋动作许可；SENS 请求不生成或刷新心跳。没有快照时测量应答为 0，含义是未知，不能解释为未连接。底盘不因该回传改变电机输出。
++
++## 遥控器接收与显示
++
++在已通过 RF CRC 和绑定 ID 检查的 AA 固定槽、AC 可变长度槽中，只接受类型 0xE3、实例/地址 11、宽度两字节；AC 长度不符和截断包不更新状态。缓存不依赖用户是否手动发现/命名模型传感器。
++
++首次有效采样只建立基线；14 位心跳向前推进（模差为 1～8191）后才确认反馈有效，后续仅向前推进刷新时戳。相同心跳可立即反映断开；相同心跳的迟到“已连接”不能覆盖断开。倒序包忽略，采样无效立即清除有效性。
++
++距最后一次推进满 1000ms 即未知；重复包不能续期。超时后恢复须重新建立基线并看到推进。重新绑定清除缓存，失去 RF 遥测时界面也显示未知。32 位时间回绕使用无符号差值；底盘重启或时间计数器跳变后，最多经历一次超时与重新建基线。
++
++| 数据条件 | 首页 |
++|---|---|
++| 有效且未连接 | 草袋未连接，与 CH6 无关 |
++| 有效且已连接，CH6 目标打开/关闭 | 草袋开 / 草袋关 |
++| 有效且已连接，CH6 中间值或无效 | 草袋-- |
++| 无有效反馈、旧底盘不支持、失联或冻结 | 草袋未知 |
++
++“开/关”是本地发送的 CH6 目标，不表示底盘接受、执行完成或物理到位。草袋重接不触发新动作，仍由既有控制逻辑建立基线并等待新拨动。
++
++旧遥控器不消费地址 11，仍显示其原有指令页面；新遥控器配旧底盘显示草袋未知。部署此功能需更新两端，实机仍须确认接收机能发现并持续轮询第 11 个 SENS 地址。
+--- /dev/null
++++ b/experiments/ticket03/bag_connection.h
+@@ -0,0 +1,15 @@
++#ifndef MOWER_BAG_CONNECTION_H
++#define MOWER_BAG_CONNECTION_H
++
++#include <stdint.h>
++
++/* Read-only PD10 telemetry; never a position or motion authorization. */
++#define MOWER_BAG_SENS_ADDRESS       11U
++#define MOWER_BAG_SENS_TYPE          0xE3U
++#define MOWER_BAG_CONNECTED         1U
++#define MOWER_BAG_SAMPLE_VALID      2U
++#define MOWER_BAG_HEARTBEAT_MASK    0x3FFFU
++#define MOWER_BAG_HEARTBEAT_MS      100U
++#define MOWER_BAG_FRESHNESS_MS      1000U
++
++#endif
+--- a/experiments/ticket03/exp3_board.h
++++ b/experiments/ticket03/exp3_board.h
+@@ -72,6 +72,8 @@
+ void exp3_board_complete_pwm_event(const Exp3PwmEvent *event, bool accepted);
+ bool exp3_board_defer_result(const Exp3Message *result);
+ bool exp3_board_runtime(uint32_t now, uint16_t *word);
++/* True only for a live, progressing PD10 sample; connected is not a position. */
++bool exp3_board_bag_connection(uint32_t now, bool *connected);
+ #endif
+ uint32_t exp3_board_ch4_epoch(void);
+ void exp3_board_publish_pwm_diag(const Exp3PwmDiag *diag);
+--- a/experiments/ticket03/openi6x_adapter.c
++++ b/experiments/ticket03/openi6x_adapter.c
+@@ -1,4 +1,5 @@
+ #include "exp3_board.h"
++#include "bag_connection.h"
+ #if EXP3_ENABLED
+ Exp3Hil g_exp3_hil;
+ #if MOWER_BLADE_OK_ENABLED
+@@ -6,6 +7,34 @@
+ static uint16_t runtime_word;
+ static uint32_t runtime_at;
+ static uint8_t runtime_seen, runtime_valid;
++static uint16_t bag_word;
++static uint32_t bag_at;
++static uint8_t bag_seen, bag_valid;
++bool exp3_board_bag_connection(uint32_t now, bool *connected) {
++    if (!connected || !g_exp3_hil.bound || !bag_valid ||
++        (uint32_t)(now-bag_at) >= MOWER_BAG_FRESHNESS_MS) return false;
++    *connected = (bag_word & MOWER_BAG_CONNECTED) != 0U;
++    return true;
++}
++static void receive_bag_connection(uint16_t word, uint32_t now) {
++    uint16_t delta;
++    if (!g_exp3_hil.bound) return;
++    if (!(word & MOWER_BAG_SAMPLE_VALID)) {
++        bag_seen=bag_valid=0U;
++        return;
++    }
++    if (!bag_seen || (uint32_t)(now-bag_at) >= MOWER_BAG_FRESHNESS_MS) {
++        bag_word=word; bag_at=now; bag_seen=1U; bag_valid=0U;
++        return;
++    }
++    delta=(uint16_t)(((word>>2)-(bag_word>>2)) & MOWER_BAG_HEARTBEAT_MASK);
++    if (delta && delta < 8192U) {
++        bag_word=word; bag_at=now; bag_valid=1U;
++    } else if (!delta && !(word & MOWER_BAG_CONNECTED)) {
++        /* Disconnect wins within one heartbeat; delayed connected cannot undo it. */
++        bag_word=word;
++    }
++}
+ bool exp3_board_runtime(uint32_t now, uint16_t *word) {
+     if (!word || !g_exp3_hil.bound || !runtime_valid ||
+         (uint32_t)(now-runtime_at) >= 1000U) return false;
+@@ -45,6 +74,7 @@
+             g_exp3_mailbox.command = 0U;
+ #if MOWER_BLADE_OK_ENABLED
+             runtime_seen=runtime_valid=0U;
++            bag_seen=bag_valid=0U;
+ #endif
+             exp3_hil_bind_session(&g_exp3_hil, NULL, auto_session.peer,
+                                   auto_session.self, now);
+@@ -173,6 +203,8 @@
+ #if MOWER_BLADE_OK_ENABLED
+             if (p[i] == 0xe2 && p[i+1] == 10U)
+                 receive_runtime((uint16_t)(p[i+2] | ((uint16_t)p[i+3]<<8)), now);
++            if (p[i] == MOWER_BAG_SENS_TYPE && p[i+1] == MOWER_BAG_SENS_ADDRESS)
++                receive_bag_connection((uint16_t)(p[i+2] | ((uint16_t)p[i+3]<<8)), now);
+ #endif
+             if (p[i] == 0xe1 && p[i + 1] == 9)
+                 receive_word((uint16_t)(p[i + 2] | ((uint16_t)p[i + 3] << 8)), now);
+@@ -185,6 +217,8 @@
+ #if MOWER_BLADE_OK_ENABLED
+             if (p[i] == 0xe2 && p[i+1] == 10U && size == 2U)
+                 receive_runtime((uint16_t)(p[i+3] | ((uint16_t)p[i+4]<<8)), now);
++            if (p[i] == MOWER_BAG_SENS_TYPE && p[i+1] == MOWER_BAG_SENS_ADDRESS && size == 2U)
++                receive_bag_connection((uint16_t)(p[i+3] | ((uint16_t)p[i+4]<<8)), now);
+ #endif
+             if (p[i] == 0xe1 && p[i + 1] == 9 && size == 2)
+                 receive_word((uint16_t)(p[i + 3] | ((uint16_t)p[i + 4] << 8)), now);
+--- a/experiments/ticket03/test_release_radio.c
++++ b/experiments/ticket03/test_release_radio.c
+@@ -2,6 +2,81 @@
+ #include <assert.h>
+ #include <stdio.h>
+ #include <string.h>
++#include "bag_connection.h"
++
++#if MOWER_BLADE_OK_ENABLED
++static void bag_packet(uint16_t word, uint32_t now, bool extended, unsigned length)
++{
++    uint8_t packet[37];
++    memset(packet, 0xff, sizeof(packet));
++    packet[0]=extended ? 0xac : 0xaa;
++    packet[9]=0xe3; packet[10]=11U;
++    if (extended) {
++        packet[11]=2U; packet[12]=(uint8_t)word; packet[13]=(uint8_t)(word>>8);
++    } else {
++        packet[11]=(uint8_t)word; packet[12]=(uint8_t)(word>>8);
++    }
++    exp3_board_rf(packet, length, now);
++}
++
++static void test_bag_connection(void)
++{
++    bool connected=true;
++    assert(!exp3_board_bag_connection(400000U, &connected)); /* old firmware */
++    assert(!exp3_board_bag_connection(400000U, NULL));
++    bag_packet(0x002bU,400000U,false,37U); /* hb10, valid, connected */
++    assert(!exp3_board_bag_connection(400000U, &connected));
++    bag_packet(0x002bU,400100U,false,37U); /* repeat isn't progress */
++    assert(!exp3_board_bag_connection(400100U, &connected));
++    bag_packet(0x002fU,400200U,false,37U); /* hb11 */
++    assert(exp3_board_bag_connection(400200U, &connected) && connected);
++    bag_packet(0x002eU,400210U,false,37U); /* same hb: unplug */
++    assert(exp3_board_bag_connection(400210U, &connected) && !connected);
++    bag_packet(0x002fU,400220U,false,37U); /* delayed connected */
++    assert(exp3_board_bag_connection(400220U, &connected) && !connected);
++    bag_packet(0x0033U,400300U,true,13U); /* truncated AC */
++    assert(exp3_board_bag_connection(400300U, &connected) && !connected);
++    bag_packet(0x0033U,400310U,false,12U); /* truncated AA */
++    assert(exp3_board_bag_connection(400310U, &connected) && !connected);
++    bag_packet(0x0033U,400320U,true,37U); /* hb12 reconnect */
++    assert(exp3_board_bag_connection(400320U, &connected) && connected);
++    {
++        uint8_t packet[37];
++        memset(packet,0xff,sizeof(packet));
++        packet[0]=0xaa; packet[9]=0xe3; packet[10]=12U;
++        packet[11]=0x36U; packet[12]=0U;
++        exp3_board_rf(packet,sizeof(packet),400321U); /* wrong address */
++        packet[9]=0xe4; packet[10]=11U;
++        exp3_board_rf(packet,sizeof(packet),400322U); /* wrong type */
++        packet[0]=0xac; packet[9]=0xe3; packet[11]=1U; packet[12]=0x36U;
++        exp3_board_rf(packet,sizeof(packet),400323U); /* wrong payload width */
++        assert(exp3_board_bag_connection(400323U,&connected) && connected);
++    }
++    bag_packet(0x002eU,400330U,false,37U); /* old heartbeat ignored */
++    assert(exp3_board_bag_connection(400330U, &connected) && connected);
++    bag_packet(0x0033U,401319U,false,37U);
++    assert(exp3_board_bag_connection(401319U, &connected) && connected);
++    assert(!exp3_board_bag_connection(401320U, &connected)); /* exact 1s */
++    bag_packet(0x0033U,401320U,false,37U);
++    assert(!exp3_board_bag_connection(401320U, &connected));
++    bag_packet(0x0036U,401420U,true,37U); /* recovery needs advance */
++    assert(exp3_board_bag_connection(401420U, &connected) && !connected);
++    bag_packet(0x0038U,401430U,false,37U); /* invalid sample */
++    assert(!exp3_board_bag_connection(401430U, &connected));
++    bag_packet(0xffffU,401440U,false,37U); /* baseline at hb16383 */
++    assert(!exp3_board_bag_connection(401440U, &connected));
++    bag_packet(0x0003U,401540U,true,37U); /* 14-bit wrap */
++    assert(exp3_board_bag_connection(401540U, &connected) && connected);
++    bag_packet(0x0042U,0xfffffff0U,false,37U); /* time wrap baseline */
++    assert(!exp3_board_bag_connection(0xfffffff0U, &connected));
++    bag_packet(0x0047U,0x54U,false,37U);
++    assert(exp3_board_bag_connection(0x54U, &connected) && connected);
++    g_exp3_hil.bound=0U;
++    assert(!exp3_board_bag_connection(0x54U, &connected));
++    g_exp3_hil.bound=1U;
++    puts("PASS grass bag AA/AC feedback, unplug/reconnect, frozen replay, timeout, heartbeat/time wrap");
++}
++#endif
+ 
+ static void run_pair(Exp3AutoSession *controller, uint32_t start, uint32_t end)
+ {
+@@ -27,6 +102,32 @@
+         }
+     }
+ }
++
++#if MOWER_BLADE_OK_ENABLED
++static void test_bag_rebind(Exp3AutoSession *controller)
++{
++    uint32_t old_controller=g_exp3_hil.controller, now;
++    bool connected=false;
++    /* Keep the old session's cached PD10 fresh while a new peer handshakes. */
++    bag_packet(0x1003U,500000U,false,37U);
++    bag_packet(0x1007U,500100U,false,37U);
++    assert(exp3_board_bag_connection(500100U,&connected) && connected);
++    exp3_auto_init(controller,EXP3_AUTO_CONTROLLER,0x87654323U,500100U);
++    for (now=500100U; now<510100U; now+=10U) {
++        uint16_t heartbeat=(uint16_t)(1025U+(now-500100U)/100U);
++        bag_packet((uint16_t)((heartbeat<<2)|3U),now,false,37U);
++        run_pair(controller,now,now+10U);
++        if (g_exp3_hil.controller != old_controller) break;
++    }
++    assert(now<510100U && g_exp3_hil.bound);
++    assert(!exp3_board_bag_connection(now,&connected)); /* actual rebind cleared cache */
++    bag_packet(0x2003U,now+10U,false,37U);
++    assert(!exp3_board_bag_connection(now+10U,&connected));
++    bag_packet(0x2006U,now+110U,true,37U);
++    assert(exp3_board_bag_connection(now+110U,&connected) && !connected);
++    puts("PASS new binding clears fresh grass bag cache and waits for new heartbeat");
++}
++#endif
+ 
+ int main(void)
+ {
+@@ -92,6 +193,9 @@
+         exp3_board_rf(packet, sizeof(packet), 300240U);
+         assert(exp3_board_runtime(300240U, &runtime) && (runtime&7U)==5U);
+     }
++#endif
++#if MOWER_BLADE_OK_ENABLED
++    test_bag_connection();
+ #endif
+     {
+         Exp3Message cancel = {0};
+@@ -143,6 +247,9 @@
+         assert(!g_exp3_hil.waiting && !g_exp3_hil.cancel_failed);
+ 
+     }
++#if MOWER_BLADE_OK_ENABLED
++    test_bag_rebind(&controller);
++#endif
+     puts("PASS OpenI6X RF adapter auto binds and replaces rebooted controller session");
+     return 0;
+ }
+--- a/experiments/ticket03/test_release_sens.c
++++ b/experiments/ticket03/test_release_sens.c
+@@ -4,6 +4,8 @@
+ #include <stdio.h>
+ #include <string.h>
+ static uint8_t reply[6], length;
++static uint16_t bag_word;
++static bool snapshot_available = true;
+ #include "main.h"
+ uint32_t HAL_GetTick(void) { return 123; }
+ uint32_t HAL_GetUIDw0(void) { return 1U; }
+@@ -12,9 +14,11 @@
+ static bool snapshot(void *ctx, TelemetrySnapshot_t *s) {
+     unsigned i;
+     (void)ctx;
++    memset(s, 0, sizeof(*s));
+     for (i = 0; i < 8; i++)
+         s->values[i] = (uint16_t)(100 + i);
+-    return true;
++    s->values[TELEMETRY_VALUE_BAG_CONNECTION] = bag_word;
++    return snapshot_available;
+ }
+ static bool send(void *ctx, const uint8_t *p, uint8_t n) {
+     (void)ctx;
+@@ -26,6 +30,12 @@
+     uint8_t p[4] = {4, command, (uint8_t)(0xfb - command), 0xff};
+     length = 0;
+     SensIbusResponder_Feed(r, p, 4);
++    if (length) {
++        uint16_t sum=0xFFFFU;
++        unsigned i;
++        for (i=0; i<length-2U; ++i) sum=(uint16_t)(sum-reply[i]);
++        assert(reply[length-2U]==(uint8_t)sum && reply[length-1U]==(uint8_t)(sum>>8));
++    }
+ }
+ int main(void) {
+     SensIbusResponder_t r;
+@@ -64,5 +74,26 @@
+     assert(length==6U && reply[2]==0x2f && reply[3]==1U);
+     request(&r, 0x7a);
+     assert(length==0U);
+-    puts("PASS release SENS addr10 output/gear snapshot and unchanged addr1-8");
++    request(&r, 0x8b);
++#if MOWER_GRASS_BAG_CH6_ENABLED
++    assert(length==4U && reply[1]==0x8b);
++    request(&r, 0x9b);
++    assert(length==6U && reply[2]==0xe3 && reply[3]==2U);
++    bag_word=0x1236U;
++    request(&r, 0xab);
++    assert(length==6U && reply[2]==0x36 && reply[3]==0x12);
++    bag_word=0x123bU;
++    request(&r, 0xab);
++    assert(length==6U && reply[2]==0x3b && reply[3]==0x12);
++    snapshot_available=false;
++    request(&r, 0xab);
++    assert(length==6U && reply[2]==0 && reply[3]==0);
++    request(&r, 0x7b);
++    assert(length==0U);
++    request(&r, 0x8c);
++    assert(length==0U);
++#else
++    assert(length==0U);
++#endif
++    puts("PASS release SENS addr11 connection, addr10 output/gear and unchanged addr1-8");
+ }
+--- /dev/null
++++ b/tools/test_bag_connection_source.py
+@@ -0,0 +1,89 @@
++#!/usr/bin/env python3
++"""Execute the production telemetry call site with PD10 and unavailable sources."""
++import os
++from pathlib import Path
++import subprocess
++import tempfile
++
++root = Path(__file__).resolve().parents[1]
++source = (root / 'control_chassis/Core/UserApp/app_Motion.c').read_text()
++start = source.index('static void RefreshTelemetrySnapshot(', source.index('static void RefreshTelemetrySnapshot(') + 1)
++opened = source.index('{', start)
++end, depth = opened + 1, 1
++while depth:
++    depth += (source[end] == '{') - (source[end] == '}')
++    end += 1
++body = source[start:end]
++
++fixture = r'''
++#include <assert.h>
++#include <stdbool.h>
++#include <stdint.h>
++#include <stdio.h>
++#include "telemetry_snapshot.h"
++typedef struct {
++    bool connected, link_fresh, stable_online, timeout_latched, remote_recoverable_latched;
++    unsigned recoverable_latch_reason;
++} RemoteCommand_t;
++typedef struct { bool emergency_active, collision_active, tilt_active; } RemoteSafetyInput_t;
++typedef struct { uint32_t Voltage; int32_t CurCadc; uint16_t RSOC; } AXEBMS_Data;
++typedef struct { bool valid; uint32_t last_good_tick; int32_t speed_mm_per_s; } ChassisWheelFeedback_t;
++typedef struct {
++    bool erpm_valid, crc_error_active;
++    uint32_t erpm_last_rx_tick;
++    int32_t erpm;
++} FlipskyCanFeedback_t;
++enum { REPORT_FAULT_COLLISION=2, REPORT_FAULT_TILT=3,
++       REMOTE_LATCH_REASON_REMOTE_STOP=4, REMOTE_LATCH_REASON_OWNERSHIP_TRANSITION=5,
++       EXECUTION_OWNER_MANUAL_REMOTE=0, GPIO_PIN_RESET=0, GPIO_PIN_10=10 };
++#define GPIOD ((void *)0)
++#define FLIPSKY_REALTIME_FEEDBACK_VALIDATED 0
++#define FLIPSKY_CAN_RX_TIMEOUT_MS 100
++static struct { unsigned g_system_report_state; } g_app;
++static unsigned api_lockout, my_bms, pd10=1, reads;
++static int HAL_GPIO_ReadPin(void *port, unsigned pin) {
++    assert(port==GPIOD && pin==GPIO_PIN_10); ++reads; return pd10;
++}
++static bool Flipsky_CAN_ReadFeedback(FlipskyCanFeedback_t *out) { (void)out; return false; }
++static bool AXEBMS_RS485_ReadTelemetry(unsigned *bms, AXEBMS_Data *out, uint32_t *at, bool *valid) {
++    (void)bms; (void)out; (void)at; (void)valid; return false;
++}
++static bool chassis_control_read_wheel_feedback(ChassisWheelFeedback_t *out) { (void)out; return false; }
++static bool SafetyOwnershipGate_IsOwnerPermitted(unsigned owner) { (void)owner; return false; }
++'''
++tests = r'''
++int main(void) {
++    RemoteCommand_t command={0};
++    RemoteSafetyInput_t safety={0};
++    TelemetrySnapshot_t snapshot;
++    TelemetrySnapshot_Reset();
++    for (unsigned fault=0; fault<2; ++fault) {
++        safety.emergency_active=safety.collision_active=safety.tilt_active=!!fault;
++        api_lockout=fault;
++        for (unsigned sample=0; sample<6; ++sample) {
++            pd10=sample%2;
++            uint32_t now=1000U+sample*100U;
++            RefreshTelemetrySnapshot(&command,&safety,false,now);
++            assert(TelemetrySnapshot_Read(&snapshot));
++            uint16_t word=snapshot.values[TELEMETRY_VALUE_BAG_CONNECTION];
++            assert((word&2U) && !!(word&1U)==!pd10);
++            assert((word>>2)==now/100U);
++            assert(snapshot.values[TELEMETRY_VALUE_RUN_PERMISSION]==0U);
++            assert(snapshot.values[TELEMETRY_VALUE_WORK_MODE]==0U);
++        }
++    }
++    assert(reads==12U);
++    puts("PASS production PD10 source: low=connected, always sampled while locked/offline/in safety fault");
++}
++'''
++with tempfile.TemporaryDirectory(prefix='mower-bag-source-') as work:
++    work = Path(work)
++    cpp = work / 'source.c'
++    cpp.write_text(fixture + '\n' + body + '\n' + tests)
++    subprocess.run([
++        os.environ.get('CC', 'cc'), '-std=c99', '-Wall', '-Wextra', '-Werror',
++        '-fsanitize=address,undefined', '-I' + str(root / 'control_chassis/Core/Inc'),
++        str(cpp), str(root / 'control_chassis/Core/UserApp/telemetry_snapshot.c'),
++        '-o', str(work / 'source'),
++    ], check=True)
++    subprocess.run([str(work / 'source')], check=True)
+--- a/tools/test_blade_ok_ui.py
++++ b/tools/test_blade_ok_ui.py
+@@ -89,6 +89,10 @@
+ static bool known;
+ static uint16_t runtime;
+ static bool exp3_board_runtime(uint32_t,uint16_t *word) { *word=runtime; return known; }
++static bool bagKnown, bagConnected;
++static bool exp3_board_bag_connection(uint32_t,bool *connected) {
++    *connected=bagConnected; return bagKnown;
++}
+ static bool has(const char *value) {
+     for(const auto &label:labels) if(label==value) return true;
+     return false;
+@@ -151,6 +155,24 @@
+     fixture.radio_quality=100; fixture.height_setting=3; fixture.bag_command=2;
+     labels.clear(); mowerUserRender();
+     assert(has("已连接") && has("高") && has("开") && has("1.10m/s"));
++    fixture.valid |= MOWER_UI_BAG_CONNECTION;
++    for(unsigned command=0; command<=2; ++command) {
++      fixture.bag_command=command; fixture.bag_connected=false;
++      resetDraw(); mowerUserRender(); assert(has("草袋未连接"));
++      assert(!has("袋指令") && !has("草袋开") && !has("草袋关"));
++    }
++    fixture.bag_connected=true;
++    const char *bagLabels[]={"草袋--","草袋开","草袋关"};
++    for(unsigned command=0; command<=2; ++command) {
++      fixture.bag_command=command;
++      resetDraw(); mowerUserRender(); assert(has(bagLabels[command]));
++    }
++    fixture.valid &= ~MOWER_UI_BAG_CONNECTION;
++    resetDraw(); mowerUserRender(); assert(has("草袋未知"));
++    fixture.telemetry_online=false; fixture.valid |= MOWER_UI_BAG_CONNECTION;
++    resetDraw(); mowerUserRender(); assert(has("草袋未知"));
++    fixture.telemetry_online=true; fixture.valid &= ~MOWER_UI_BAG_CONNECTION;
++    fixture.bag_command=2;
+     channelOutputs[9]=-1000; mowerUserRender(); assert(has("0.40m/s"));
+     channelOutputs[9]=1000; mowerUserRender(); assert(has("1.80m/s"));
+     channelOutputs[9]=-500; mowerUserRender(); assert(has("0.75m/s"));
+@@ -253,6 +275,26 @@
+     channelOutputs[8]=-1000; channelOutputs[5]=1000;
+     mowerUiReadLive(live);
+     assert(live.telemetry_online && live.soc_percent==82 && live.height_setting==1 && live.bag_command==2);
++    assert(!(live.valid & MOWER_UI_BAG_CONNECTION)); // Old chassis: unknown.
++    bagKnown=true; bagConnected=false;
++    const int bagOutputs[]={-1000,1000,0,-1000,1000};
++    for(auto output:bagOutputs) {
++      channelOutputs[5]=output;
++      mowerUiReadLive(live);
++      assert((live.valid & MOWER_UI_BAG_CONNECTION) && !live.bag_connected);
++      renderFixture=true; fixture=live;
++      resetDraw(); mowerUserRender(); assert(has("草袋未连接"));
++    }
++    bagConnected=true;
++    for(auto output:bagOutputs) {
++      channelOutputs[5]=output; mowerUiReadLive(live); fixture=live;
++      assert((live.valid & MOWER_UI_BAG_CONNECTION) && live.bag_connected);
++      resetDraw(); mowerUserRender();
++      assert(has(output < 0 ? "草袋开" : output > 0 ? "草袋关" : "草袋--"));
++    }
++    bagKnown=false; mowerUiReadLive(live); fixture=live;
++    resetDraw(); mowerUserRender(); assert(has("草袋未知"));
++    renderFixture=false;
+     channelCenters[8]=1550; channelOutputs[8]=900; // transmitted pulse=2000
+     channelCenters[5]=1550; channelOutputs[5]=-1100; // transmitted pulse=1000
+     mowerUiReadLive(live); assert(live.height_setting==5 && live.bag_command==1);
+@@ -285,6 +327,8 @@
+     telemetryItems[1].value=101; mowerUiReadLive(live); assert(!(live.valid & MOWER_UI_SOC));
+     streaming=false; mowerUiReadLive(live);
+     assert(!live.valid && !live.telemetry_online && live.radio_battery_100mv==78);
++    bagKnown=true; mowerUiReadLive(live); assert(!(live.valid & MOWER_UI_BAG_CONNECTION));
++    bagKnown=false;
+ 
+     // Exercise the production main-view router with real probe state.
+     renderFixture=true; fixture.valid=MOWER_UI_SOC|MOWER_UI_FAULT;
+@@ -340,6 +384,16 @@
+     mowerExp3Probe.cancel_pending=false; mowerExp3CancelFailed=false;
+     mowerUserPage=MOWER_USER_HOME; runtime=15; fixture.height_setting=3; fixture.bag_command=2;
+     resetDraw(); mowerUserRender(); saveScreen("home-online");
++    fixture.valid |= MOWER_UI_BAG_CONNECTION; fixture.bag_connected=false;
++    resetDraw(); mowerUserRender(); saveScreen("bag-disconnected"); assert(has("草袋未连接"));
++    fixture.bag_connected=true; fixture.bag_command=1;
++    resetDraw(); mowerUserRender(); saveScreen("bag-open"); assert(has("草袋开"));
++    fixture.bag_command=2;
++    resetDraw(); mowerUserRender(); saveScreen("bag-closed"); assert(has("草袋关"));
++    fixture.bag_command=0;
++    resetDraw(); mowerUserRender(); saveScreen("bag-command-unknown"); assert(has("草袋--"));
++    fixture.bag_command=2; fixture.valid &= ~MOWER_UI_BAG_CONNECTION;
++    resetDraw(); mowerUserRender(); saveScreen("bag-unknown"); assert(has("草袋未知"));
+     fixture.telemetry_online=false; fixture.valid=0;
+     resetDraw(); mowerUserRender(); saveScreen("home-offline");
+     assert(has("未连接") && has("--") && !has("100") && !has("高") && !has("开"));
+@@ -348,8 +402,9 @@
+     mowerUserPage=MOWER_USER_MAINTENANCE;
+     resetDraw(); mowerUserRender(); saveScreen("maintenance");
+     mowerUserPage=MOWER_USER_DEBUG;
+-    for(unsigned first=0;first<=MOWER_DEBUG_ROWS-4;first+=4) {
+-      mowerDebugFirstRow=first; resetDraw(); mowerUserRender();
++    for(unsigned first=0;first<MOWER_DEBUG_ROWS;first+=4) {
++      mowerDebugFirstRow=first > MOWER_DEBUG_ROWS-4 ? MOWER_DEBUG_ROWS-4 : first;
++      resetDraw(); mowerUserRender();
+       std::string name="debug-"+std::to_string(first); saveScreen(name.c_str());
+     }
+     assert(has("割刀反馈过期") && has("割刀校验异常") && has("!"));
+--- a/tools/verify_blade_ok_host.sh
++++ b/tools/verify_blade_ok_host.sh
+@@ -37,7 +37,14 @@
+   "${core[@]}" "$p/exp3_probe.c" "$p/stm32_adapter.c" \
+   "$root/control_chassis/Core/UserDev/sens_ibus_responder.c" -o "$work/sens"
+ ASAN_OPTIONS=detect_leaks=0 "$work/sens"
++cc "${flags[@]}" -DMOWER_GRASS_BAG_CH6_ENABLED=1 \
++  -DREMOTE_BACKEND_A28_E34=0 -DREMOTE_BACKEND_FLYSKY_IBUS=1 \
++  -I"$root/control_chassis/Core/Inc" "$p/test_release_sens.c" \
++  "${core[@]}" "$p/exp3_probe.c" "$p/stm32_adapter.c" \
++  "$root/control_chassis/Core/UserDev/sens_ibus_responder.c" -o "$work/bag-sens"
++ASAN_OPTIONS=detect_leaks=0 "$work/bag-sens"
+ python3 "$root/tools/test_blade_ok_ui.py"
++python3 "$root/tools/test_bag_connection_source.py"
+ 
+ cc "${flags[@]}" "$p/test_vectors.c" "$p/exp3.c" -o "$work/vectors"
+ ASAN_OPTIONS=detect_leaks=0 python3 "$p/check_vectors.py" "$work/vectors" 0x32

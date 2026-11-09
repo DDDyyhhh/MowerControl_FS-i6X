@@ -1,0 +1,36 @@
+PASS Chinese production UI, live provider, actual main-view route, CH9/CH6 boundaries, scrolling and pixel bounds: UNKNOWN inhibits OK/prompt; 2s modal limit, deferred Cancel, late matching receipt, no repeat authorization; runtime home
+-- Git repository not found, revision number not available.
+-- OpenI6X 2.3.0 @0
+-- Python executable: /Users/dyh/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3
+-- Python bin directory: /Users/dyh/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin
+TARGET simu/libsimulator: cpp compiler /opt/homebrew/bin/arm-none-eabi-g++ v15.3.1
+CMake Warning at radio/src/tests/CMakeLists.txt:45 (message):
+  WARNING: gtests target will not be available (check that GTEST_INCDIR,
+  GTEST_SRCDIR, and Qt5Widgets are configured).
+
+
+TARGET firmware: cpp compiler arm-none-eabi-g++ v15.3.1
+-- Configuring done (0.2s)
+-- Generating done (0.1s)
+-- Build files have been written to: /Users/dyh/Documents/Codex/MowerControl/OpenI6X/FS-I6X/opentx/build-mower-user-ui
+[  4%] Built target firmware_translations
+[  4%] Built target 9x_xbm_1bit
+[ 27%] Built target 9x_fonts_1bit
+[ 29%] Built target 9x_bitmaps
+[ 29%] Building CXX object radio/src/CMakeFiles/firmware.dir/telemetry/telemetry.cpp.obj
+[ 29%] Building CXX object radio/src/CMakeFiles/firmware.dir/targets/flysky/AFHDS2A_a7105.cpp.obj
+[ 29%] Building CXX object radio/src/CMakeFiles/firmware.dir/stamp.cpp.obj
+[ 29%] Building C object radio/src/CMakeFiles/firmware.dir/Users/dyh/Documents/Codex/MowerControl/experiments/ticket03/exp3_hil.c.obj
+[ 29%] Building C object radio/src/CMakeFiles/firmware.dir/Users/dyh/Documents/Codex/MowerControl/experiments/ticket03/openi6x_adapter.c.obj
+[ 29%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/128x64/view_main.cpp.obj
+[ 29%] Building CXX object radio/src/CMakeFiles/firmware.dir/debug.cpp.obj
+[ 30%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/128x64/view_about.cpp.obj
+[ 30%] Building CXX object radio/src/CMakeFiles/firmware.dir/targets/common/arm/stm32/usbd_storage_msd.cpp.obj
+[ 30%] Linking CXX executable ../../firmware.elf
+/Applications/ArmGNUToolchain/15.3.rel2/arm-none-eabi/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/bin/ld: warning: ../../firmware.elf has a LOAD segment with RWX permissions
+Flash used: 129884 / 131072 (99%), left: 1188
+RAM used: 15680 / 16384 (95%), left: 704
+[100%] Built target firmware
+   text	   data	    bss	    dec	    hex	filename
+ 129812	     72	  15608	 145492	  23854	/Users/dyh/Documents/Codex/MowerControl/OpenI6X/FS-I6X/opentx/build-mower-user-ui/firmware.elf
+7a62cc61aa127469e591045a103ef791975d06ba70dab45c0dbdb89af6cdede4  /Users/dyh/Documents/Codex/MowerControl/OpenI6X/FS-I6X/opentx/build-mower-user-ui/firmware.bin

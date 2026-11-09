@@ -1,0 +1,69 @@
+--- a/control_chassis/Core/UserDev/chassis_control.c
++++ b/control_chassis/Core/UserDev/chassis_control.c
+@@ -335,21 +335,19 @@
+ }
+ 
+ #if MOTOR_DRIVER_USED == DRIVER_TYPE_OID
+-static void chassis_control_req_oid_actual_speed(void)
+-{
+-    static uint32_t last_req_tick = 0;
+-    uint32_t now_tick = HAL_GetTick();
+-
+-    // 20ms ~ 50ms 轮询一次
+-    if ((now_tick - last_req_tick) < 20U)
+-        return;
+-    last_req_tick = now_tick;
+-
+-    // 一次性同时向 4 个驱动器请求速度数据
+-    OID_Req_Actual_Speed(OID_NODE_FL);
+-    OID_Req_Actual_Speed(OID_NODE_FR);
+-    OID_Req_Actual_Speed(OID_NODE_RL);
+-    OID_Req_Actual_Speed(OID_NODE_RR);
++void chassis_control_poll_oid_actual_speed(uint8_t phase)
++{
++    /* Motion task slots 1..4 query one wheel each. Slot 5 sends controls.
++     * Keep each wheel at 50ms without same-batch query/control traffic.
++     */
++    switch (phase)
++    {
++    case 1: OID_Req_Actual_Speed(OID_NODE_FL); break;
++    case 2: OID_Req_Actual_Speed(OID_NODE_FR); break;
++    case 3: OID_Req_Actual_Speed(OID_NODE_RL); break;
++    case 4: OID_Req_Actual_Speed(OID_NODE_RR); break;
++    default: break;
++    }
+ }
+ 
+ static int16_t chassis_erpm_to_speed_mmps(int32_t erpm, int8_t sign)
+@@ -742,7 +740,6 @@
+ {
+ 
+ #if MOTOR_DRIVER_USED == DRIVER_TYPE_OID
+-    chassis_control_req_oid_actual_speed();
+     // 0x50A 已统一由 app_BMS_Sensor.c 的遥测任务发送，避免重复入队。
+     // chassis_control_send_oid_wheel_speed_feedback();
+ #elif MOTOR_DRIVER_USED == DRIVER_TYPE_MSSD
+--- a/control_chassis/Core/UserApp/app_Motion.c
++++ b/control_chassis/Core/UserApp/app_Motion.c
+@@ -335,6 +335,9 @@
+ 
+     // === 4. 运动控制逻辑 (50Hz - 每 50ms 执行一次) ===
+     control_divider++;
++#if MOTOR_DRIVER_USED == DRIVER_TYPE_OID
++    chassis_control_poll_oid_actual_speed(control_divider);
++#endif
+     if (control_divider >= 5)
+     {
+       control_divider = 0;
+--- a/control_chassis/Core/Inc/chassis_control.h
++++ b/control_chassis/Core/Inc/chassis_control.h
+@@ -120,6 +120,9 @@
+ void chassis_control_send_status_feedback(void);
+ void Send_Motor_speed(uint8_t axis_id, float speed_rpm, float torque_ff, uint8_t reset_integrator);
+ void Control_Update(void);
++#if MOTOR_DRIVER_USED == DRIVER_TYPE_OID
++void chassis_control_poll_oid_actual_speed(uint8_t phase);
++#endif
+ void chassis_control_send_odom_feedback(void);
+ void chassis_control_req_odrive_data(void);
+ 

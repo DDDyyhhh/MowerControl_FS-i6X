@@ -1,0 +1,1 @@
+PASS: one query per 10ms slot, 50ms per wheel, no query in control slot

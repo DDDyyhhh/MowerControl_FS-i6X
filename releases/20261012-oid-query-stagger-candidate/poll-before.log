@@ -1,0 +1,7 @@
+poll: /tmp/tmpagjz6j0y/poll.c:35: main: Assertion `current_calls<=1' failed.
+Traceback (most recent call last):
+  File "/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/releases/20261012-oid-query-stagger-candidate/poll_timing_test.py", line 50, in <module>
+    subprocess.run([str(exe)], check=True)
+  File "/usr/lib/python3.10/subprocess.py", line 526, in run
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command '['/tmp/tmpagjz6j0y/poll']' died with <Signals.SIGABRT: 6>.

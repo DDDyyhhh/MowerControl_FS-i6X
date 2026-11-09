@@ -1,0 +1,6 @@
+PASS: packaged BIN exactly matches packaged ELF conversion.
+PASS: packaged HEX exactly matches packaged ELF conversion.
+PASS: final production ELF MX_TIM2_Init contains expected ARR immediate #8399.
+PASS: final production ELF MX_TIM3_Init contains expected ARR immediate #5599.
+Compared with November 5 production BIN: same length 83084 bytes; 3 byte(s) differ.
+[{"offset": "0x1d44", "before": 66, "after": 65}, {"offset": "0x1d46", "before": 207, "after": 223}, {"offset": "0x1d47", "before": 3, "after": 83}]

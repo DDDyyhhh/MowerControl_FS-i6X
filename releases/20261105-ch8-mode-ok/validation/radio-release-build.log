@@ -1,0 +1,32 @@
+PASS Chinese production UI, live provider, actual main-view route, CH9/CH6 boundaries, scrolling and pixel bounds: UNKNOWN inhibits OK/prompt; 2s modal limit, deferred Cancel, late matching receipt, no repeat authorization; runtime home
+-- Git repository not found, revision number not available.
+-- OpenI6X 2.3.0 @0
+-- Python executable: /Users/dyh/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3
+-- Python bin directory: /Users/dyh/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin
+TARGET simu/libsimulator: cpp compiler /opt/homebrew/bin/arm-none-eabi-g++ v15.3.1
+CMake Warning at radio/src/tests/CMakeLists.txt:45 (message):
+  WARNING: gtests target will not be available (check that GTEST_INCDIR,
+  GTEST_SRCDIR, and Qt5Widgets are configured).
+
+
+TARGET firmware: cpp compiler arm-none-eabi-g++ v15.3.1
+-- Configuring done (0.1s)
+-- Generating done (0.1s)
+-- Build files have been written to: /Users/dyh/Documents/Codex/MowerControl/OpenI6X/FS-I6X/opentx/build-mower-user-ui
+[  1%] Built target 9x_xbm_1bit
+[ 11%] Built target firmware_translations
+[ 27%] Built target 9x_fonts_1bit
+[ 29%] Built target 9x_bitmaps
+[ 30%] Building CXX object radio/src/CMakeFiles/firmware.dir/stamp.cpp.obj
+[ 30%] Building CXX object radio/src/CMakeFiles/firmware.dir/debug.cpp.obj
+[ 30%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/128x64/view_about.cpp.obj
+[ 30%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/128x64/view_main.cpp.obj
+[ 30%] Building CXX object radio/src/CMakeFiles/firmware.dir/targets/common/arm/stm32/usbd_storage_msd.cpp.obj
+[ 30%] Linking CXX executable ../../firmware.elf
+/Applications/ArmGNUToolchain/15.3.rel2/arm-none-eabi/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/bin/ld: warning: ../../firmware.elf has a LOAD segment with RWX permissions
+Flash used: 130556 / 131072 (99%), left: 516
+RAM used: 15792 / 16384 (96%), left: 592
+[100%] Built target firmware
+   text	   data	    bss	    dec	    hex	filename
+ 130484	     72	  15720	 146276	  23b64	/Users/dyh/Documents/Codex/MowerControl/OpenI6X/FS-I6X/opentx/build-mower-user-ui/firmware.elf
+3d6ee56aa4047c37583c2dd657dcfde1b7e843ef48355c1653a29711e9898c32  /Users/dyh/Documents/Codex/MowerControl/OpenI6X/FS-I6X/opentx/build-mower-user-ui/firmware.bin

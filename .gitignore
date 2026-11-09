@@ -1,0 +1,9 @@
+.DS_Store
+/.svn/
+/.scratch/
+/build/
+/control_chassis/build/
+/control_chassis/Eide/build/
+/remote_lvgl/Eide/build/
+/remote_lvgl/MDK-ARM/yaokon/
+*.uvguix.*

@@ -1,0 +1,22 @@
+{
+  "purpose": "diagnostic scheduling candidate; hardware cause and remedy not yet established",
+  "wheel_diameter_m": 0.21,
+  "gear_ratio": 4.43,
+  "pole_pairs": 10,
+  "query_slots_ms": [
+    10,
+    20,
+    30,
+    40
+  ],
+  "cycle_ms": 50,
+  "control_slot_query_suppressed": true,
+  "feedback_stale_threshold_ms": 150,
+  "can_auto_retransmission_changed": false,
+  "can_mailbox_abort_rule_changed": false,
+  "host_and_dual_build_passed": true,
+  "production_query_schedule_red_then_green": true,
+  "elf_sha256": "29e0fd21447b6dc5f593d54b90f0dfd517d67e75b04a50ca71d1ca68dc698b96",
+  "flashed": false,
+  "hardware_reply_gap_resolved": false
+}

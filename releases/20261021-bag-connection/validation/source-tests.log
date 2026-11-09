@@ -1,0 +1,1 @@
+PASS production PD10 source: low=connected, always sampled while locked/offline/in safety fault

@@ -1,0 +1,2185 @@
+                SFlipsky ESC Tool V1.6 User Manual
+KY FLIPSKY IPFSLKIYP FLIPSK Flipsky ESC Tool V1.6
+FLIPSKY PFSLKY FLIPSKY User Manual
+                SFlipsky ESC Tool V1.6 User Manual
+  CatalogLIP 1 Overview ...............................................................................................................1
+  F 2 Operation Requirements .................................................................................... 2
+   K 2.1 Hardware Requirement ..................................................................................................... 2
+   S 2.2 Software Requirement .......................................................................................................2
+
+    Y P 2.2.1 System Driver Download and Related Files Description .......................................... 2
+    K I 2.2.2 Windows 7 / Windows 8 Driver Installation .............................................................. 3
+  S L 3 Flipsky ESC Tool Home Page Introduction ......................................................8
+  P F 4 Build Communication ....................................................................................... 10
+   I 4.1 Build Communication of Flipsky ESC Tool and FT ESC .................................................. 10
+   L4.2 CAN Devices Connection Error and Solution .................................................................. 11
+    F Y 4.2.1 ESC ID Setup ......................................................................................................... 11
+    K 4.2.2 CAN Baud Rate Setup ........................................................................................... 12
+  S 5 Firmware Update ............................................................................................... 13
+ Y P 5.1 FT Series ESC Firmware .................................................................................................13
+K I 5.2 Firmware Update Steps ...................................................................................................14
+  L 6 Motor Setup ........................................................................................................17
+   F Y 6.1 Motor Parameters Identification .......................................................................................18
+    K 6.1.1 Preparations for Parameters Identification ............................................................. 18
+    S 6.1.2 Parameter Identification Steps ............................................................................... 19
+    Y P 6.1.3 Motor Parameter Identification Results and Fault Codes ....................................... 21
+   K I 6.2 ESC Adjustable Parameters Definition and Configuration ...............................................23
+    S L 6.2.1 Basic ESC Parameters Setup ................................................................................ 24
+    P F 6.2.2 Field Weakening Control Parameter Setup ............................................................ 28
+   I 6.2.3 Battery Setup ......................................................................................................... 29
+ L 6.2.4 Erpm Gear Setup ................................................................................................... 30
+F Y 6.2.5 Power Gear Setup ..................................................................................................31
+    PSK 6.2.6 Current Setup ....................................................................................................... 32
+                SFlipsky ESC Tool V1.6 User Manual
+    P 6.2.7 Encoder Setup ....................................................................................................... 34
+    I 6.2.8 Speed PID Setup ................................................................................................... 35
+    L 6.2.9 Position PID Setup(Encoder Startup Mode only) ................................................... 36
+  F 7 Control Setup .....................................................................................................37
+   K 7.1 ESC ID Setup .................................................................................................................. 38
+   S 7.2 CAN Status Frequency Setup ......................................................................................... 38
+   Y P 7.3 CAN Bus Baud Rate Setup ............................................................................................. 39
+   K I 7.4 CAN Bus Multi-ESC Sync Control Setup .........................................................................40
+   S L 7.5 Throttle Response Level Setup ........................................................................................41
+   P F 7.6 Input Signal Deadband Setup ..........................................................................................42
+   I 7.7 Smart Switch ................................................................................................................... 43
+   L7.8 Brake Light Level Setup .................................................................................................. 43
+   F Y 7.9 Traction Control Setup .....................................................................................................44
+   K 7.10 Emergency Switch Setup .............................................................................................. 45
+   S 7.11 Signal Ramp Time Pos(s) Setup ....................................................................................46
+
+                    7.12 Signal Ramp Time Neg(s) Setup ................................................................................... 46
+
+ Y P 7.13 Input Signal Type Setup ................................................................................................ 47
+K I 7.13.1 OFF ...................................................................................................................... 47
+
+    L 7.13.2 UART ..................................................................................................................49
+     F Y 7.13.2.1 UART Parameter Specification and Setup .................................................. 49
+     K 7.13.2.2 UART Control Mode Setup ......................................................................... 50
+     S 7.13.2.3 UART Reverse Delay Time Setup ...............................................................51
+     Y P 7.13.2.4 Extra Interface Setup .................................................................................. 51
+     K I 7.13.2.5 Minimal Current at Zero Pedal Setup ..........................................................52
+     S L 7.13.2.6 Assisted Turnaround Mode and ESC ID Setup ........................................... 53
+    P F 7.13.2.7 Brake-Parking Mode Setup ......................................................................... 54
+   I 7.13.2.8 Off-Road Climbing Mode .............................................................................55
+ L 7.13.3 PPM ..................................................................................................................... 56
+F Y 7.13.3.1 PPM Parameter Specification and Setup ....................................................56
+     PSK 7.13.3.2 PPM Signal Calibration Steps ..................................................................... 57
+                SFlipsky ESC Tool V1.6 User Manual
+     P 7.13.3.3 PPM Control Mode Setup ........................................................................... 59
+     I 7.13.3.4 PPM Reverse Delay Time Setup .................................................................60
+    L 7.13.4 ADC .................................................................................................................... 62
+     F 7.13.4.1 ADC Parameter Specification and Setup .................................................... 62
+     K 7.13.4.2 ADC Input Throttle Calibration .................................................................... 63
+     S 7.13.4.3 ADC Control Mode Setup ............................................................................65
+     Y P 7.13.4.4 Extra Interface Setup .................................................................................. 66
+     K I 7.13.4.5 Cruising Control Mode Setup ...................................................................... 66
+     S L 7.13.4.6 Brake Unlock and Start Setup .....................................................................68
+     P F 7.13.4.7 Safety Start Setup .......................................................................................68
+
+                         7.13.5 PAS ...................................................................................................................... 69
+
+     I7.13.5.1 PAS Parameter Specification and Setup .....................................................69
+     L7.13.5.2 PAS Control Mode Setup ............................................................................ 70
+    F Y 7.13.5.3 PAS Sensor Type Setup ..............................................................................71
+     K 7.13.5.4 PAS Parameters Setup ............................................................................... 71
+     S 7.13.5.5 Boost Current For Startup ........................................................................... 73
+ Y P 7.13.5.6 Minimal Current at Zero Pedal Setup ..........................................................73
+K I 7.13.5.7 Extra Interface Setup .................................................................................. 74
+  L 8 Test and Display ................................................................................................ 75
+   F Y 8.1 Flipsky ESC Tool Button Control ......................................................................................75
+    K 8.1.1 Button Control Specification ................................................................................... 76
+   S 8.2 Data Analysis ...................................................................................................................78
+    Y P 8.2.1 Data Curve Display and Setup ............................................................................... 78
+    K I 8.2.2 Real-time Data Display ...........................................................................................81
+  S L 9 Restore Factory Default Setup ........................................................................ 82
+FLIP PSKY F 10 Version ................................................................................................................83
+PS 1 Overview
+Flipsky ESC Tool V1.6 User Manual
+ LI Flipsky ESC Tool is developed based on the FT ESC series, only adaptable for FT ESC series
+F of Flipsky. The main function of this APP includes FT series ESCs and parameters settings, control
+K mode setup, control test and data display, firmware updating, ESC restoration of factory settings,
+
+ESC reset and other functions.
+
+ S Thanks for purchasing FT series ESC! In order to ensure the normal use of the product and
+Y P avoid possible equipment damage, we recommend that you read this manual carefully before using
+K I and strictly follow the specified operating procedures. Our company will not be held responsible for
+S L any liability arising from any unauthorized modifications. Meanwhile, our company reserves the
+P F right to change the product design, appearance, performance and use requirements without notice.
+KFYLIPFSLKIY PFSLKIYPSKFYLIPSKY 1
+Flipsky ESC Tool V1.6 User ManualIPS 2 Operation Requirements
+
+  FL 2.1 Hardware Requirement
+   K  FT Series ESC
+   S Current Products including: FT85BS, FT85BS2.0, FT85BD, FT85RS, FT60BD, FT85KS,
+  Y P FT85GS, FT85CS_WP, FT110BS.
+
+                     Type-C USB cable
+
+  SK LI 2.2 Software Requirement
+   P F  Windows 7 or above operation system is required;
+   I  Windows 7 and Windows 8 need to install CDC port driver, or Flipsky ESC Tool cannot
+    Lbuild communication with FT series ESC.
+   F Y  Windows 10 or above have built-in CDC port driver.
+  SK 2.2.1 System Driver Download and Related Files Description
+ Y P Join QQ group to download related files: 1039697455
+K I Related folder including: (as Fig.2-1)
+
+           LFig.2-1. Folder content
+  SKY F LIPSKY  Win7_or_ Win8 CDC Driver: Window 7 / Window 8 CDC port driver installation folder
+  P F  Flipsky ESC Tool V1.6 20250511.exe
+  I Flipsky ESC Tool User Manual V1.6.
+FL PSKY2
+                SFlipsky ESC Tool V1.6 User Manual
+  P 2.2.2 Windows 7 / Windows 8 Driver Installation
+   LI Take Windows 7 as an example:
+   F The ESC might cannot connect with the ESC Tool for the first time if you use Windows 7. (as
+  K Fig.2-2) Please update / reinstall the port driver for your computer system to connect.
+
+           S Fig.2-2.Fail to connect
+KY FLIPSKY IPSKY FLIP DriveUpdate:
+
+   FL Y  Connect the ESC with computer via USB cable, right click the "Computer" and select
+                         "Device Manager" as Fig.2-3:
+          SK Fig. 2-3. Open Device Manager
+   Y P Right-click the "Computer"
+      K ISelect "Device Manager"
+
+FLIPS PSKY FL 3
+             SFlipsky ESC Tool V1.6 User Manual
+P  When AT32 Virtual COM Port with a yellow icon shows as below(Fig.2-4), it means that you
+I need to update the driver:
+L  Right-click the "AT32 Virtual COM Port" and select "Update Driver Software" as
+KY FLIPSKFYLIPFSKY FLKIYPSK Fig.2-5.
+Fig.2-5. Select "Update Driver Software"
+
+          Right-click "AT32 Virtual COM Port",
+          Select "Update Driver Software"
+FLIPSKY PSKY FLIPS 4
+                SFlipsky ESC Tool V1.6 User Manual
+   P  Select "Browse my computer for driver software" as Fig.2-6:
+
+       PSKY FLI FLIPSK Select"Browsemycomputerfordriversoftware"
+   FLI SKY  Click "Browse" to find the driver file as Screenshot 2-7 below .
+KFYLIPSKY PFSLKIYP FLIPSKY 5
+                SFlipsky ESC Tool V1.6 User Manual
+   P  Select right driver installation folder(the folder downloaded from the link above). Take
+    I Fig.2-8 as an example:
+ Y FLIPSKY PFSLKY FLIPSK  If a security warning appears, select "Always install this driver software" as Fig.2-9 below:
+KFLIPSKY PFSLKIY FLIPSKY 6
+PS  The driver update finishes as Fig.2-10:
+Flipsky ESC Tool V1.6 User Manual
+  FLIPSKY FLKIY FLIPSK  Enter the "Device Manager" and check whether yellow icon of the USB Serial Device
+                  disappears. If so, it means that the driver has been successfully updated as Fig.2-11:
+
+Y PS Fig.2-11. The USB Serial Device No Yellow Icon
+KFLIPSKY PFSLKIY FLIPSKY 7
+                SFlipsky ESC Tool V1.6 User Manual
+  IP 3 Flipsky ESC Tool Home Page Introduction
+   L Flipsky ESC Tool home page related controls introduction as Fig.3-1:
+
+         F Fig.3-1.Flipsky ESC Tool Home Page
+KY FLIPSKFYLIPSKY FLKIYPSK (1) FlipskyESCToolV1.6Version
+
+   S (2) File: Save/load configuration files
+
+                    (3) Help: Understand information about the ESC Tool
+
+   Y P (4) Read Setup: Read the current parameters of ESC
+   K I (5) Write Setup: Write and save the current page parameters
+   S L (6) Restore Factory Setup: Restore factory default setup, recover all ESC parameters to the
+
+                         initial default values
+
+   P F (7) Reboot ESC: Click to re-connect the ESC
+   I(8) Motor Setup: Click to enter the motor setup
+ L (9) Control Setup: Click to enter the input control type setup
+F Y (10) Test and Display: Click to enter the control test and data display interface
+
+                    (11) Firmware Update: Click to enter the firmware update interface
+
+          PSK8
+             SFlipsky ESC Tool V1.6 User Manual
+P (12) CAN-BUS: Click to identify multiple motor devices
+I (13) Parameters Identification: Click to identify parameters
+L (14) Explanation will be displayed when the mouse docks the parameters.
+
+(15) Port: Select COM
+
+F (16) Baud: Select baud rate
+K (17) Refresh: Detect and refresh Port
+S (18) Connect / Disconnect: Connect/disconnect the ESC with the ESC Tool
+Y P (19) Multiple ESCsCheck the model, number of ESC and Master and Slave ESC ID
+K I (20) CheckSearch all ESCs on CAN bus
+
+(21) Maximize the window
+LIPS FL  File: Save/load configuration files
+KY F FLIPSKY KY  Save Motor setup value Xml: Export and save current motor configurationsP3-2.File
+   S  Load Motor setup value Xml: Load motor configurations
+
+                     Save Control setup value Xml: Export and save current control configurations
+
+   Y P  Load Control setup value Xml: Load control configurations
+FLIPSK PSKY FLI 9
+Flipsky ESC Tool V1.6 User ManualIPS 4 Build Communication
+
+FL 4.1 Build Communication of Flipsky ESC Tool and FT ESC
+ K Power on the ESC and connect it with the computer via USB. Open the Flipsky ESC Tool
+S V1.6 and the port for ESC ID (COM6-Flipsky) will be displayed. If no ID displays, please click
+Y P "Refresh" to scan again as Fig.4-1.
+
+       K I Fig.4-1.Port display and select
+IPS FL Click "Connect" for ESC and ESC Tool connection. The ESC ID of corresponding model will
+L appear on the screen as Fig.4-2.
+
+ F Y Fig.4-2. Connection
+KY IPSK The USB connection ESC is the master board, and all others connected via CAN bus are
+  L slave boards. Theoretically, 1 master board can be connected with a maximum of 253 slave CAN
+
+                devices (except for master ESC ID, ESC ID=0 and ESC ID=255). While, it is recommended not
+
+  F Y using more than 8 slave boards in practice since too many CAN devices affect the working
+  K performance efficiency. Moreover, please remove the CAN terminal resistors except for the first
+
+                and last ESCs' CANs. Set 1pcs Master ESC and 6pcs Slave ESCs as an example:
+
+   Y PS Master(Start)==Slave1==Slave2==Slave3==Slave4==Slave5==Slave6(End)
+   K I Remove the CAN terminal resistors of Slave1, Slave2, Slave3, Slave4 and Slave5, leaving only
+   S L the CAN terminal resistors of Master (Start) and Slave6 (End).
+FLIP PSKY F 10
+              SFlipsky ESC Tool V1.6 User Manual
+P 4.2 CAN Devices Connection Error and Solution
+I If multiple ESCs are connected via CAN but one cannot communicate and the Flipsky ESC Tool
+L detects that the number of ESC is less than actually connected, 3 possible causes are as below:
+F 1) The slave ESC boards' CAN terminal resistors haven't been removed.
+K 2) Different ESCs with same IDs
+S 3) One of ESC's CAN baud rate is inconsistent with others.
+
+     Solution:
+
+Y P (1) Ensure that all CAN resistance are properly configured.(view Section 4.1)
+K I (2) After step (1), unplug the CAN-BUS wires. Check the ESC ID one by one by connecting
+S L them with the ESC Tool separately via USB cable. If same IDs happen, revise them to make sure
+P F the uniqueness of the ESC ID.
+
+     (3) If it has been verified that all ESCs have different ESC IDs and the CAN end resistance has
+
+I been configured correctly, but you are still unable to detect the other ESCs on the CAN bus, you
+L can continue to check whether the CAN baud rate setting is consistent with the others. Only you
+F Y can communicate normally when you make sure that the CAN baud rate setup of all ESCs are the
+K same.
+
+     (4) If still not succeed after the above trials, please restore all the ESCs default setup and try to
+
+S reconnect.
+KY LIP 4.2.1 ESC ID Setup
+   F KY Setup steps are as Fig.4-3:
+FLIPSKY PSKY FLIPS 11Fig.4-3.ESC ID setup
+                SFlipsky ESC Tool V1.6 User Manual
+   P  Click "Control Setup" to enter the control setup interface
+   I  Check the ESC ID, available range:1~254 (view details in section 7.1)
+   L  Click "Write Setup" on the upper left to write the ESC ID into setup.
+  F K 4.2.2 CAN Baud Rate Setup
+   Y PS Setting steps are as Fig.4-4:
+
+                     Click "Control Setup" to enter the control setup interface.
+
+   K I  Check the CAN Bus Baud Rate in"CAN Bus Baud Rate"(view details in Section 7.2)
+   S L  Click "Write Setup" on the upper left to save the setup(as Fig.4-4)
+
+      IP F Fig.4-4.CAN Bus Baud Rate setup
+KFYLIPFSLKY PFSLKIYPSKFYLIPSKY 12
+Flipsky ESC Tool V1.6 User ManualIPS 5 Firmware Update
+
+FL 5.1 FT Series ESC Firmware
+K Click "Firmware Update" to enter firmware update interface. It will automatically check if the
+S ESC firmware version matches with the Flipsky ESC Tool. If not, please update the firmware as
+Y P Fig.5-1.
+
+      NOTE: When update firmware of dual ESC(like FT85BD), please update via USB cable of
+
+K I the master and slave independently.
+    PS FL Fig.5-1.Firmware update interface
+KFYLIPFSLKIY PFSLKIYPSKFYLIPSKY 13
+PS 5.2 Firmware Update Steps
+Flipsky ESC Tool V1.6 User Manual
+LI  Step 1, click "Enter bootloader" and "Yes" to enter the Bootloader mode as Fig.5-2:
+        F P5-2.Enter bootloader
+KY FLIPSKY IPSKY FLIPSK  Step 2: When the ESC red LED blinking at a fixed frequency, it means it has entered the
+    L Bootloader mode successfully (as Fig.5-3). Click "OK" and "Connect" to reconnect the ESC
+    F Y as Fig.5-4.
+         K Fig.5-3.ESC enters the bootloader mode
+
+FLIPSKY PSKY FLIPS 14
+                SFlipsky ESC Tool V1.6 User Manual
+           IP P 5-4.Reconnect ESC
+   FLIPSKY FSLKY FLIPSK  Step 3: Click"Start Flashing", "Yes" to update corresponding firmware, as Fig.5-5, 5-6
+ Y P below:
+K I Fig.5-5.Start to update and download firmware
+FLIPSKY PFSLKY FLIPSKY 15
+                SFlipsky ESC Tool V1.6 User Manual
+          IP Fig.5-6.Downloading firmware
+ Y FLIPSKY PFSLKY FLIPSK  When the ESC's green and blue LEDs keep on after the blinking of red and green LEDs, it
+K I means the firmware update succeeds(as Fig.5-7). Click "Connect" to reconnect the ESC.
+         LFig.5-7.Blue and green LEDs keep on
+FLIPSKY PFSKY FLIPSKY 16
+Flipsky ESC Tool V1.6 User ManualIPS 6 Motor Setup
+
+FL Motor setup interface is as Fig.6-1:
+        K Fig.6-1. Motor setup
+KFYLIPFSLKIYPSKPFYSLKIYPSKFYLIPFSLKIYPS 17
+PS 6.1 Motor Parameters Identification
+Flipsky ESC Tool V1.6 User Manual
+LI 6.1.1 Preparations for Parameters Identification
+ F K Set "Motor Rated Current(A)", "Li-ion Battery Series(S)" and "Cell Cut-Off Voltage" before doing
+
+ parameters identification as below Fig.6-2.
+Y PS Fig.6-2.Three parameters setup before identification
+KY FLIYPSKFLIPSKY PFSLKIY  Motor Rated Current(A): The maximum current of motor parameters identification(A). Please
+   K I adjust the current according to the motor rated current. Default as 50A, available range:
+   S L 5~500A.
+
+                   Li-ion Battery Series(S): Write the battery Lipos per battery specifications (1S=4.2V default:
+
+   P F 12S; adjustable range: 3-100S)
+   I Cell Cut-Off Voltage(V): Battery voltage cutoff per cell setup to prevent the battery over
+ L discharge (default: 3.1V; adjustable range: 2.6 ~ 3.3V).
+F PSKY18
+PS 6.1.2 Parameter Identification Steps
+Flipsky ESC Tool V1.6 User Manual
+LI  Step 1: Set "Motor Rated Current(A)", "Li-ion Battery Series(S)", "Cell Cut-Off
+F Voltage(V)"accordingly.(as Fig.6-2)
+K  Step 2: When identifying 2 motors or above, please select "CAN-BUS"(if not, don't select) as
+S Fig.6-3 as below.
+KY IP Fig.6-3.CAN-BUS
+   FLIPS SKY FL  Step 3: Click the parameter identification button(as Fig.6-4). The APP will show a warning
+                       dialog of precaution for identifying motor parameters. Click "Yes" to enter identification after
+
+ Y P confirmation.(as Fig.6-5)
+K LI Fig.6-4.Parameter identification button
+FLIPSKY PFSKY FLIPSKY 19
+                SFlipsky ESC Tool V1.6 User Manual
+        IP Fig.6-5.Precaution for identifying motor parameter
+KFYLIPFSLKIYPSKPFYSLKIYPFSLKFYLIPFSLKIYPSK 20
+                SFlipsky ESC Tool V1.6 User Manual
+  P 6.1.3 Motor Parameter Identification Results and Fault Codes
+   LI After identification, check the results on the right side of the home page.(as Fig.6-6) Check the
+  F result explanation to judge whether the identification is normal. If normal then you can continue the
+  K next step; if abnormal, find the causes throgh explanation.
+
+         S Fig.6-6 Parameter identification results
+KY FLIPSKFYLIPSKY FLKIYP  Motor Parameter Identification Results:
+
+   S  ESC ID: ESC ID
+   Y P  StartupMotor Startup Mode:
+   K I  IPDSInitial Position Detection Startup
+   S L  HFPIHigh Frequency Pulse Injection
+
+                        HALLHall Sensor Mode
+
+   P F  ENCODER: Encoder Mode
+   I OPENOPEN Mode
+ L Rm: Motor Phase Resistance (m)
+F Y  Lq: Motor Q-Axis Inductance (uH)
+
+                   Ld: Motor D-Axis Inductance (uH)
+
+          PSK21
+                SFlipsky ESC Tool V1.6 User Manual
+   P  Motor Flux(): Motor Flux Linkage (mWb)
+   I  KpKi: Dynamic variation range of Proportional(Kp) and Integral(Ki)
+   L  PWM Freq: Dynamic variation range of PWM Frequency
+
+                   Hall Code:
+
+   F  HALL SensorHall Code1
+   K  One Hall Phase AbsenceHall Code2
+   S  Two Hall Phase AbsenceHall Code3
+   Y P  Hall Three-Phase Short CircuitHall Code4
+   K I  Overloading, Undetected HALLHall Code5
+
+                        No HALL Sensor ConnectionHall Code6
+
+   PS FL  Interpretation of motor parameters identification error:
+   I  Failed 1The battery S number is set incorrectly, and does not match the actual operating
+   Lvoltage.Please set the correct number of battery S.
+    F Y NOTE: The battery S number shall match with the actual number, or it cannot be
+
+                            identified/activate the over discharged protection, affecting battery lifespan.
+
+   SK  Failed 2The ESC is still faulty, please check the error code.
+KY IP  Failed 3: The Motor inductance and resistance parameter identification are abnormal, please
+
+                       check the motor wire connection.
+
+   FL Y  Failed 4: The motor hall sensor identify failed. please check the motor hall sensor.
+   SK  Failed 5: The motor flux linkage identify failed. Maybe the motor load is too heavy.
+FLIPSKY PSKY FLIP 22
+                SFlipsky ESC Tool V1.6 User Manual
+  P 6.2 ESC Adjustable Parameters Definition and Configuration
+   LI Some motor parameters like Rm, Lq, Ld,  etc. will be calculated automatically after the parameter
+  F identification finish which don't need to change manually.Some control parameters (e.g. Startup Mode,
+  K HFPI Saliency Gain, HFPI Voltage Gain, Max PWM Frequency, Min PWM Frequency, etc.) will be
+  S reasonably derived by the adaptive algorithm according to the motor characteristics and whether using
+
+            the HALL sensor. If not necessary, these parameters do not need to be modified. Other parameters
+
+  Y P (e.g. Max Erpm, Max Current) can be manually set accordingly.
+   K I Adjustable parameters including: ESC Basic Setup, Field Weakening Control, Max Erpm Setup,
+  S L Max Power Setup, Max Current Setup, Limitation, Encoder Setup, rpm PID setting and location PID
+
+            setting, as Fig.6-7.
+
+   P F NOTE: Remember to click the upper left button "Write Setup" to save the configurations.
+      I Fig.6-7 Adjustable Parameters
+
+KFYLIPFSLKY PFSLKIYPSKFYLIPSKY 23
+PS 6.2.1 Basic ESC Parameters Setup
+Flipsky ESC Tool V1.6 User Manual
+LI Basic ESC parameters including "Startup Mode", "Motor Sensor Port", "HFPI Saliency Gain",
+F "HFPI Voltage Gain Volt", "Rotation Direction", "Min PWM Frequency", "Max PWM Frequency", "Motor
+K Temp sensor Type", "Motor Temp NTC  (K)", "Motor Temp PTC (%/K)", "Zero Duty Mode", "Power
+
+on Beeping Hint", "Beeping Level(%)", "Observer ErpmThreshold", "FOC Brake Mode", "Brake Erpm
+
+S Threshold". As Fig.6-8:
+        Y P Fig.6-8.Basic ESC parameters
+KY FLIPSK IPSKY FLI  StartupMode:
+    L Three motor startup modes:
+   F Y  IPDSInitial Position Detection Startup (suitable for light loading sensorless mode such as
+    K underwater DPVs, multi-axis FPVs etc.)
+   S  HFPIHigh Frequency Pulse Injection (suitable for heavy loading sensorless mode such
+
+                            as E-Bike, E-Board, mini buggy etc.)
+
+   Y P  HALLHall Sensor Startup(widely used, especially suitable for equipment with full load)
+   K I  ENCODEREncoder Sensor Startup
+   S L NOTE: HFPI mode is not suitable for all motors. If there are serious vibrations, stalls etc.
+  P F when using this mode, it means that this mode is not suitable for the motor. If the motor
+
+            integrates HALL interface, we strongly recommend using HALL for smooth running and better
+
+  Iperformance.
+ L Motor Sensor Port
+F Y Before setup, please choose the corresponding motor sensor port and remember to click
+
+              "Write Setup".
+
+          PSK24
+                SFlipsky ESC Tool V1.6 User Manual
+   P  Hall sensor: Three Hall effect position sensors. A Hall effect component is installed every
+
+                            60°/120° electrical Angle.
+
+   I  ABI Encoder: An incremental encoder is a linear or rotary electric-mechanical device that
+    L has two output signals, A and B, which issue pulses when the device is moved.
+    F NOTE: Since the incremental encoder cannot determine the initial position of the rotor, it
+    K is recommended to rotate the motor manually one circle for zero position calibration
+
+                            after the first start of the ESC, otherwise unexpected situations may occur when the
+
+    S control command is forcibly sent.
+   Y P  AS5047(SPI): An absolute encoder maintains position information when power is
+    K I removed from the encoder, which will immediately report changes and no need to do zero
+    S L position calibration.
+   P F  HFPI Saliency Gain
+   I Adjustable range: 0.5~4.0
+   L Parameter Specification: The surface-mounted permanent magnet synchronous motor, because
+
+            of its weak convex polarity, has a large noise in the angle measurement when using the HFPI mode,
+
+  F Y and this parameter is designed to improve the accuracy of the angle measurement. This value is
+  K automatically done by the algorithm after the motor parameters are recognized. The algorithm will
+  S calculate a reasonable value according to the identification results. It's no need to change if not
+
+            necessary.
+
+KY IP  HFPI Voltage Gain
+   L Adjustable range: 0.2~3.0
+   F Y Parameter Specification: Parameter description: This parameter setup is designed for
+
+              high-frequency pulse voltage injection needs of motor D-axis in HFPI mode, which is determined by
+
+  K the motor specification and can be matched automatically after the motor parameter identification
+  S finish, so it's no need to write manually if not necessary.
+   KY IP  Rotation Direction
+
+                       Positive
+
+   S L Negative
+   IP F  Min PWM Frequency
+
+                  Adjustable range: 2000~25000
+
+ LParameter Specification: This parameter can be matched automatically after the motor parameter
+F Y identification finish and it's no need to write manually if not necessary.
+
+          PSK25
+                SFlipsky ESC Tool V1.6 User Manual
+   P  Max PWM Frequency
+   I Adjustable range: 10000~25000
+   L Parameter Specification: This parameter can be matched automatically after the motor
+
+            parameter identification finish and it' s no need to write manually if not necessary.
+
+   F K  Motor Temp sensor Type
+   S  NTC 10K at 25°C
+   Y P  NTC 10K at 25°C
+
+                        NTC 100K at 25°C
+
+   K I  PT1000PTC 1K at 100°C
+   S L  KTY83-122
+   P F  KTY83-152
+   I  KTY84-130
+
+                        KTY84-150
+
+   L KTY84-151
+   F Y  KTY84-152
+   K Parameter Specification: NTC 10K temperature sensor with a temperature of 25°C is the most
+  S widely used one in applications but some others are also used in special application fields.
+ Y P  Motor Temp NTC  (K)
+K I Adjustable range: 1~10000
+   L Parameter Specification: A thermistor's ""value, or beta value, is an indication of the shape of
+  F Y the curve representing the relationship between resistance and temperature of an NTC thermistor.
+  K Please write the correct data per your motor. Flipsky's motor NTC  is 3380.
+   S  Motor Temp PTC (%/K)
+   Y P Adjustable range: 0.5~100
+   K I Parameter Specification: The PTC type temperature sensor  coefficient value. Please select
+
+            corresponding temperature sensor type.
+
+   PS FL  Zero Duty Mode
+   I Keep Output
+ L  Release Motor
+
+                  Parameter Specification: Zero Duty Mode. If set duty cycle 0% in Zero Duty Mode, users can
+
+F Y choose the mode of Keep Output or Release Motor.
+          PSK26
+                SFlipsky ESC Tool V1.6 User Manual
+   P  Power on Beeping Hint
+   I  OFF
+   L  ON
+
+                  Parameter Specification: When activate the function, the ESC will beep for 3 times after powering
+
+  F on.
+   K NOTE: Motor parameter identification must be completed before turning on the function,
+  S otherwise the sound is abnormal.
+   KY IP  Beeping Level(%)
+
+                  Adjustable range: 0~1
+
+   S L Parameter Specification: The larger of the value, the louder of the sound.
+   IP F  Observer Erpm Threshold
+
+                  Adjustable range: 1~250000
+
+   L Parameter Specification: When the rpm is over than this value, switch to the observer erpm
+  F Y threshold to measure the rotor position and rpm.
+   SK  FOC Brake Mode
+
+                  Available mode: Duty Cycle DetectedErpm DetectedDuty Erpm Detected
+
+ Y P Parameter Specification:
+K I  Duty Cycle Detected: When enter brake status and detect the Duty cycle is lower than
+
+    L 0.001, switch to the three-phase short-circuit status.
+   F Y  Erpm Detected: When enter brake status and detect the Erpm is lower than
+
+                            Brake Erpm Threshold, switch to the three-phrase short-circuit status.
+
+   K  Duty Erpm Detected: When detect the duty cycle is lower than 0.001 and the absolute
+    S value of Erpm is lower than Brake Erpm Threshold in the meanwhile, switch to the
+    Y P three-phrase short-circuit status.
+   K I  Brake Erpm Threshold
+   S L Adjustable range: 08000
+   P F Parameter Specification: When in this brake control status, if the detected erpm is lower than this
+  Ibrake Erpm threshold, the ESC will switch to the three-phrase short-circuit status.
+FL PSKY27
+                SFlipsky ESC Tool V1.6 User Manual
+  P 6.2.2 Field Weakening Control Parameter Setup
+   LI Field weakening control parameters including "Flux Weakening Current(A)", "Positive Ramp
+  F Time(ms)", "Negative Ramp Time(ms)"; as Fig.6-9:
+
+        K Fig.6-9. Field Weakening Control Parameter
+   SKY LIPS  Flux Weakening Current
+   P F Adjustable range: 0~500
+   I Parameter Specification: the current applied to the D-axis in field weakening control. Increasing
+
+               this value can increase the maximum speed limit of the motor. The higher the value, the higher the
+
+  L maximum speed, but at the same time, the higher the current consumption and the hotter the motor,
+  F Y it is recommended to set it lower than 1/4 of the Motor Current Max.
+   SK  Flux Weakening Pos ramp time
+
+                  Adjustable range: 0~10000
+
+ Y P Parameter Specification: When the Positive Ramp Time is set as 1000ms, the flux weakening
+K I current to 20A, the flux weakening Current will increase from 0A to 20A in 1000ms when the duty cycle
+
+  L reaches 90% or above.
+   F KY  Flux Weakening Neg ramp time
+
+                  Adjustable range: 0~10000
+
+   S Parameter Specification: When the Negative Ramp Time is set as 1000ms, and the current control
+  Y P is set to be 0, the flux weakening current will fall from 20A to 0A in 1000ms and ends the flux
+
+            weakening control.
+
+FLIPSK PSKY FLI 28
+PS 6.2.3 Battery Setup
+Flipsky ESC Tool V1.6 User Manual
+I Maximum motor rpm including "Cell Cut-Off start Volt(V)", "Cell Cut-Off End Volt(V)", "Cell Regen
+L Start Volt(V)", "Cell Regen End Volt(V)", "Li-ion Battery Series(S)", "Bus Voltage Resistance". As
+F Fig.6-10:
+
+         K Fig.6-10.Battery Setup
+   IPSKY FLIPS Cell Cut-off Start Volt(V)
+   L Adjustable Range: 2.53.8V
+   F Y Parameter Specification: Single-cell start cut-off voltage setting, when the voltage of a single cell
+  K falls below this setting value, the ESC will reduce the output power. NOTE: the output power will
+  S decrease gradually when the voltage is below this value.
+ Y P  Cell Cut-off End Volt(V)
+K I Adjustable Range: 2.53.8V
+   L Parameter Specification: Single-cell end cut-off voltage setting, when the voltage of a single cell
+  F Y falls below this value, the ESC will stop outputting power.
+
+                  NOTE: power output will be completely disabled when the voltage is below this value.
+
+   SK  Cell Regen Start Volt
+   Y P Adjustable Range: 2.65V
+   K I Parameter Specification: The regenerative power will be decreased when the battery voltage
+
+            exceeds this value.
+
+   S L NOTE: When the voltage exceeds this value, regenerative brake will decrease gradually.
+   IP F  Cell Regen End Volt
+
+                  Adjustable Range: 2.65V
+
+ L Parameter Specification: When the voltage exceeds this value, the regenerative brake current will
+F Y not be allowed.
+
+   K NOTE:power output will be completely disabled when the voltage exceeds this value.
+          PS 29
+                SFlipsky ESC Tool V1.6 User Manual
+   P  Li-ion Battery Series(s)
+   I Adjustable Range: 3100S
+   L Parameter Specification: Li-ion battery series setup, please set according to the using battery
+  F voltage(1S=4.2V).
+   K  Bus Voltage Resistance
+   S Adjustable Range: 9801020
+   Y P Parameter Specification: Minor adjustments can improve the accuracy of the power supply voltage
+  K I measured by the ESC (adjust based on the voltage reading from the multimeter or the voltage
+
+            displayed on the switching power supply). Retain the default settings unless necessary.
+
+  LIPS FL 6.2.4 Erpm Gear Setup
+   F Y Max Erpm Setup including "Positive Erpm", "Negative Erpm", "Gear 1 Erpm(L-Gear)", "Gear 2
+  K Erpm(M-Gear)", "Gear 3 Erpm(H-Gear)", "Gear 4 Erpm", "Gear 5 Erpm""R-Gear Max Erpm". As
+  S Fig.6-11:
+ Y P Fig.6-11.Erpm Gear Setup
+K Y FLI PSKY  PositiveErpm
+   K I Adjustable Range: 500~250000
+   PS FL  Negative Erpm
+
+                  Adjustable Range: -250000~-500
+
+ LI Gear 1 Erpm(L-Gear)
+F Y Adjustable Range: 500~250000
+
+          PSK30
+PS  Gear 2 Erpm(M-Gear)       Flipsky ESC Tool V1.6 User Manual
+I Adjustable Range: 500~250000
+FL  Gear 3 Erpm(H-Gear)
+
+Adjustable Range: 500~250000
+SK  Gear 4 Erpm
+Y P Adjustable Range: 500~250000
+K I NOTE: This gear is applicable for PAS control mode ONLY.
+S L  Gear 5 Erpm
+P F Adjustable Range: 500~250000
+I NOTE: This gear is applicable for PAS control mode ONLY.
+L  R-Gear Max Erpm
+F Y Adjustable Range: 500~250000
+KY IPSK 6.2.5 Power Gear Setup
+   L Power gear setup including "Positive Power", "Negative Power", "Gear 1 Power(L-Gear)(W)",
+  F Y "Gear 2 Power(M-Gear)(W)", "Gear 3 Power(H-Gear)(W)", "Gear 4 Power(W)", "Gear 5
+  K PowerErpm(W)""R-Gear Max Power(W)". As Fig.6-11:
+          S Fig.6-11.Power Gear Setup
+ LIPSKY FLIP  PositivePower
+F Y Adjustable Range: 0~1000000
+
+         PSK31
+PS  Negative Power               Flipsky ESC Tool V1.6 User Manual
+I Adjustable Range: -1000000~0
+FL  Gear 1 Power(L-Gear)
+
+Adjustable Range: 0~250000
+SK  Gear 2 Power(M-Gear)
+Y P Adjustable Range: 0~250000
+K I  Gear 3 Power(H-Gear)
+S L Adjustable Range: 0~250000
+IP F  Gear 4 Power
+
+Adjustable Range: 0~250000
+
+L NOTE: This gear is applicable for PAS control mode ONLY.
+ F KY  Gear 5 Power
+ S Adjustable Range: 0~250000
+Y P NOTE: This gear is applicable for PAS control mode ONLY.
+K I  R-Gear Max Power
+   L Adjustable Range: 0~250000
+F SKY 6.2.6 Current Setup
+KY IP The max current setup includes maximum motor current and maximum battery current setup. The
+
+maximum motor current setup includes "Motor Current" and "Motor Brake Current". The maximum
+
+S L battery current setup includes "Battery Current" and "Battery Regen Current" as Fig.6-12:
+ P F Fig.6-12.Current Setup
+FLI PSKY32
+                SFlipsky ESC Tool V1.6 User Manual
+   P NOTE: The max(motor/current) current limit of every ESC of FT series is different.
+   I  Max Motor Current: the maximum continuous working current (A)
+   L Adjustable range: 0~550
+   F K  Max Motor Brake Current: the maximum continuous braking current (A)
+   S Adjustable range: -550~0
+   Y P NOTE: If using the DC power supply, the Max Motor Brake Current must be set to "0". Otherwise,
+
+            the large back EMF will damage the ESC or even the power supply when the motor brakes in a high
+
+  K I speed state.
+   PS FL  Max Battery Currentthe maximum continuous output current(A)
+
+                  Adjustable range: 0~550
+
+   I NOTE: When setting Max Battery Current, it must be set according to the battery specification.
+   L Set a battery with maximum continuous output current 50A as an example:
+   F Y single ESC, Max Battery Current: 50A
+   K dual ESC, Max Battery Current: 50/2=25A
+
+                  4WD ESC, Max Battery Current: 50/4=12.5A
+
+   S The total output current of the battery must not exceed the battery maximum continuous output
+ Y P current specification. Otherwise, the BMS will cut off the power supply and make the motor lose
+K I control, which is very dangerous. Moreover, please make sure that the Max Battery Current setting
+  L value does not exceed than that of the DC power supply to avoid ESC damage or other unpredictable
+  F Y conditions.
+
+   K  Max Battery Regen Currentthe maximum continuous regenerative current of battery
+   S (A)
+   Y P Adjustable range: -550~0
+
+                  NOTE: If using the DC power supply, the Max Battery Regen Current must be set to "0". Otherwise,
+
+  K I the large back EMF will damage the ESC or even the power supply when the motor brakes in a high
+  S L speed mode.
+FLIP PSKY F 33
+PS 6.2.7 Encoder Setup
+Flipsky ESC Tool V1.6 User Manual
+LI Encoder setup includes "ABI Encoder Direction", "ABI Encoder Counts", "Motor Pole Pairs",
+F "Encoder Offset(°)" as Fig.6-13:
+
+         K Fig.6-13.Encoder setup
+   SKY LIPS  ABI Encoder Direction
+   P F Positive
+
+                       Negative
+
+   I Parameter Specification: If the A and B phases are connected in reverse, the pulse count will be
+  L reversed. In this case, the encoder direction needs to be corrected.
+   F KY  ABI Encoder Counts
+
+                  Adjustable range: 0~100000
+
+   S Parameter Specification: This parameter is 4 times the number of pulses output by the encoder
+ Y P when it rotates one circle. For example, if both phase A and phase B output 1000 pulses when they
+K I rotate one circle, they should be set to 4000 as 4 times of the frequency.
+
+   FL Y  Motor Pole Pairs
+
+                  Adjustable range: 0~100
+
+   K Parameter Specification: When the motor sensor port is set to encoder mode, this value will be
+  S calculated automatically after finishing the motor parameter identification. If no special application, no
+  Y P modification is required. NOTE: When starting in encoder mode, please ensure the correct setting of
+
+            this value.
+
+   SK LI  Encoder Offset(°)
+   P F Adjustable range: 0~360°
+   IParameter Specification: It means the offset angle between the encoder and the motor rotor.
+
+            When the motor sensor port is set to encoder mode, this value will be calculated automatically after
+
+ Lfinishing the motor parameter identification. No modification is required unless necessary.
+F PSKY34
+PS 6.2.8 Speed PID Setup
+Flipsky ESC Tool V1.6 User Manual
+LI Speed PID setup includes"Speed PID Kp", "Speed PID Ki", "Speed PID Kd", " PID Minimum
+F Erpm", "PID Maximum Erpm", "PID Accel (r/())Erpm" as Fig.6-13:
+SK Fig.6-13.Speed PID setup
+   SKY LIP  Speed PID Kp: Speed PID controller proportional gain coefficients.
+                       Adjustable range: 0~10000
+   P F If no special application, no modification is required.
+
+   LI  Speed PID KiSpeed PID controller integral gain coefficients.
+   F Y Adjustable range:0~10000
+
+                       If no special application, no modification is required.
+
+   SK  Speed PID Kd: Speed PID controller differential coefficients
+ Y P Adjustable range:0~10000
+K I If no special application, no modification is required.
+
+   L  PID Maximum Erpm: Minimum speed for speed PID control.
+   F Y Adjustable range: 0~250000
+   K Parameter Specification: When the ESC detects the Erpm higher than this max. value, it will
+
+              maintain the maximum speed PID Maximum Erpm output.
+
+   Y PS  PID Accel (r/())Erpm: Acceleration value for speed PID control.
+                       Adjustable range: -1~150000
+   K I Parameter Specification: The larger the value, the faster the speed changes. For example,
+                  when it is set to 30000 Erpm, it means that the speed changes by 30000 Erpm in 1 second. Which
+
+   S L means that it takes 1 second only for the motor to increase Erpm from 0 to 30000 when a speed
+
+                  command of 30000 Erpm is given.
+FLIP PSKY F 35
+                SFlipsky ESC Tool V1.6 User Manual
+  P 6.2.9 Position PID Setup(Encoder Startup Mode only)
+   LI Position PID Setup includes"Position PID Kp" , "Position PID Ki" and "Position PID Kd" as
+  F Fig.6-14 below:
+
+          K Fig.6-14.Position PID Setup
+   SKY LIPS  Position PID Kp: Position PID controller proportional gain coefficients.
+   P F Adjustable range: 0~10000
+
+                       If no special application, no modification is required.
+
+   FLI Y  Position PID Ki: Position PID controller integral gain coefficients.
+    K Adjustable range: 0~10000
+
+                         If no special application, no modification is required.
+
+KY IPS  Position PID KdPosition PID controller derivative coefficients.
+                         Adjustable range: 0~10000
+    L If no special application, no modification is required.
+FLIPSKY PFSKY FLIPSKY 36
+Flipsky ESC Tool V1.6 User ManualIPS 7 Control Setup
+
+L Control setup parameter includes "ESC ID", "CAN Status Frequency(Hz)", "CAN Bus Baud
+F Rate", "Multi-ESC Sync Control", "Throttle Accel Level", "Input Signal Deadband", "Smart
+K Switch","Brake Light Level(%)", "Traction Control Svstem", "TC Erpm Diff Max", "TC Erpm Diff Min",
+S "Emerqency Switch", "Signal Ramp Time Pos(s)", "Signal Ramp Time Neg(s)" and "Input Signal
+Y P Type" as Fig.7-1 as below:
+
+       K I Fig7-1.Control setup
+KY FLKIYPS FLIPSKY IPFSLKY SetupStepsareasfollow:
+   S L  Click "Control Setup" to enter the control setup interface
+   P F  Set the needed parameters
+   I Click "Write Setup" on the upper left to save the configuration
+
+FL PSKY37
+PS 7.1 ESC ID Setup
+Flipsky ESC Tool V1.6 User Manual
+LI ESC IDESC ID(Fig.7-2), adjustable range: 1~254. For distinguish the ESCs on the same
+F CAN bus. Please make sure the uniqueness of the ESC ID since the same ESC IDs result in
+K parameter identification failures or abnormal control. ESC ID 0 (special command number) and
+S ESC ID 255 (special broadcast command) are not available for setup.
+Y P ESC ID setup steps are in Chapter 4.2.1.
+
+                                                        Fig.7-2.ESC ID
+KY FLKIYPSKFLIPSKY IPFSLKIY 7.2 CAN Status Frequency Setup
+   PS FL CAN Status Frequency(Hz): Each ESC will automatically return real-time data through the CAN
+
+              bus, where the real-time data includes motor current, battery current, motor erpm, duty cycle,
+
+  IMOSFET temperature, motor temperature and battery voltage data. All of the above real-time data
+ Lwill be returned and sent to the CAN bus at regular intervals, and the frequency of sending can be
+F Y set via CAN Status Frequency as Fig.7-3 below.
+
+          PSK38
+                SFlipsky ESC Tool V1.6 User Manual
+          P Fig.7-3.CAN status frequency
+  FLIPSKY FLIY FLIPSK 7.3 CAN Bus Baud Rate Setup
+   K CAN Bus Baud Rate(Fig.7-4): Please make sure the consistency of CAN baud rate for the
+  S same CAN devices.
+ Y P You can view the CAN bus baud rate setup in chapter 4.2.2.
+
+                                                                Fig.7-4.CAN bus baud rate
+
+KFLIPSKY PFSLKIY FLIPSKY 39
+                SFlipsky ESC Tool V1.6 User Manual
+  P 7.4 CAN Bus Multi-ESC Sync Control Setup
+   LI Multi-ESC Sync Control: synchronous control for multiple ESCs via CAN as Fig.7-5:
+
+           FFig.7-5.CAN Bus
+   FLIPSKY SKY FLIPSK SetupSteps:
+ Y P  Click "Control Setup" to enter the control setup interface
+K I  Click "Multi-ESC Sync Control" to select whether synchronous control of the CAN ESCs or
+
+                         not. (ON - with synchronous control, OFF - not)
+
+   L  Click the upper left menu "Write Setup" to save the setup
+   F KY Parameter Specification:
+   S When the ESC is used as master and "Multi-ESC Sync Control" is set to ON, the input signal
+  Y P will synchronize the master ESC and all slave ESCs mounted on the CAN bus; when "Multi-ESC
+
+              Sync Control" is set to OFF, the input signal controls only the master ESC.
+
+   K I When the ESC acts as a slave and "Multi-ESC Sync Control" is set to ON, the slave ESC will
+  S L accept control commands sent from the CAN bus; when "Multi-ESC Sync Control "is set to OFF, the
+  P F slave ESC will block the control commands sent from the CAN bus.
+
+                     If you want multiple ESCs to be controlled synchronously, set all ESC's "Multi-ESC Sync
+
+  IControl" as "ON".
+ L However, if you want to control each ESC separately in UART, PPM or ADC control type, set
+F Y all ESC's "Multi-ESC Sync Control" as "OFF".
+
+          PSK40
+                SFlipsky ESC Tool V1.6 User Manual
+   P If use your own control module as the master board and want to control the ESCs via
+  I CAN-Bus, set all ESC's "Multi-ESC Sync Control" as "ON", and the "Input Signal Type" as
+  L "OFF".
+  F K 7.5 Throttle Response Level Setup
+   Y PS Throttle Response Level: Level 0~Level 5(as Fig.7-6):
+
+         K I Fig.7-6.Throttle Response Level
+KY FLIPS IPSKY FL SetupSteps:
+
+                     Click "Control Setup" to enter the setup interface
+
+   L  Click "Throttle Response Level" to select the appropriate throttle response level
+   F Y  Click "Write Setup" on the upper left to save the configuration
+   K Parameter Specification: The higher of the level, the more sensitive of the throttle and brake
+  S response. Level 4 is the standard level which has no advance or lag on all input signals and is
+
+              suitable for common users
+
+FLIPSKY PSKY FLIP 41
+PS 7.6 Input Signal Deadband Setup
+Flipsky ESC Tool V1.6 User Manual
+LI Input Signal Deadband: adjustable range: 1%25%. as Fig.7-7:
+      F Fig.7-7. Input signal deadband
+   FLIPSKY KY FLIPSK SetupSteps:
+
+                     Click"Control Setup" to enter the control setup interface
+
+   S  Click "Input Signal Deadband" to adjust suitable input signal deadband(%)
+ Y P  Click "Write Setup" on the upper left to save the configuration
+K I Parameter Specification: The ESC starts the current output only when the throttle input signal
+  L percentage is over than that of the input deadband setup . It's recommended to use the default
+  F Y value 10%. Regarding the input control type PPM and UART, the deadband percentage can be
+  K small or even 0% as the remote controller has already set it, for example, the Flipsky remote
+  S controller VX4 with 5% deadband already. It's strongly recommended to keep the default setting as
+
+              10% under ADC control.
+
+FLIPSKY PSKY FLIP 42
+PS 7.7 Smart Switch
+Flipsky ESC Tool V1.6 User Manual
+ LI Smart Switch: This function only support FT85BDFT60BD and FT85KS of FT series ESC.
+
+You can set it through Smart Switch as Fig.7-8:
+F K Fig.7-8. Smart Switch setup
+   FLIPSKY KY FLIPS Parameter Specification: two modes: "Keep Power On" stands for always on without power-off.
+
+              The second mode means power off after a specific time, for example, "OFF 5min later" supports
+
+  S auto shutoff without drive signal after 5 minutes later.
+KY LIP 7.8 Brake Light Level Setup
+
+   F Y Brake Light Level: The brake light brightness setup in static. Adjustable range: 0~100%, default
+  K as "20%".
+
+        S Fig.7-9.Brake light brightness setup in static
+FLIPSKY PSKY FLIP 43
+PS 7.9 Traction Control Setup
+Flipsky ESC Tool V1.6 User Manual
+LI TCR Control: Traction control is realized when multiple ESCs are jointly controlled, and the
+F algorithm can be used to prevent the drive wheels from skidding when multiple ESCs accelerate
+
+the drive motors at the same time.This mode is only for current control (does not support current
+
+K hybrid bi-directional control in PPM mode). Traction control setup as Fig.7-10
+Y PS Fig.7-10.Traction Control setup
+ Y FLIPSK PSKY FLI  TractionControlSystem
+K I  ON
+
+                          OFF
+
+   L Parameter Specification: This mode is mainly for preventing the drive wheel from slipping when
+  F Y ESK8 accelerates and maintains its stability.
+   SK  TC Erpm Diff Max
+
+                    Adjustable range: 0~10000
+
+   Y P Parameter Specification: Maximum erpm difference threshold. Different motors correspond to
+  K I different maximum erpm difference thresholds, which are typically set to 5% of the maximum erpm
+  S L at full voltage. For example, a 6374 motor with a 7-pole KV of 160 would have a maximum erpm of
+  P F about 56,500 at full voltage of 50.4V and 12S, so this value is set to 56,500 * 0.05 = 2825.
+   I TC Erpm Diff Min
+ L Adjustable range: 0~1000
+F Y Parameter Specification: Minimum Erpm difference threshold. When the speed difference is
+  K lower than this value, the TCR control will be cut off.
+
+          PS 44
+PS 7.10 Emergency Switch Setup
+Flipsky ESC Tool V1.6 User Manual
+LI Emergency Switch  Mainly used for cutting off power. You can set any of signal below to
+F activate this function, as Fig. 7-11:
+
+       K Fig 7-11.Emergency Switch Setup
+ Y FLIPSKY PSKY FLIPS ParametersSpecification:
+K I  Disable : Disable emergency switch function
+
+   L  PPM LOW : When select "PPM LOW", if the PPM signal is detected as low level, it will cut
+    F Y off the power output.
+   K  PPM HIGH : When select "PPM HIGH", if the PPM signal is detected as high level, it will cut
+    S off the power output.
+
+                     Brake ADC LOW : When select "Brake ADC LOW ", if the Brake ADC signal is detected as
+
+    Y P low level, it will cut off the power output.
+   K I  Brake ADC HIGH : When select "Brake ADC HIGH ", if the Brake ADC signal is detected as
+    S L high level, it will cut off the power output.
+FLIP PSKY F 45
+                SFlipsky ESC Tool V1.6 User Manual
+  P 7.11 Signal Ramp Time Pos(s) Setup
+   LI Signal Ramp Time Pos(s): Adjustable range: "0.1~100s"; default as 0.1s. As Fig.7-12:
+
+         F Fig.7-12.Signal Ramp Time Pos(s) Setup
+ Y FLIPSKY PSKY FLIPSK 7.12 Signal Ramp Time Neg(s) Setup
+K I Signal Ramp Time Neg(s): Adjustable range: "0.1~100s"; default as 0.1s. As Fig.7-13:
+
+         L Fig.7-13. Signal Ramp Time Neg(s) Setup
+FLIPSKY PFSKY FLIPSKY 46
+PS 7.13 Input Signal Type Setup
+Flipsky ESC Tool V1.6 User Manual
+LI Input Signal Type:OFF/UART/PPM/ADC/PAS. Default as OFF(as Fig.7-14). View the chapter
+F below for details.
+
+       K Fig.7-14.Input signal type setup
+KY FLIPSKFYLIPSKY FSLKIYPS 7.13.1 OFF
+   KY IP When "Input Signal Type" is set to OFF(Fig.7-15), all input signals will be shielded. You can
+  S L only control the ESC through Current, Duty, Brake and other buttons in Test and Display
+  P F interface(Fig.7-16). View button operations in Chapter 8.1.1.
+
+FLI PSKY47
+PS Fig.7-15.OFF
+Flipsky ESC Tool V1.6 User Manual
+LIPSKY FLI FLIPSK Fig.7-16.Test and Display interface
+KFYLIPFSKY PFSLKIYPSKFYLIPSKY 48
+PS 7.13.2 UART
+LI 7.13.2.1 UART Parameter Specification and SetupFlipsky ESC Tool V1.6 User Manual
+
+ F K UART control mode can support all FT series remotes.(VX1, VX1Pro, VX2, VX3, VX3Pro, VX4,
+S VX4Pro, VX5) Support limit its maximum rpm or max power in different gears.
+
+      Setup steps are as Fig.7-17 below when using UART signal to control the ESC:
+
+        Y P Fig.7-17.UART Control Setup
+KY FLIYPSKFLIPSKY PFSLKIY NOTE: Step 3 and Step 10 is must, other parameters can be set according to your needs.
+   K I  Step 1: Click "Control Setup" to enter the control setup interface
+   S L  Step 2: Select UART in "Input Signal Type"
+
+                     Step 3: Select suitable UART Control Mode per your needs(view details in 7.13.2.2)
+
+   P F  Step 4: Set UART Reverse Delay Time per your needs(view details in 7.13.2.3)
+   I Step 5: Set Extra Interface per your needs(view details in 7.13.2.4)
+ L  Step 6: Set Minimal Current at Zero Pedal per your needs(view details in 7.13.2.5)
+F Y  Step 7: Set Assisted Turnaround Mode and Assisted Turnaround ESC ID Setup per your
+
+                         needs (view details in 7.13.2.6)
+
+          PSK49
+                SFlipsky ESC Tool V1.6 User Manual
+   P  Step 8: Set Brake Parking Mode per your needs(view details in 7.13.2.7)
+   I  Step 9: Set Off-Road Climbing Mode per your needs(view details in 7.13.2.8)
+   L  Step 10: Click "Write Setup" on the upper left again, write and save the configuration to
+
+                         ESC.
+
+  F SK 7.13.2.2 UART Control Mode Setup
+   Y P User can select applicable UART Control Mode as Fig.7-18:
+
+        SK LI Fig.7-18.UART Control Mode
+KY FLIP LIPSKY F  None
+
+   F Y  Current Gear Reverse Brake: Current control mode: gear speed limit, reverse with brake,
+    K reverse
+
+                     Current Gear Brake: Current control mode: gear speed limit, reverse with brake
+
+   S  Current Reverse Brake: Current control mode: reverse with brake, reverse
+   Y P  Current Brake: Current control mode: reverse with brake
+   K I  Duty Gear Brake Reverse: Duty cycle control mode: gear speed level limit, reverse with
+
+                         brake, reverse
+
+   S L  Current Bidirectional Gear: Current control mode: bilateral control, gear speed limit
+FLIP PSKY F 50
+PS 7.13.2.3 UART Reverse Delay Time Setup
+Flipsky ESC Tool V1.6 User Manual
+LI The UART control mode supports reverse function, so you can set the UART Reverse Delay
+F Time per your needs. The adjustable range: 0.0s~10s, and the default is 5s as shown in Fig. 7-19:
+
+      K Fig.7-19.UART Reverse Delay Time Setup
+   IPSKY FLIPS Parameter Specification: When the motor is stopped, pull the throttle back to the maximum and
+  L then start to rotate in the reverse direction. It can reach the maximum reverse speed within the
+  F Y set time period(as Fig.7-19, it's 5s as set)
+  SK 7.13.2.4 Extra Interface Setup
+KY IP This function only support FT85BD, FT60BD and FT85KS of FT series ESC. Support front light,
+
+              brake light and horn control under UART control. Support VX2, VX3, VX4, VX4Pro and VX5 remote
+
+  L to control front light, brake light and horn. User can set through Extra Interface accordingly as
+  F Y Fig.7-20:
+
+           K Fig.7-20.Extra Interface
+ LIPSKY FLIPS  None
+F Y  Front Light
+
+  K  Brake Light
+         PS 51
+Flipsky ESC Tool V1.6 User ManualPS  Horn
+I  Front and Brake Light
+L  Front and Horn
+
+ Brake Light and Horn
+
+F  Front, Brake Light and Horn
+Y PSK 7.13.2.5 Minimal Current at Zero Pedal Setup
+K I This function enables FT series ESCs to maintain a certain current output after releasing the
+S L throttle under the UART input signal. In certain skateboards with higher gear ratios (>3.5:1), such
+P F as off-road models, a braking-like resistance may occur after releasing the throttle, which is caused
+
+by the gear ratio. This feature maintains a certain level of current output even after the throttle is
+
+I released via the remote control, which could counteract the resistance, enabling the skateboard to
+L enter a near-zero-resistance state.
+F Y The setup steps are as Fig. 7-21 below:
+
+      K Fig.7-21.Minimal Current at Zero Pedal Setup
+KY FLIPS Y User can set below parameters accordingly.
+   K Parameter Specification:
+   S  Slow-Release Motor: Enable this function or not, default: OFF
+   Y P  Slow-Decrease TimeCurrent output releasing time, default: 4.5s
+
+                     Slow-Decrease Throttle: Current output throttle percentage, default:5%  0.05×Motor
+
+    K I Current
+   S L  Slow-Decrease DutyWhen the motor duty cycle is lower than this value, this function is
+    P F off. Only when the duty cycle is higher than this value will this function be effective.
+
+                    NOTE:This function is not available under the control mode of Duty Gear Brake Reverse(Duty
+
+  Icycle control mode: gear speed limit, reverse with brake, reverse)
+FL PSKY52
+                SFlipsky ESC Tool V1.6 User Manual
+  P 7.13.2.6 Assisted Turnaround Mode and ESC ID Setup
+   LI Assisted Turnaround: This assisted turnaround function is applicable for UART control only. It
+  F only supports for remote VX4(Firmware: V1.4. or above), VX4Pro(Firmware: V1.0 or
+  K above),VX2(Firmware: V1.9), VX3(Firmware: V1.9) and VX5 currently. Please check details in the
+
+              user manual.
+
+   S Setup Steps:
+   Y P  Step 1: Select Assisted Turnaround Mode accordingly as Fig.7-22:
+
+         K I Fig.7-22.Assisted Turnaround Mode
+   FLIPS SKY FL Parameter Specification:
+ Y P  Assisted Turnaround Mode
+K I  None: Turn off assisted turnaround mode.
+
+                          Dual Drive Mode: Dual drive turnaround mode. Uses only two ESC drives. One forward
+
+     L and one reverse.
+    F Y  Quad Drive Mode: 4WD turnaround mode. All four ESCs drive at the same time.
+     K Forward on the same side, reverse on the other side.
+   S  Step 2: Set assisted turnaround ESC ID as Fig.7-23:
+
+       Y P Fig.7-23. Assisted turnaround ESC ID Setup
+FLIPSK PSKY FLI 53
+                SFlipsky ESC Tool V1.6 User Manual
+   P  Assisted Turnaround ESC ID Setup:
+    I  Left Front ESC ID(Slave): Set in 4WD.
+    L  Right Front ESC ID(Slave): Set in 4WD.
+
+                          Left Rear ESC ID(Slave): Set in 4WD.
+
+    F  Right Rear ESC ID(Master): Set in 4WD.
+   K NOTE:
+   S (1) Dual Drive Mode: Set "Left Rear ESC ID(Slave)" and "Right Rear ESC ID(Master)".
+
+                    (2) Quad Drive Mode: Set "Left Front ESC ID(Slave)","Right Front ESC ID(Slave)" , "Left Rear
+
+    Y P ESC ID(Slave)" and "Right Rear ESC ID(Master)".
+  SK LI 7.13.2.7 Brake-Parking Mode Setup
+   IP F Brake-Parking Mode: Pull the remote controller throttle gear/bar 0.5S to enter into
+  L Brake-Parking Mode after the motor stop running. The greater percentage of pulling back the
+  F Y throttle gear, the bigger of the parking force. Setup as shown in Fig.7-24:
+
+         K Fig.7-24.Brake-Parking Mode Setup
+KY FLIPS SKY NOTE: This mode injects current into the motor d-axis to make the coil generate magnetic force
+
+  Y P and attract the rotor to achieve the parking effect, so current will be consumed when parking. The
+  K I maximum d-axis current can reach Motor Current Max when parking. It is not recommended to park
+  S L in this mode for a long time, otherwise the motor will get hot and lead to overload current limiting
+
+              phenomenon.
+
+   P F When in Reverse Mode like Current Gear Reverse Brake or Current Gear Brake mode, max
+  Ipulling the throttle gear / bar will end the Brake-Parking Mode but enter into Reverse Mode instead.
+ L Currently, this mode supports for remote VX4(firmware: V1.4. or above), VX4Pro(firmware :
+F Y V1.0 or above), VX2(firmware: V1.9), VX3(firmware: V1.9) and VX5 only. Please check user
+
+              manuals for details.
+
+          PSK54
+PS 7.13.2.8 Off-Road Climbing Mode
+Flipsky ESC Tool V1.6 User Manual
+LI Off-Road Climbing Mode: In this mode, all CAN ESCs will be switched to duty cycle control and
+F allow users to pass off-road passing gravel roads or climbing high slopes easily by controlling
+
+speed of the four wheels synchronously via remote controller. Setup as shown in Fig.7-25:
+SK Fig.7-25.Off-Road Climbing Mode Setup
+   FLIPSKY KY FLIP NOTE:
+
+                    1. After using this mode, the reverse mode will be disabled.
+
+   S 2. Currently, this mode supports for remote VX4(firmware: V1.4. or above), VX4Pro(firmware:
+ Y P V1.0 or above), VX2(firmware version:V1.9), VX3(firmware:V1.9) and VX5 only. Please
+K I check user manual for details.
+FLIPSKY PFSLKY FLIPSKY 55
+PS 7.13.3 PPM
+LI 7.13.3.1 PPM Parameter Specification and SetupFlipsky ESC Tool V1.6 User Manual
+
+F K The PPM signal pulse width usually ranges from 1ms to 2ms, so theoretically the PPM control
+S frequency supports up to 500Hz. Considering the MCU clock accuracy, it is recommended to use
+
+the PPM control frequency less than 400Hz. Setting steps as Fig.7-26 below:
+
+       Y P Fig.7-26.PPM Signal Control Setup
+KY FLIYPSKFLIPSKY PFSLKIY  Step 1: Click "Control Setup" to enter the setup interface
+                     Step 2: Switch the "Input Signal Type" to "PPM".
+   K I  Step 3: Calibrate when use PPM as input signal for the first time(check details in chapter
+    S L 7.13.3.2)
+   P F NOTE: Calibrate the PPM signal for one side of the dual ESC controller is workable. The other
+                    side's Input Signal Type set "OFF".
+   I Step 4: Select the appropriate PPM Control Mode as you need (see details in 7.13.3.3)
+ L  Step 5: Set the Reverse Delay Time (see details in 7.13.3.4)
+F Y  Step 6: Click the upper left menu "Write Setup" to save the setup.
+          PSK56
+PS 7.13.3.2 PPM Signal Calibration Steps
+Flipsky ESC Tool V1.6 User Manual
+LI Calibrate PPM signal first when use it as input signal for the first time. Please plug the PPM
+F signal cable to the ESC PPM port before calibration. Take VX1 remote of Flipsky as an example:
+K  Click "Start" to begin the calibration as Fig.7-27 below:
+
+       S Fig.7-27.Enter PPM signal calibration
+   LIPSKY FLIP NOTE: No PPM signal can be detected if the remote receiver hasn't been plugged with the
+  F Y ESC PPM wire when you click "Start" as Fig7-28:
+
+           K Fig.7-28.No PPM signal
+KY FLIPS KY  Connect the remote receiver with the ESC PPM wire in this case. If the PPM signal data
+
+    S seems abnormal (as shown in Fig.7-29), please click "Reset". (Refer to Fig.7-27).
+                                                              Fig.7-29.Abnormal PPM signal
+FLIPSKY PSKY FLIP 57
+                SFlipsky ESC Tool V1.6 User Manual
+   P  Pull and push the remote throttle gear to refresh the minimum, middle and maximum PPM
+    I signal values as Fig.7-30, Fig.7-31:
+
+         L Fig.7-30.Refresh the maximum PPM signal
+       PSKY F FLIPSK Fig.7-31.Refresh the minimum PPM signal
+KY FLI IPSKY  Click "Setup" to write the current values into Min Pulse Width, Mid Pulse Width and Max
+    L Pulse Width separately as Fig.7-32:
+
+         F Y Fig.7-32.Write current PPM signal value
+FLIPSKY PSKY FLIPSK 58
+                SFlipsky ESC Tool V1.6 User Manual
+   P  Click"Stop" to complete the PPM calibration as Fig.7-33:
+
+         I Fig.7-33.PPM signal calibration ends
+  LIPSKY FL FLIPSK 7.13.3.3 PPM Control Mode Setup
+   F Y User can select suitable PPM Control Mode accordingly as Fig.7-34:
+
+          SK Fig.7-34.PPM Control Mode
+KY Y FLIP PSKY  None
+
+   K I  Current
+   S L Current control mode, unidirectional control, forward only:1.0~2.0ms,
+   P F  Current Brake
+   ICurrent control mode, bidirectional control, brake:1.0~1.5ms,forward:1.5~2.0ms
+
+                     Current Reverse
+
+ L Current control mode, bidirectional control, no brake, reverse:1.0~1.5ms, forward:1.5~2.0ms
+F Y  Current Reverse Brake
+
+   K Current control mode, bidirectional control, brake/reverse:1.0~1.5ms, forward:1.5~2.0ms.
+          PS 59
+                SFlipsky ESC Tool V1.6 User Manual
+   P  Duty( forward:1.0~2.0ms)
+   I Current control mode, bidirectional control, brake/reverse:1.0~1.5ms, forward:1.0~2.0ms.
+   L  Duty Reverse
+
+                     Duty cycle control mode, bidirectional control, backward:1.0~1.5ms, forward:1.5~2.0ms.
+
+   F  Duty Reverse Brake
+   K Duty cycle control mode, bidirectional control, brake/reverse:1.0~1.5ms, forward:1.5~2.0ms.
+   S  Duty Reverse Slow
+   Y P Duty cycle control mode, bidirectional control, reverse:1.0~1.5ms, forward:1.5~2.0ms.
+   K I NOTE: No back EMF is generated when the accelerator is released.
+
+                     Speed
+
+   S L PID control mode, unidirectional control, forward only:1.0~2.0ms
+   P F  Speed Reverse
+   I PID control mode, bidirectional control, reverse:1.0~1.5ms, forward:1.5~2.0ms
+   L Current Hybrid Bidirectional With Brake
+   F Y Bidirectional current mixed controlreverse/brake: 1.0~1.5msforward/brake: 1.5~2.0ms
+ Y PSK 7.13.3.4 PPM Reverse Delay Time Setup
+K I The PPM control mode supports reverse function, so you can set the UART Reverse Delay
+  L Time as you need. Adjustable range: 0.0s~10s, and the default is 5s as Fig.7-35:
+
+         F Y Fig.7-35.PPM Reverse Delay Time setup
+   PSKY FLIPSK Parameter Specification: When the motor is stopped, pull the throttle back to the maximum and
+  Istart to rotate in the reverse direction. The reverse speed can reach the maximum within the set
+ Ltime period (as shown in Fig.7-32, it's 5 seconds as this set).
+F PSKY60
+PS 7.13.3.5 Safety Start Setup
+Flipsky ESC Tool V1.6 User Manual
+LI When this parameter is set as ON, if the PPM throttle receives abnormal signal when ESC is
+F connectedit will prevent the motor from accidental activation. Please calibrate the PPM signal
+K again. After a certain period of power-up of ESC, the throttle signal should be zero. Only then will
+
+the PPM signal enter a valid control state as Fig.7-36:
+
+        Y PS Fig.7-36.Safety Start Setup
+KFYLIPFSLKIYPSKPFSLKIYPSKFYLIPFSLKIY 61
+PS 7.13.4 ADC
+LI 7.13.4.1 ADC Parameter Specification and SetupFlipsky ESC Tool V1.6 User Manual
+
+F K ADC control type voltage range: 0V~3.3V. Please make sure the ADC input voltage lower than
+S 3.3V to avoid the ESC 3.3V chip damage. Setting steps are as Fig.7-37. below:
+
+        Y P Fig.7-37.ADC signal setup
+KY FLIPSKFLIPSKY FSLKIY  Step 1: Click "Control Setup" to enter the setup interface
+   Y P  Step 2: Switch the "Input Signal Type" to "ADC"
+   K I  Step 3: Do ADC throttle calibration when use it for the first time. (view details in Chapter
+    S L 7.13.4.2.)
+
+                    NOTE: When using a DUAL ESC, only select the signal control type calibration for the signal
+
+  P F master or slave under control, and set the signal type of the other master/ slave to OFF.
+   I Step 4: Select the appropriate ADC Control Mode per your needs (view details in chapter
+ L 7.13.4.3)
+F Y  Step 5: Set Extra Interface per your needs (view details in chapter 7.13.4.4)
+   K  Step 6: Select the Cruising Control Mode per your needs (view details in chapter 7.13.4.5)
+
+          PS 62
+                SFlipsky ESC Tool V1.6 User Manual
+   P  Step 7: Set the Time for Enter Cruising per your needs (view details in chapter 7.13.4.5)
+   I  Step 8: Set Brake Unlock and Start per your needs (view details in chapter 7.13.4.6)
+   L  Step 9: Set Safety Start per your needs (view details in chapter 7.13.4.7)
+
+                     Step 10: Click the upper left menu "Write Setup" to save the setup.
+
+  F SK 7.13.4.2 ADC Input Throttle Calibration
+   Y P Do ADC throttle calibration when use it as input signal for the first time as follows:
+   K I  Click "Start" to begin the calibration as Fig.7-38 below:
+
+        S L Fig.7-38.Enter ADC input throttle calibration
+   FLIP SKY F  Twist the ADC throttle to refresh the min, mid and max throttle signal as Fig.7-39 below:
+ Y P Fig.7-39.Refresh ADC throttle signal
+K Y FLI PSKY  Press the ADC brake to refresh the min and max brake value as Fig.7-40 below:
+
+      K I Fig.7-40. Refresh ADC brake signal
+FLIPS PSKY FL 63
+                SFlipsky ESC Tool V1.6 User Manual
+   P  Click "Setup" to write the min and max ADC signal value to Min Throttle Voltage, Mid
+    I Throttle Voltage, Max Throttle Voltage, Min Brake Voltage and Max Brake Voltage
+    L separately as Fig.7-41 below:
+
+         F Fig.7-41.Write current ADC configurations
+   FLIPSKY KY FLIPSK  Click "Stop" to finish the calibration as Fig.7-42 as below:
+
+         S Fig.7-42.ADC input setup complete
+KFYLIPSKY PFSLKIYP FLIPSKY 64
+PS 7.13.4.3 ADC Control Mode Setup
+Flipsky ESC Tool V1.6 User Manual
+LI Select the appropriate ADC Control Mode per your needs as Fig.7-43 below:
+       F Fig.7-43.ADC Control Mode
+   FLIPSKY Y FLIPSK  None: No response to anyADC input signal.
+
+                     Current: Current control mode, ADC throttle only without brake.
+
+   K  Current Bidirectional: Current control mode, enable Throttle ADC and bidirectional current
+    S control
+ Y P  Current LMH-Gear: Current control mode, only enable ADC throttle and L\M\H speed gear.
+
+                     Current Brake: Current control mode, enable ADC throttle and brake.
+
+K I  Current Brake LMH-Gear: Current control mode, enable Throttle ADC, Brake ADC and
+    L L\M\H speed gear
+   F Y  Current R-Gear: Current control mode, enable Throttle ADC and reverse gear.
+   K  Current R-Gear LMH-Gear: Current control mode, enable Throttle ADC, reverse gear and
+
+                         L\M\H speed gear
+
+   S  Current R-Gear Braker: Current control mode, enable Throttle ADC, reverse gear and
+    Y P Brake ADC
+   K I  Current R-Gear Brake LMH-Gearr: Current control mode, enable Throttle ADC, reverse
+
+                         gear , Brake ADC and L\M\H speed gear
+
+   S L  Duty: Duty cycle mode, ADC throttle only without brake
+   P F  Duty Bidirectional: Bidirectional duty cycle control mode, ADC throttle only without brake
+
+                     Duty R-Gear: Reverse duty cycle control mode, Throttle ADC only without brake
+
+   I Speed: PID control mode, Throttle ADC only without brake
+ L  Speed Bidirectional: Bidirectional PID control mode, Throttle ADC only without brake
+F Y  Speed R-Gear: Reverse PID control mode, Throttle ADC only without brake
+
+          PSK65
+PS 7.13.4.4 Extra Interface Setup
+Flipsky ESC Tool V1.6 User Manual
+LI This function only support FT series ESCs with extra interface of 12V(front light and horn). It
+F can switch on/off physically, setting the front light and horn interfaces to a continuous output state
+K when controlled by ADC signal. User can set via Extra Interface per your needs, as Fig.7-44:
+
+        S Fig.7-44.Extra Interface
+   LIPSKY FLIP  None
+   F Y  Front Light
+
+                     Horn
+
+   K  Front and Horn
+KY IPS 7.13.4.5 Cruising Control Mode Setup
+
+   FL Y Cruising Control Mode: three modes available, select different mode accordingly as Fig.7-45:
+          K Fig.7-45.Cruising Control Mode
+FLIPSKY Y FLIPS ParameterSpecification:
+               None
+  K Turn off Cruising Control Mode
+         PS 66
+                SFlipsky ESC Tool V1.6 User Manual
+   P  Self-Locking Button
+   I Using self-locking button to activate the cruising control. Connect the PPM and GND pins
+
+              for the self-locking button. Press the switch button to enter into cruise mode, and then re-press the
+
+  L button to bump out to end the cruise mode.
+   F NOTE:
+    K  The cruise mode can be entered only in status of throttle signal detected or motor
+
+                              running with rpm
+
+    S  The cruise mode will stop if receive a brake signal in ADC control mode
+   Y P  Resetting Button
+   K I Using resetting button to activate the cruising control. Connect the PPM and GND pins for
+
+              the self-locking button. Press once to enter into the cruise mode, and press again to end the cruise
+
+  S L mode.
+   P F NOTE:
+
+                          The cruise mode can be entered only in status of throttle signal detected or motor
+
+     Irunning with rpm
+
+                          The cruise mode will stop if receive a brake signal in ADC control mode.
+
+   FL Y  Keep Throttle ADC for a While
+
+                    Entering the cruising control by keeping Throttle ADC for a while. Set the time via Time
+
+  K for Enter Cruising. Keep the throttle at desired level for a period of time and release, and then you
+  S will enter the cruise mode and stay. If any throttle change or brake signal is detected, the mode will
+
+              be exited.
+
+ Y P NOTE:
+K I  The cruise mode will stop if receive a brake signal in ADC control mode.
+
+   FL Y  Time for Enter Cruising
+
+                    If the cruise control mode is set to Keep Throttle ADC for a While, you can set the Time for
+
+  K Enter Cruising per your needs. Adjustable range: 3s to 30s, and the default is 10s as shown in
+  S Fig.7-46:
+
+       Y P Fig.7-46.Time for Enter Cruising
+FLIPSK PSKY FLI 67
+PS 7.13.4.6 Brake Unlock and Start Setup
+Flipsky ESC Tool V1.6 User Manual
+LI Brake Unlock and StartUnlock the throttle handle via the brake handle. When this function is
+F enabled, ESC startups, please press the brake handle to activate the throttle, otherwise you will not
+K be able to control it. This function prevents accidental activation of the throttle handle, which could
+
+trigger unintended acceleration and cause unexpected mechanical startup.
+
+       S  7-47.Brake Unlock and Start Setup
+ Y FLIPSKY PSKY FLIP 7.13.4.7 Safety Start Setup
+K I Safety Start: When this parameter is set as ON, if the ADC throttle receives abnormal signal
+
+  L when ESC is connectedit will prevent the motor from accidental activation. Please calibrate the
+  F Y ADC signal again. After a certain period of power-up of ESC, the ADC signal should be zero. Only
+  K then will the ADC signal enter a valid control state, as Fig.7-48:
+
+          S Fig7-48.Safety Start Setup
+FLIPSKY PSKY FLIP 68
+PS 7.13.5 PAS
+LI 7.13.5.1 PAS Parameter Specification and SetupFlipsky ESC Tool V1.6 User Manual
+
+F K PAS Function Description:
+S (1) It's compatible with most of PAS cadence sensors in the market, which mainly include
+
+below three types(View in Chapter 7.13.5.3)
+
+Y P (2) Enable FT ESCs to be compatible with Flipsky TFT screen display which supports real-time
+K I data like speed, voltage etc. read and PAS speed gear levels setup.
+S L (3) Support connect brake signal function: The ESC will cut off power output immediately once
+
+receiving the brake signal; When the control mode set to enable Brake Signal, pin GEAR_R and pin
+
+P F GEAR_L are used to detect the brake signal and are available at GND. That is, when the pin
+I GEAR_R or the pin GEAR_L detects GND, the ESC will cut off the power output immediately, and
+
+disable the throttle gear.
+
+LSetup steps are as Fig.7-49 below:
+ F Y Fig.7-49.PAS Input Signal Setup
+KYLIPSKY FLIPSKFLIPSKY  Step 1: Click "Control Setup" to enter the setup interface
+F Y  Step 2: Switch the "Input Signal Type" to "PAS"
+
+                     Step 3: When using PAS as the input signal for the first time, please do ADC calibration if
+
+          PSK69
+                SFlipsky ESC Tool V1.6 User Manual
+    P you firstly use PAS as input signal.(view details in 7.13.4.2);
+   I  Step 4: Select suitable PAS Control Mode per your needs (view details in 7.13.5.2)
+   L  Step 5: Select suitable PAS Sensor Type per your needs (view details in 7.13.5.3)
+
+                     Step 6: Set the PAS parameters per your needs (view details in 7.13.5.4)
+
+   F  Step 7: Set the Boost Current For Startup per your needs (view details in 7.13.5.4)
+   K  Step 8: Set the Minimal Current at Zero Pedal per your needs (view details in 7.13.5.4)
+   S  Step 9: Set the Extra Interface per your needs (view details in 7.13.4.4
+   Y P  Step 10: Click the upper left menu "Write Setup" to save the configuration.
+  SK LI 7.13.5.2 PAS Control Mode Setup
+   P F Select suitable PAS Control Mode per your needs as Fig.7-50
+
+      I Fig. 7-50.PAS Control Mode
+KY FL IPSKY  None: No response to any PAS input signal
+
+   L  Current--UART Speed Gear:
+
+                    Current control mode: UART Speed Gear--Use ESC UART port to connect the Flipsky TFT
+
+   F Y screen display to switch different speed gears
+   K  Current--Brake Signal--UART Speed Gear:
+   S Current control mode: Brake Signal--The ESC will cut off power output immediately once
+
+                    receiving the brake signal; UART Speed Gear--Use ESC UART port to connect the Flipsky TFT
+
+   Y P screen display to switch different speed gears.
+   K I  Current--Throttle ADC--Brake Signal--UART Speed Gear:
+   S L Current control mode: enable throttle ADC control; Brake Signal--The ESC will cut off power
+
+                    output immediately once receiving the brake signal; UART Speed Gear--Use ESC UART port
+
+   P F to connect the Flipsky TFT screen display to switch different speed gears.
+   I Current--Throttle ADC--Brake ADC--UART Speed Gear:
+ L Current control mode: enable throttle ADC and Brake ADC control; UART Speed Gear--Use
+
+                    ESC UART port to connect the Flipsky TFT screen display to switch different speed gears.
+
+F Y  Current--Throttle ADC--Brake ADC--Brake Signal--UART Speed Gear:
+          PSK70
+                SFlipsky ESC Tool V1.6 User Manual
+   P Current control mode: enable throttle ADC and Brake ADC control; UART Speed Gear--Use
+   I ESC UART port to connect the Flipsky TFT screen display to switch different speed gears.
+  FL 7.13.5.3 PAS Sensor Type Setup
+   SK Select suitable PAS Sensor Type per your needs as Fig.7-51 below:
+
+          Y P Fig.7-51.Sensor Type
+   IPSK FLI  Forward Square Wave, Reverse Low Level(KT-V12L, KT-D12L, etc):
+   LOutput square wave when rotates in forward direction; output Low Level when rotates in
+   F Y reverse.
+   K  Forward High Duty Cycle, Reverse Low Duty Cycle(V7-50P, KT-V6L, BZ-10C, etc):
+
+                    Output High duty cycle rectangular wave when rotates in forward direction; output Low duty
+
+   S cycle rectangular wave when rotates in reverse.
+ Y P  Dual Quadrature Square Wave Signal
+K LI 7.13.5.4 PAS Parameters Setup
+
+   F KY PAS parameters include: "PAS Throttle", "Pedal Erpm Filterd Coef", "Min Pedal RPM", "Max
+
+              Pedal RPM", "Sensor Direction", "Sensor Magnets", "Startup Angle", "Angle Sample Interval(ms)",
+
+  S "Angle Std Threshold" as Fig.7-52:
+       Y P Fig.7-52.PAS parameters
+
+FLIPSK PSKY FLI 71
+                SFlipsky ESC Tool V1.6 User Manual
+   IP  PAS Throttle: PAS max current output percentage (adjustable range: 1-100%).
+    L The maximum PAS current output will be limited within this setting percentage of the motor
+
+                    current.
+
+   F K  Pedal Erpm Filterd Coefadjustable range:0~1;
+   Y PS  Sensor Magnetsmagnet number of PAS sensor, adjustable range:1~32.
+
+                         e.g., 12 magnets generate 12 pulses per revolution.
+
+   SK LI  Min Pedal RPM: the minimum PAS pedal RPM (adjustable range: 1-200RPM).
+    P F The ESC starts current output when the pedal RPM reaches the mini setting value.
+
+                    Otherwise, the current output is zero.
+
+   I  Max Pedal RPM: the maximum PAS pedal RPM (adjustable range: 1-500RPM).
+    LThe ESC current output will stop increasing if the pedal RPM reaches the max setting value.
+   F Y Once this value is exceeded, the ESC output current will remain at the maximum value (%) of
+
+                    "PAS Current Throttle".
+
+   SK  Sensor Direction: positive/negative, applicable for dual square signal ONLY.
+KY IP  Startup Angle: adjustable range: 1~360°
+
+                         When PAS sensor detects the angle exceeds this value, the output function will be
+
+   L activated.
+   F KY  Angle Sample Interval(ms): adjustable range: 0~30000ms
+    S Used to sample the PAS angle data over a specific time period and calculate the standard
+
+                    deviation based on it, to confirm whether the pedal is in an operational state.
+
+   KY IP  Angle Std Threshold: adjustable range: 1~255
+    S L When the standard deviation is less than this value, it means the user has stopped pedaling,
+   P F which also signifies that the PAS current output will simultaneously cease.
+FLI PSKY72
+PS 7.13.5.5 Boost Current For Startup
+Flipsky ESC Tool V1.6 User Manual
+LI The parameters of this function are used for improving startup performance, including: "Startup
+F Boost Throttle(%)", "Startup Boost Max Duty", "Startup Boost Max Time(s)"; as Fig.7-53:
+
+       K Fig. 7-53.Boost Current For Startup
+   PSKY FLIPS  Startup Boost Throttle(%)adjustable range:0~100%
+   I When the parameter set as 100%, indicating it will startup with max motor current.
+   FL Y  Startup Boost Max Dutyadjustable range:0~1
+
+                    The startup booster power output will stop when the motor loading exceeds this value.
+
+   SK  Startup Boost Max Time(s)adjustable range:0~100
+ Y P It will stop once the startup boost reaches a certain time.
+K FLI Y 7.13.5.6 Minimal Current at Zero Pedal Setup
+
+   SK This function enables the FT series ESC to maintain a certain level of current output even after
+
+              releasing the throttle pedal when receiving a PAS input signal.
+
+   Y P Setup steps are as Fig.7-54
+      K I Fig.7-54.Minimal Current at Zero Pedal
+
+FLIPS Y FL User can set according to the parameter specification and actual needs.
+   K Parameter Specification
+          PS 73
+                SFlipsky ESC Tool V1.6 User Manual
+   P  Slow-Release Motoruse the function or not, default as OFF;
+   I  Slow-Decrease Timeset the output current continuous time of it, default as 4.5s;
+   L  Slow-Decrease Throttle  set output throttle, default as 5%, which means the output
+
+                         current is 0.05×Motor Current;
+
+   F  Slow-Decrease DutyOnly when the motor duty exceeds this setting value this function is
+    K available.
+  KY IPS 7.13.5.7 Extra Interface Setup
+   S L This function only support FT series ESCs with extra interface of 12V(front light and horn). It
+  P F can switch on/off physically, setting the front light and horn interfaces to a continuous output state
+  I when controlled by PAS signal. User can set via Extra Interface per your needs, as Fig.7-57:
+     L Fig.7-57.Extra Interface
+KY F IPSKY  None
+   L  Front Light
+   F Y  Horn
+   K  Front and Horn
+FLIPSKY PSKY FLIPS 74
+Flipsky ESC Tool V1.6 User ManualIPS 8 Test and Display
+
+FL 8.1 Flipsky ESC Tool Button Control
+K Switch the "Input Signal Type" to "OFF" if you want to control the ESC on the Test and Display
+S interface of Flipsky ESC Tool, only then can you control the ESC by Current, Duty, Speed, Position,
+Y P Brake and other buttons as Fig.8-1:
+SK LI Fig.8-1.Control button
+KFYLIPFSLKIYP PFSLKIYPSKFYLIPFSKY 75
+PS 8.1.1 Button Control Specification
+Flipsky ESC Tool V1.6 User Manual
+LI Button control setup:
+F  Drive: Click the "Current"-current control mode (torque control mode), "Speed"- speed
+K control mode, "Duty"-duty cycle control mode (voltage control mode) and
+
+     "Position"-position control mode buttons to drive. During the driving process, the current,
+
+S speed, duty cycle and position angle can be adjusted according to needs as shown in 8-2:
+KY IP Fig.8-2.Four control modes
+KY FLIPS LIPSKY FL NOTEPosition Control is applicable in Encoder Control Mode only.
+   F Y  Reverse the motor: Click "Reverse" to change the motor running direction as Fig.8-3.
+          K Fig.8-3.Reverse direction
+
+FLIPSKY PSKY FLIPS 76
+                SFlipsky ESC Tool V1.6 User Manual
+   P  Brake: Click "Brake" to enter the brake setup as Fig.8-4:
+
+            I Fig.8-4.Brake
+   FL SK NOTE: If you use the DC power supply, please do not brake in high speed. Otherwise, the large
+  Y P back EMF will damage the ESC or even the power supply when the motor brakes in a high speed
+
+              mode.
+
+   SK LI  Stop: Click "Release" to stop the motor running. Two methods available:
+   P F Click "Switch" and the"Current" under Current Control, then the "Current" will switch to
+
+              "Release". Click the "Release" to stop the motor rotating as Fig.8-5:
+
+     LI Fig.8-5.Stop method 1
+KY F FLIPSKY Y If not tick the "Switch" and it's "Current" under Current Control, the motor can only be stopped
+
+  K through the "Release" under the "Others" as Fig.8-6:
+           S Fig.8-6. Stop method 2
+
+FLIPSKY PSKY FLIP 77
+PS 8.2 Data Analysis
+Flipsky ESC Tool V1.6 User Manual
+LI 8.2.1 Data Curve Display and Setup
+F K  There are 5 real-time data graphs as Fig.8-7 below:
+
+      Erpm curve
+
+S  ESC MOSFET and motor temperature curve (Temperature/)
+Y P  Power curve (Power/W)
+K I  Battery and motor current curve(Current/A)
+S L  Motor deflection angle curve(deg/°)
+P F Fig.8-7.Real-time data curve display interface
+KY FLI FLIPSKY Y  Data Curve Display Setup Steps:
+   K  Activate the graph: Tick "Display" to activate graphics data display as Fig.8-8:
+       Y PS Fig.8-8.Graph display setup
+
+FLIPSK PSKY FLI 78
+                SFlipsky ESC Tool V1.6 User Manual
+   P  Graph enlargement: Move the mouse cursor in the graph and left-click twice to enlarge it,
+    I and restore it in the same way as Fig.8-9 below:
+
+          L Fig.8-9. Graph enlargement
+ Y FLIPSKY PFSKY FLIPSK  Magnify/reduce the graph horizontal and vertical axis values: Tick both "Horizontal" and
+K I "Vertical" (as Fig.8-10), move the mouse cursor into the graph and then scroll the mouse
+
+    L wheel to magnify/reduce.
+          F Y Fig.8-10
+
+   IPSKY FLIPSK NOTE:
+ L (1) Tick"Horizontal" only if you just want to increase or decrease the values of horizontal axis.
+F Y (2) Tick "Vertical" only if you just want to increase or decrease the values of vertical axis.
+   K (3) Tick both "Horizontal" and"Vertical" if you want to increase or decrease the values of
+
+          PS 79
+PS vertical and horizontal axis at the same time.
+Flipsky ESC Tool V1.6 User Manual
+I  The sampling frequency setup: default 100Hz, which means that the data samplings are
+L 100 times per second. Adjustable setup range: 50Hz1000HZ as Fig.8-11:
+
+    F Fig.8-11. The sampling frequency setup of graphics
+IPSKY FLIPSK  Curve play speed setup: default "x1", adjustable range 1~10 times as8-12:
+ L Fig.8-12. Curve play speed adjustment
+KFYLIPFSKY PFSLKIYPSKFYLIPSKY 80
+PS 8.2.2 Real-time Data Display
+Flipsky ESC Tool V1.6 User Manual
+LI In order to facilitate the observation of the data and display the curve graph data in a more
+F intuitive way, we increase some data that the curve graph does not have to better understand the
+K equipment status as Fig.8-13:
+Y PS Fig.8-13.Data Display
+   FLIPSK SKY FLI  ESC Power(W): ESC power display, corresponding to the graphic data
+ Y P  Battery Voltage(V): Battery voltage display
+K I  Battery Current(A): Battery current display, corresponding to the graphic data
+
+   L  Motor Current(A): Motor current display, corresponding to the graphic data
+   F Y  Motor Erpm: Motor erpm display, corresponding to the graphic data
+
+                     Motor Position: Motor deflection angle position display, corresponding to the graphic data
+
+   K  Duty(%): Duty cycle percentage display
+   S  MOS Temperature (): ESC MOSFET temperature display, corresponding to the graphic
+    Y P data
+   K I  Motor Temperature (): Motor working temperature display, corresponding to the graphic
+
+                         data
+
+   S L  CPU Load(%): CPU loading percentage display
+   P F  Error Code: Fault code display
+FLI PSKY81
+                SFlipsky ESC Tool V1.6 User Manual
+  IP 9 Restore Factory Default Setup
+   L If meet with some problems like parameters setup failure, ESCs connection failure, motor
+  F parameter identification failure etc., please try to restore the factory default setup as Fig.9-1 below:
+
+         K Fig.9-1.Restore factory default setup
+KFYLIPFSLKIYPSKPFYSLKIYPSKFYLIPFSLKIYPS 82
+IPS 10 Version
+                                           Flipsky ESC Tool V1.6 User Manual
+
+         Sheet 1. File Version
+                             Contents Changed
+FL K Date
+SKY LIPS 2023/8/12Version
+
+V1.0
+
+             1. Fixed the problem that the Hall parameter cannot pass when the
+             load is too heavy.
+FLIP SKY F 2023/11/8
+V1.1     2. Optimize the parameter adjustment procedure. All interfaces are
+         shielded during parameter adjustment to prevent other signals from
+         affecting parameter adjustment.
+
+         3. Optimize the dead zone setting mode in ADC mode, and fix the
+         problem that some gamepads may not start smoothly when used;
+KFYLIPSKY PFSLKIYP FLIPSKY 2024/01/19
+V1.2     4. Rectify the fault that the electrical connection to the upper
+         computer fails.
+         FT ESC Function Upgrade:
+         1. Add dual-drive ESC FT85BD
+         2. Add Smart Switch function supporting slide power on and auto turn
+
+              off(support FT85BD only)
+         3. Add Extra Interface setup to enable front light, brake light and horn etc.
+
+              for ESC FT85BD under UART control mode. Support VX4 to control
+              the function of front lights, brake lights and horn; this function only
+              supports FT85BD; set via Extra Interface parameters.
+         4. Add the function of FT series ESC under UART input signal to maintain
+              a certain current output after releasing the throttle. In some high gear
+              ratio (>3.5:1) skateboards, such as off-road skateboards, after
+              releasing the throttle, there will be some resistance similar to braking,
+              but in fact the resistance is caused by the high gear ratio. This function
+              can maintain a certain current output after the remote releases the
+
+                                           83
+                SFlipsky ESC Tool V1.6 User Manual
+         P throttle, and this current can counteract these resistances, and be able
+         I to make the skateboard in an almost zero resistance release state.
+        L 5. Slow-Release MotorWhether use this function, default as OFF
+
+                                                         6. Slow-Decrease TimeUsed for setting the continuous time of output
+
+         F current, default as 4.5s
+        K 7. Slow-Decrease ThrottleUsed for setting the output throttle, default as
+         S 5%, which means the output current is 0.05×Motor Current.
+        Y P 8. Slow-Decrease DutyOnly when the duty cycle is higher than this
+         K I value, this function is available.
+
+                                                         9. Add the Duty control mode of FT series ESCs in ADC mode, as well as
+
+        S L bidirectional current and bidirectional duty cycle control modes.
+       P F 10. Add Zero Duty Mode, when the user gives 0% duty cycle, the user can
+      I choose whether to keep output or release motor.
+
+                                                         11. Repair the problem that some hub motors can not measure the
+
+     L magnetic chain when the inertia is relatively large.
+    F Y 12. Repair the problem that the maximum speed cannot limit the gear
+
+         K speed.
+ Y PS Flipsk ESC Tool Function Upgrade
+
+                                                         1. Repair the abnormal problem that the curve cannot display the
+
+K I waveform corresponding to the waveform name.
+        L 2. Optimize the version judgment to prevent user from using unmatched
+         F Y firmware and causing abnormal problems.
+        K 3. Repair the problem that sometimes real-time data cannot be displayed
+
+                                                               normally after the Flipsky ESC Tool turns on.
+FLIPSKY PSKY FLIPS 2024/04/22
+V1.3  FT ESC Function Upgrade
+      1. Add FT ESC FT85RS
+      2. Optimize the motor flux linkage detection for some small motors with
+
+           large resistance.
+      3. Optimize real-time data acquisition protocol (Notes: the remote VX4
+
+           needs to update firmware V1.3.0, otherwise the real-time data will
+           display abnormally and the parameter adjustment results will
+           display abnormally.)
+
+                                        84
+                SFlipsky ESC Tool V1.6 User Manual
+        P 4. The minimum set voltage of lithium battery can be set to 2.6V to
+         I support lithium iron phosphate battery.
+        L 5. Add PAS Function
+
+                                                             (1) It's compatible with most of PAS cadence sensors in the market,
+
+        F which mainly include below three types:
+         K a. Forward Square Wave, Reverse Low Level like KT-V12L, KT-D12L
+        S etc.
+         Y P b. Forward High Duty Cycle, Reverse Low Duty Cycle like V7-50P,
+        K I KT-V6L, BZ-10C etc.
+
+                                                                c. Dual quadrature square wave signal output: the A-phase signal
+
+        S L leads the B-phase signal when rotating in the forward direction, while the
+       P F A-phase signal lags behind the B-phase signal when rotating in the
+      I backward / reverse direction.
+
+                                                             (2) Enable FT ESCs to be compatible with Flipsky TFT screen display
+
+     L which supports real-time data like speed, voltage etc. read and PAS speed
+    F Y gear levels setup.
+
+         K (3) Support Brake Signal function: The ESC will cut off power output
+        S immediately once receiving the brake signal;When the control mode set to
+
+                                                         enable Brake Signal, pin GEAR_R and pin GEAR_L are used to detect the
+
+ Y P brake signal and are active at Vol. That is, when the pin GEAR_R or the pin
+K I GEAR_L detects a Vol(GND), the ESC will cut off the power output
+
+        L immediately, and disable the throttle gear.
+        F KY Flipsky ESC Tool Function Upgrade:
+
+                                                         1. Add FT85RS ESC
+
+        S 2. Add PAS function
+FLIPSKY PSKY FLIP 2024/8/24
+V1.4  FT ESC Function Upgrade
+      1. Add FT60BD ESC
+      2. Optimize the motor voltage detection accuracy by adding motor "Bus
+
+           Voltage Resistance" setup.
+      3. Add Flux Weakening Current Control.
+      4. Add encoder function. Enable encoder control setup like AS5047 (SPI)
+
+                                        85
+                SFlipsky ESC Tool V1.6 User Manual
+         P and ABI Encoder.
+        I 5. Add speed control PID mode. Maintain the default parameters in most
+         L situations.
+
+                                                         6. Add position control PID mode (for encode control status only).
+
+         F Maintain the default parameters in most situations.
+        K 7. Add more types of motor temperature sensors such as NTC-10K-25,
+         S NTC-100K-25, PT1000,PTC-1K-100, KTY83 series, KTY84 series
+         Y P etc.
+        K I 8. Add ESC power on beeping alert ON/OFF setup. Also, the beeping
+
+                                                               voice level percentage can be adjusted.
+
+        S L 9. Add Brake Light Level setup to enable the light brightness to be
+       P F adjusted during the braking process (available for FT60BD and
+      I FT85BD only at present).
+
+                                                         10. In UART control mode, add Assisted Turnaround Mode setup like
+
+     L fixed-circle turnaround for 2WD mode and tank turnaround for 4WD
+    F Y mode.
+
+        K 11. In UART control mode, add Brake-Parking Mode ON/OFF setup to
+         S support parking mode by pulling remote controller brake gear/bar
+
+                                                               (achieved by transferring current into the motor D axis)
+
+ Y P 12. In UART control mode, add Off-Road Climbing Mode ON/OFF setup to
+K I switch duty cycle control and allow users to pass off-road climbing
+
+         Lprocess easily by controlling speed of the four wheels synchronously
+        F Y 13. In ADC control mode, add Cruising Control Mode setup in three
+         K different situations.
+
+                                                      (1) Self-locking switch
+
+         S (2) Reset switch
+       Y P (3) Throttle hold
+
+                                                         Flipsky ESC Tool Function Upgrade:
+
+      K I 1. Add FT60BD ESC.
+     S L 2. Add erpm control and position control modes in Test and Display
+    P F interface; add position data display.
+FLI PSKY86
+V1.5KFYLIPFSLKIYPSKPFYSLKIYPFSLKIFYPLSIPFSLKIYPSK 2025/5/11                                          Flipsky ESC Tool V1.6 User Manual
+
+                                                       FT ESC Function Upgrade
+                                                       1. Add firmware of FT85RS with enclosure. Enclosure version and
+                                                       water cooling version use the same firmware
+                                                       2. Add firmware of FT85GS with enclosure
+                                                       3. Add firmware of DR60BS UAV ESC
+                                                       4. Optimize the brake control algorithm and added three new brake
+                                                       modes control:
+                                                       (1) When entering the brake state and the duty cycle is detected to
+                                                       be lower than 0.001, it switches to three-phase short circuit state;
+                                                       (2) When entering the braking state and the detected erpm is lower
+                                                       than the Brake Erpm Threshold value, it will switch to the
+                                                       three-phase short-circuit state;
+                                                       (3) When entering the braking state, it will switch to the three-phase
+                                                       short-circuit state when it detects the duty cycle is lower than 0.001
+                                                       and the absolute value of erpm is lower than the Brake Erpm
+                                                       Threshold value at the same time;
+                                                       5. Optimize Flux Weakening Control Algorithm, add new Flux
+                                                       Weakening Control Current Positive Ramp Time and Negative Ramp
+                                                       Time. Users can adjust the Flux Weakening Current Response Time
+                                                       by the value of Positive Ramp Time and Negative Ramp Time.
+                                                       For example, when Positive Ramp Time is set to 1000ms and Flux
+                                                       Weakening Current is 20A, then when the duty cycle reaches 90% or
+                                                       more, the Flux Weakening Current will increase from 0A to 20A
+                                                       within 1000ms, and when Negative Ramp Time is set to 1000ms,
+                                                       when the current Control command is set to 0, then the weak
+                                                       magnetic current will decrease from 20A to 0A within 1000ms, and
+                                                       then end the weak magnetic control.
+                                                       6. Add multiple ESCs jointly control to realize TRC control. This
+                                                       algorithm can be used to prevent the driving wheels from slipping
+                                                       when multiple ESCs accelerate the driving motors at the same time,
+                                                       and this mode is only for the current control (does not support the
+                                                       current mixing bi-directional control in the PPM mode);
+                                                       7.Add CAN Status Frequency parameter. Each ESC will
+                                                       automatically return real-time data through the CAN bus, which
+                                                       includes motor current, battery current, motor electronic speed, duty
+
+                                                                                         87
+                SFlipsky ESC Tool V1.6 User Manual
+        P cycle, MOSFET temperature, motor temperature, battery voltage
+        I data. The real-time data above will be sent back to the CAN bus at
+        L regular intervals. The sending frequency can be set via CAN Status
+
+                                                     Frequency.
+
+        F 8.Add unidirectional speed PID control, bidirectional speed PID
+        K control and bidirectional current mixing control under PPM mode.
+        S The maximum speed value of the speed PID control mode in PPM
+        Y P mode can be set by the parameter PID Maximum Erpm. For
+        K I bidirectional current hybrid control, the control logic is as follows:
+
+                                                        (1) When the rocker has no movement and is centered (PPM input
+
+        S L signal is Mid Pulse Width value), there is no current motor power
+       P F output;
+      I (2) When you push the throttle forward (PPM input signal > Mid
+
+                                                     Pulse Width value), then the motor turns positively;
+
+     L (3) When you push the throttle forward, the motor is rotating
+    F Y forward, if you pull back the rocker now(the input signal < Mid Pulse
+
+        K Width value), then the motor enters the braking state;
+         S (4) When the motor enters the braking state, after the rocker is
+ Y P centered, pull back the throttle again, the motor will enter the reverse
+
+                                                     drive state. Only when you push the throttle forward again to make
+
+K I the motor rotate positively, and then pulls the throttle backward, then
+        L the motor will re-enter the braking state.
+         F Y Bi-directional Current Mixing Control Mode is suitable for RC Car.
+        K 9. Add unidirectional speed PID control, bidirectional speed PID
+
+                                                     control and bidirectional speed PID control with reverse gear in ADC
+
+        S mode.
+       Y P 10. Add maximum throttle percentage for different gears in ADC
+      K I mode, the maximum throttle percentage for L, M and H gears can be
+     S L set by the parameters Max throttle of L Gear, Max throttle of M Gear
+
+                                                     and Max throttle of H Gear respectively.
+FLIP PSKY F 2025/11/25
+V1.6  FT ESC Function Upgrade:
+      1. Add waterproof ESC FT85CS_WP and high-voltage ESC FT110BS.
+
+      88
+                SFlipsky ESC Tool V1.6 User Manual
+        P 2. Add 5 speed gears with the top 2 reserved for PAS mode.
+        I 3. Add 5 speed gears and reverse power gear with the top 2
+         L reserved for PAS mode.
+
+                                                     4. Add 2 encoders: AS5600_IIC and TLE5012_SPI.
+
+        F 5. Add new motor startup mode Open Mode. In some cases, e.g.,
+         K light-load starts for underwater propeller motor, the motor might
+         S work more smoothly in Open Mode.
+        Y P 6. Add the max&min working voltage for ESC, MOSFET max
+         K I over-current , MOSFET over-temperature current limit, and
+
+                                                          motor over-temperature current limit parameters setup.
+
+        S L 7. Add battery parameters setup, including Cell Cut-Off start
+       P F Volt(V), Cell Cut-Off End Volt(V), Cell Regen Start Volt(V)", "Cell
+      I Regen End Volt(V), Li-ion Battery Series(S), Bus Voltage
+
+                                                          Resistance.
+
+     L 8. Add motor_conf and control_conf. User can save the
+    F Y configuration and burn it to the new ESC, improving quantity
+
+         K production frequency.
+        S 9. Add Emergency Switch. User can connect to the PPM/ADC
+ Y P Brake pin for emergency stop.
+
+                                                     10. Add Safety Start in PPM mode. This function can be shutdown.
+
+K I When user activate this function, the input signal should be 0
+         Lafter a certain period of power-up of ESC. Only then will the PPM
+         F Y signal enter a valid control state. When turn it down, after
+         K powering on the ESC, when PPM signal is detected then you
+
+                                                          could startup.
+
+        S 11. Add safety start function in ADC mode. This function can be
+       Y P shutdown. When user activate this function, the input signal
+      K I should be 0 after a certain period of power-up of ESC. Only then
+     S L will the ADC signal enter a valid control state. When turn it down,
+
+                                                          after powering on the ESC, when PPM signal is detected then
+
+    P F you could startup. Disabling this function enables the ESC for
+   I one-touch power-on.
+ L 12. Add 12V extra interface function in ADC mode. Support output
+F Y including brake light,front light and horn. This function support
+
+                                                          ESC with 12V output including FT85BD, FT85KS, FT60BD.
+
+          PSK89
+                SFlipsky ESC Tool V1.6 User Manual
+        P 13. Add brake unlock function in ADC mode. Please press the brake
+         I handle to activate the throttle. This function prevents accidental
+         L activation of the throttle handle, which could trigger unintended
+
+                                                          acceleration and cause unexpected mechanical startup.
+
+        F 14. Remove the multiple gears in ADC mode. All gears of input
+         K signals are set in motor interface, taking place of current gear by
+         S power gears.
+        Y P 15. Optimize dual-hall sensor in PAS mode. Add throttle startup
+         K I boost parameters, including startup boost throttle(%), max
+
+                                                          startup throttle rpm, max duty and the duration of throttle.
+
+        S L 16. Add idle current function of zero throttle in PAS mode. The ESC
+       P F will maintain current output for a while to prevent the motor from
+      I sudden stop. This also avoids gear chattering when the throttle is
+
+                                                          reapplied.
+
+     L 17. Add parameters of sensor direction,startup angle,angle sample
+    F Y interval(ms) and angle std threshold of dual-hall sensor in PAS
+
+         K mode.
+KFYLIPSKY PFSLKIYPS FLIPSKY 90
+

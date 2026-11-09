@@ -1,0 +1,208 @@
+SENS init=1 create=1/1 task=1 rxarm=7424 rxcplt=7424 bytes=7424 frame=1856 post=1856 consume=1855 feed=1855 accept=1855 gen=1817 send=1817 txok=1817 txfail=0 txdone=1817 err=0 routes=d9/t9/m1799 absent=38 unsupported=0 snapshot=0 gap=38 silent=38 last=04,A8,53,FF raw=A8 cmd=A0 addr=8 route=MEASUREMENT_SENSOR_FOUND
+SENS9 disc_req=1 disc_rsp=1 type_req=1 type_rsp=1 meas_req=193 meas_rsp=193 last_req_ms=15243 last_rsp_ms=15244 txfail=0 err=0
+TELSRC bms_v=0 bms_i=0 soc=0 wheel1=1 wheel2=0 wheel3=0 wheel4=0 ground_cmps=0 work_mode=1 run_permission=1 fault=0x0140 blade_rpm=0
+IBUS_PROBE ch11=1113 ch12=1960 ch13=1500 ch14=1500 seq=29528 frames=306 avg_period_us=3856 fresh=1 timeout_seq=0 last_ms=114375 age_ms=4 sampled_at_ms=114379
+WHEEL n=1 valid=1 age_ms=33 erpm=0 speed=0 actual_speed_update_tick=114360 sampled_at_ms=114393
+OID n=1 q_try=2263 q_queued=2263 mb_ok=2263 mb_fail=0 speed_rx=2166 last_ms=114360 id=001 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=114401
+OIDRX n=1 rx=2166 last_ms=114360 id=001 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=114401
+WHEEL n=2 valid=1 age_ms=83 erpm=3 speed=1 actual_speed_update_tick=114310 sampled_at_ms=114393
+OID n=2 q_try=2264 q_queued=2264 mb_ok=2264 mb_fail=0 speed_rx=1121 last_ms=114410 id=002 dlc=6 data=0F,01,00,00,00,03 sampled_at_ms=114430
+OIDRX n=2 rx=1121 last_ms=114410 id=002 dlc=6 data=0F,01,00,00,00,03 sampled_at_ms=114430
+WHEEL n=3 valid=1 age_ms=32 erpm=0 speed=0 actual_speed_update_tick=114361 sampled_at_ms=114393
+OID n=3 q_try=2265 q_queued=2265 mb_ok=2264 mb_fail=0 speed_rx=2166 last_ms=114411 id=003 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=114459
+OIDRX n=3 rx=2166 last_ms=114411 id=003 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=114459
+WHEEL n=4 valid=1 age_ms=33 erpm=0 speed=0 actual_speed_update_tick=114360 sampled_at_ms=114393
+OID n=4 q_try=2265 q_queued=2265 mb_ok=2265 mb_fail=0 speed_rx=2089 last_ms=114460 id=004 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=114488
+OIDRX n=4 rx=2089 last_ms=114460 id=004 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=114488
+SENS init=1 create=1/1 task=1 rxarm=7424 rxcplt=7424 bytes=7424 frame=1856 post=1856 consume=1855 feed=1855 accept=1855 gen=1817 send=1817 txok=1817 txfail=0 txdone=1817 err=0 routes=d9/t9/m1799 absent=38 unsupported=0 snapshot=0 gap=38 silent=38 last=04,A8,53,FF raw=A8 cmd=A0 addr=8 route=MEASUREMENT_SENSOR_FOUND
+SENS9 disc_req=1 disc_rsp=1 type_req=1 type_rsp=1 meas_req=193 meas_rsp=193 last_req_ms=15243 last_rsp_ms=15244 txfail=0 err=0
+TELSRC bms_v=0 bms_i=0 soc=0 wheel1=0 wheel2=0 wheel3=0 wheel4=0 ground_cmps=0 work_mode=1 run_permission=1 fault=0x0140 blade_rpm=0
+IBUS_PROBE ch11=1113 ch12=1960 ch13=1500 ch14=1500 seq=29838 frames=310 avg_period_us=3858 fresh=1 timeout_seq=0 last_ms=115570 age_ms=5 sampled_at_ms=115575
+WHEEL n=1 valid=1 age_ms=29 erpm=0 speed=0 actual_speed_update_tick=115560 sampled_at_ms=115589
+OID n=1 q_try=2287 q_queued=2287 mb_ok=2287 mb_fail=0 speed_rx=2190 last_ms=115560 id=001 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=115598
+OIDRX n=1 rx=2190 last_ms=115560 id=001 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=115598
+WHEEL n=2 valid=1 age_ms=79 erpm=0 speed=0 actual_speed_update_tick=115510 sampled_at_ms=115589
+OID n=2 q_try=2288 q_queued=2288 mb_ok=2288 mb_fail=0 speed_rx=1135 last_ms=115610 id=002 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=115627
+OIDRX n=2 rx=1135 last_ms=115610 id=002 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=115627
+WHEEL n=3 valid=1 age_ms=28 erpm=0 speed=0 actual_speed_update_tick=115561 sampled_at_ms=115589
+OID n=3 q_try=2288 q_queued=2288 mb_ok=2288 mb_fail=0 speed_rx=2190 last_ms=115611 id=003 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=115655
+OIDRX n=3 rx=2190 last_ms=115611 id=003 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=115655
+WHEEL n=4 valid=1 age_ms=29 erpm=0 speed=0 actual_speed_update_tick=115560 sampled_at_ms=115589
+OID n=4 q_try=2289 q_queued=2289 mb_ok=2289 mb_fail=0 speed_rx=2112 last_ms=115660 id=004 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=115684
+OIDRX n=4 rx=2112 last_ms=115660 id=004 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=115684
+SENS init=1 create=1/1 task=1 rxarm=7424 rxcplt=7424 bytes=7424 frame=1856 post=1856 consume=1855 feed=1855 accept=1855 gen=1817 send=1817 txok=1817 txfail=0 txdone=1817 err=0 routes=d9/t9/m1799 absent=38 unsupported=0 snapshot=0 gap=38 silent=38 last=04,A8,53,FF raw=A8 cmd=A0 addr=8 route=MEASUREMENT_SENSOR_FOUND
+SENS9 disc_req=1 disc_rsp=1 type_req=1 type_rsp=1 meas_req=193 meas_rsp=193 last_req_ms=15243 last_rsp_ms=15244 txfail=0 err=0
+TELSRC bms_v=0 bms_i=0 soc=0 wheel1=0 wheel2=0 wheel3=0 wheel4=0 ground_cmps=0 work_mode=1 run_permission=1 fault=0x01C0 blade_rpm=0
+IBUS_PROBE ch11=1113 ch12=1960 ch13=1500 ch14=1500 seq=30144 frames=306 avg_period_us=3856 fresh=1 timeout_seq=0 last_ms=116750 age_ms=5 sampled_at_ms=116755
+WHEEL n=1 valid=1 age_ms=9 erpm=0 speed=0 actual_speed_update_tick=116760 sampled_at_ms=116769
+OID n=1 q_try=2311 q_queued=2311 mb_ok=2311 mb_fail=0 speed_rx=2214 last_ms=116760 id=001 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=116777
+OIDRX n=1 rx=2214 last_ms=116760 id=001 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=116777
+WHEEL n=2 valid=1 age_ms=259 erpm=0 speed=0 actual_speed_update_tick=116510 sampled_at_ms=116769
+OID n=2 q_try=2311 q_queued=2311 mb_ok=2311 mb_fail=0 speed_rx=1145 last_ms=116510 id=002 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=116806
+OIDRX n=2 rx=1145 last_ms=116510 id=002 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=116806
+WHEEL n=3 valid=1 age_ms=8 erpm=0 speed=0 actual_speed_update_tick=116761 sampled_at_ms=116769
+OID n=3 q_try=2312 q_queued=2312 mb_ok=2312 mb_fail=0 speed_rx=2214 last_ms=116811 id=003 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=116835
+OIDRX n=3 rx=2214 last_ms=116811 id=003 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=116835
+WHEEL n=4 valid=1 age_ms=9 erpm=0 speed=0 actual_speed_update_tick=116760 sampled_at_ms=116769
+OID n=4 q_try=2313 q_queued=2313 mb_ok=2313 mb_fail=0 speed_rx=2136 last_ms=116860 id=004 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=116864
+OIDRX n=4 rx=2136 last_ms=116860 id=004 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=116864
+SENS init=1 create=1/1 task=1 rxarm=7424 rxcplt=7424 bytes=7424 frame=1856 post=1856 consume=1855 feed=1855 accept=1855 gen=1817 send=1817 txok=1817 txfail=0 txdone=1817 err=0 routes=d9/t9/m1799 absent=38 unsupported=0 snapshot=0 gap=38 silent=38 last=04,A8,53,FF raw=A8 cmd=A0 addr=8 route=MEASUREMENT_SENSOR_FOUND
+SENS9 disc_req=1 disc_rsp=1 type_req=1 type_rsp=1 meas_req=193 meas_rsp=193 last_req_ms=15243 last_rsp_ms=15244 txfail=0 err=0
+TELSRC bms_v=0 bms_i=0 soc=0 wheel1=0 wheel2=0 wheel3=0 wheel4=0 ground_cmps=0 work_mode=1 run_permission=1 fault=0x0140 blade_rpm=0
+IBUS_PROBE ch11=1113 ch12=1960 ch13=1500 ch14=1500 seq=30450 frames=306 avg_period_us=3856 fresh=1 timeout_seq=0 last_ms=117930 age_ms=5 sampled_at_ms=117935
+WHEEL n=1 valid=1 age_ms=39 erpm=0 speed=0 actual_speed_update_tick=117910 sampled_at_ms=117949
+OID n=1 q_try=2334 q_queued=2334 mb_ok=2334 mb_fail=0 speed_rx=2237 last_ms=117910 id=001 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=117957
+OIDRX n=1 rx=2237 last_ms=117910 id=001 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=117957
+WHEEL n=2 valid=1 age_ms=39 erpm=0 speed=0 actual_speed_update_tick=117910 sampled_at_ms=117949
+OID n=2 q_try=2335 q_queued=2335 mb_ok=2335 mb_fail=0 speed_rx=1154 last_ms=117910 id=002 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=117986
+OIDRX n=2 rx=1154 last_ms=117910 id=002 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=117986
+WHEEL n=3 valid=1 age_ms=38 erpm=0 speed=0 actual_speed_update_tick=117911 sampled_at_ms=117949
+OID n=3 q_try=2336 q_queued=2336 mb_ok=2336 mb_fail=0 speed_rx=2238 last_ms=118011 id=003 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=118015
+OIDRX n=3 rx=2238 last_ms=118011 id=003 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=118015
+WHEEL n=4 valid=1 age_ms=39 erpm=0 speed=0 actual_speed_update_tick=117910 sampled_at_ms=117949
+OID n=4 q_try=2336 q_queued=2336 mb_ok=2336 mb_fail=0 speed_rx=2157 last_ms=118010 id=004 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=118044
+OIDRX n=4 rx=2157 last_ms=118010 id=004 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=118044
+SENS init=1 create=1/1 task=1 rxarm=7424 rxcplt=7424 bytes=7424 frame=1856 post=1856 consume=1855 feed=1855 accept=1855 gen=1817 send=1817 txok=1817 txfail=0 txdone=1817 err=0 routes=d9/t9/m1799 absent=38 unsupported=0 snapshot=0 gap=38 silent=38 last=04,A8,53,FF raw=A8 cmd=A0 addr=8 route=MEASUREMENT_SENSOR_FOUND
+SENS9 disc_req=1 disc_rsp=1 type_req=1 type_rsp=1 meas_req=193 meas_rsp=193 last_req_ms=15243 last_rsp_ms=15244 txfail=0 err=0
+TELSRC bms_v=0 bms_i=0 soc=0 wheel1=0 wheel2=0 wheel3=0 wheel4=0 ground_cmps=0 work_mode=1 run_permission=1 fault=0x0140 blade_rpm=0
+IBUS_PROBE ch11=1113 ch12=1960 ch13=1500 ch14=1500 seq=30760 frames=310 avg_period_us=3858 fresh=1 timeout_seq=0 last_ms=119125 age_ms=6 sampled_at_ms=119131
+WHEEL n=1 valid=1 age_ms=35 erpm=0 speed=0 actual_speed_update_tick=119110 sampled_at_ms=119145
+OID n=1 q_try=2358 q_queued=2358 mb_ok=2358 mb_fail=0 speed_rx=2261 last_ms=119110 id=001 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=119154
+OIDRX n=1 rx=2261 last_ms=119110 id=001 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=119154
+WHEEL n=2 valid=1 age_ms=35 erpm=0 speed=0 actual_speed_update_tick=119110 sampled_at_ms=119145
+OID n=2 q_try=2359 q_queued=2359 mb_ok=2359 mb_fail=0 speed_rx=1166 last_ms=119110 id=002 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=119182
+OIDRX n=2 rx=1166 last_ms=119110 id=002 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=119182
+WHEEL n=3 valid=1 age_ms=34 erpm=0 speed=0 actual_speed_update_tick=119111 sampled_at_ms=119145
+OID n=3 q_try=2360 q_queued=2360 mb_ok=2360 mb_fail=0 speed_rx=2262 last_ms=119211 id=003 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=119211
+OIDRX n=3 rx=2262 last_ms=119211 id=003 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=119211
+WHEEL n=4 valid=1 age_ms=35 erpm=0 speed=0 actual_speed_update_tick=119110 sampled_at_ms=119145
+OID n=4 q_try=2360 q_queued=2360 mb_ok=2360 mb_fail=0 speed_rx=2181 last_ms=119210 id=004 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=119240
+OIDRX n=4 rx=2181 last_ms=119210 id=004 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=119240
+SENS init=1 create=1/1 task=1 rxarm=7424 rxcplt=7424 bytes=7424 frame=1856 post=1856 consume=1855 feed=1855 accept=1855 gen=1817 send=1817 txok=1817 txfail=0 txdone=1817 err=0 routes=d9/t9/m1799 absent=38 unsupported=0 snapshot=0 gap=38 silent=38 last=04,A8,53,FF raw=A8 cmd=A0 addr=8 route=MEASUREMENT_SENSOR_FOUND
+SENS9 disc_req=1 disc_rsp=1 type_req=1 type_rsp=1 meas_req=193 meas_rsp=193 last_req_ms=15243 last_rsp_ms=15244 txfail=0 err=0
+TELSRC bms_v=0 bms_i=0 soc=0 wheel1=0 wheel2=0 wheel3=0 wheel4=0 ground_cmps=0 work_mode=1 run_permission=1 fault=0x0140 blade_rpm=0
+IBUS_PROBE ch11=1113 ch12=1960 ch13=1500 ch14=1500 seq=31066 frames=306 avg_period_us=3856 fresh=1 timeout_seq=0 last_ms=120305 age_ms=6 sampled_at_ms=120311
+WHEEL n=1 valid=1 age_ms=15 erpm=0 speed=0 actual_speed_update_tick=120310 sampled_at_ms=120325
+OID n=1 q_try=2382 q_queued=2382 mb_ok=2382 mb_fail=0 speed_rx=2285 last_ms=120310 id=001 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=120333
+OIDRX n=1 rx=2285 last_ms=120310 id=001 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=120333
+WHEEL n=2 valid=1 age_ms=15 erpm=0 speed=0 actual_speed_update_tick=120310 sampled_at_ms=120325
+OID n=2 q_try=2383 q_queued=2383 mb_ok=2383 mb_fail=0 speed_rx=1178 last_ms=120310 id=002 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=120362
+OIDRX n=2 rx=1178 last_ms=120310 id=002 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=120362
+WHEEL n=3 valid=1 age_ms=14 erpm=0 speed=0 actual_speed_update_tick=120311 sampled_at_ms=120325
+OID n=3 q_try=2383 q_queued=2383 mb_ok=2383 mb_fail=0 speed_rx=2285 last_ms=120361 id=003 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=120391
+OIDRX n=3 rx=2285 last_ms=120361 id=003 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=120391
+WHEEL n=4 valid=1 age_ms=15 erpm=0 speed=0 actual_speed_update_tick=120310 sampled_at_ms=120325
+OID n=4 q_try=2384 q_queued=2384 mb_ok=2384 mb_fail=0 speed_rx=2203 last_ms=120410 id=004 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=120420
+OIDRX n=4 rx=2203 last_ms=120410 id=004 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=120420
+SENS init=1 create=1/1 task=1 rxarm=7424 rxcplt=7424 bytes=7424 frame=1856 post=1856 consume=1855 feed=1855 accept=1855 gen=1817 send=1817 txok=1817 txfail=0 txdone=1817 err=0 routes=d9/t9/m1799 absent=38 unsupported=0 snapshot=0 gap=38 silent=38 last=04,A8,53,FF raw=A8 cmd=A0 addr=8 route=MEASUREMENT_SENSOR_FOUND
+SENS9 disc_req=1 disc_rsp=1 type_req=1 type_rsp=1 meas_req=193 meas_rsp=193 last_req_ms=15243 last_rsp_ms=15244 txfail=0 err=0
+TELSRC bms_v=0 bms_i=0 soc=0 wheel1=0 wheel2=0 wheel3=0 wheel4=0 ground_cmps=0 work_mode=1 run_permission=1 fault=0x0140 blade_rpm=0
+IBUS_PROBE ch11=1113 ch12=1960 ch13=1500 ch14=1500 seq=31372 frames=306 avg_period_us=3856 fresh=1 timeout_seq=0 last_ms=121484 age_ms=7 sampled_at_ms=121491
+WHEEL n=1 valid=1 age_ms=45 erpm=0 speed=0 actual_speed_update_tick=121460 sampled_at_ms=121505
+OID n=1 q_try=2406 q_queued=2406 mb_ok=2406 mb_fail=0 speed_rx=2309 last_ms=121510 id=001 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=121513
+OIDRX n=1 rx=2309 last_ms=121510 id=001 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=121513
+WHEEL n=2 valid=1 age_ms=95 erpm=0 speed=0 actual_speed_update_tick=121410 sampled_at_ms=121505
+OID n=2 q_try=2406 q_queued=2406 mb_ok=2406 mb_fail=0 speed_rx=1191 last_ms=121510 id=002 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=121542
+OIDRX n=2 rx=1191 last_ms=121510 id=002 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=121542
+WHEEL n=3 valid=1 age_ms=44 erpm=0 speed=0 actual_speed_update_tick=121461 sampled_at_ms=121505
+OID n=3 q_try=2407 q_queued=2407 mb_ok=2407 mb_fail=0 speed_rx=2309 last_ms=121561 id=003 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=121571
+OIDRX n=3 rx=2309 last_ms=121561 id=003 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=121571
+WHEEL n=4 valid=1 age_ms=45 erpm=0 speed=0 actual_speed_update_tick=121460 sampled_at_ms=121505
+OID n=4 q_try=2407 q_queued=2407 mb_ok=2407 mb_fail=0 speed_rx=2226 last_ms=121560 id=004 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=121600
+OIDRX n=4 rx=2226 last_ms=121560 id=004 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=121600
+SENS init=1 create=1/1 task=1 rxarm=7424 rxcplt=7424 bytes=7424 frame=1856 post=1856 consume=1855 feed=1855 accept=1855 gen=1817 send=1817 txok=1817 txfail=0 txdone=1817 err=0 routes=d9/t9/m1799 absent=38 unsupported=0 snapshot=0 gap=38 silent=38 last=04,A8,53,FF raw=A8 cmd=A0 addr=8 route=MEASUREMENT_SENSOR_FOUND
+SENS9 disc_req=1 disc_rsp=1 type_req=1 type_rsp=1 meas_req=193 meas_rsp=193 last_req_ms=15243 last_rsp_ms=15244 txfail=0 err=0
+TELSRC bms_v=0 bms_i=0 soc=0 wheel1=0 wheel2=0 wheel3=0 wheel4=0 ground_cmps=0 work_mode=1 run_permission=1 fault=0x0140 blade_rpm=0
+IBUS_PROBE ch11=1113 ch12=1960 ch13=1500 ch14=1500 seq=31684 frames=312 avg_period_us=3833 fresh=1 timeout_seq=0 last_ms=122687 age_ms=0 sampled_at_ms=122687
+WHEEL n=1 valid=1 age_ms=41 erpm=0 speed=0 actual_speed_update_tick=122660 sampled_at_ms=122701
+OID n=1 q_try=2430 q_queued=2430 mb_ok=2430 mb_fail=0 speed_rx=2333 last_ms=122710 id=001 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=122710
+OIDRX n=1 rx=2333 last_ms=122710 id=001 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=122710
+WHEEL n=2 valid=1 age_ms=91 erpm=0 speed=0 actual_speed_update_tick=122610 sampled_at_ms=122701
+OID n=2 q_try=2430 q_queued=2430 mb_ok=2430 mb_fail=0 speed_rx=1205 last_ms=122710 id=002 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=122739
+OIDRX n=2 rx=1205 last_ms=122710 id=002 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=122739
+WHEEL n=3 valid=1 age_ms=40 erpm=0 speed=0 actual_speed_update_tick=122661 sampled_at_ms=122701
+OID n=3 q_try=2431 q_queued=2431 mb_ok=2431 mb_fail=0 speed_rx=2333 last_ms=122761 id=003 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=122768
+OIDRX n=3 rx=2333 last_ms=122761 id=003 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=122768
+WHEEL n=4 valid=1 age_ms=41 erpm=0 speed=0 actual_speed_update_tick=122660 sampled_at_ms=122701
+OID n=4 q_try=2431 q_queued=2431 mb_ok=2431 mb_fail=0 speed_rx=2247 last_ms=122710 id=004 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=122797
+OIDRX n=4 rx=2247 last_ms=122710 id=004 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=122797
+SENS init=1 create=1/1 task=1 rxarm=7424 rxcplt=7424 bytes=7424 frame=1856 post=1856 consume=1855 feed=1855 accept=1855 gen=1817 send=1817 txok=1817 txfail=0 txdone=1817 err=0 routes=d9/t9/m1799 absent=38 unsupported=0 snapshot=0 gap=38 silent=38 last=04,A8,53,FF raw=A8 cmd=A0 addr=8 route=MEASUREMENT_SENSOR_FOUND
+SENS9 disc_req=1 disc_rsp=1 type_req=1 type_rsp=1 meas_req=193 meas_rsp=193 last_req_ms=15243 last_rsp_ms=15244 txfail=0 err=0
+TELSRC bms_v=0 bms_i=0 soc=0 wheel1=0 wheel2=0 wheel3=0 wheel4=0 ground_cmps=0 work_mode=1 run_permission=1 fault=0x0140 blade_rpm=0
+IBUS_PROBE ch11=1113 ch12=1960 ch13=1500 ch14=1500 seq=31990 frames=306 avg_period_us=3859 fresh=1 timeout_seq=0 last_ms=123867 age_ms=1 sampled_at_ms=123868
+WHEEL n=1 valid=1 age_ms=22 erpm=0 speed=0 actual_speed_update_tick=123860 sampled_at_ms=123882
+OID n=1 q_try=2453 q_queued=2453 mb_ok=2453 mb_fail=0 speed_rx=2356 last_ms=123860 id=001 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=123890
+OIDRX n=1 rx=2356 last_ms=123860 id=001 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=123890
+WHEEL n=2 valid=1 age_ms=72 erpm=0 speed=0 actual_speed_update_tick=123810 sampled_at_ms=123882
+OID n=2 q_try=2454 q_queued=2454 mb_ok=2454 mb_fail=0 speed_rx=1218 last_ms=123910 id=002 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=123919
+OIDRX n=2 rx=1218 last_ms=123910 id=002 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=123919
+WHEEL n=3 valid=1 age_ms=21 erpm=0 speed=0 actual_speed_update_tick=123861 sampled_at_ms=123882
+OID n=3 q_try=2454 q_queued=2454 mb_ok=2454 mb_fail=0 speed_rx=2356 last_ms=123911 id=003 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=123948
+OIDRX n=3 rx=2356 last_ms=123911 id=003 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=123948
+WHEEL n=4 valid=1 age_ms=22 erpm=0 speed=0 actual_speed_update_tick=123860 sampled_at_ms=123882
+OID n=4 q_try=2455 q_queued=2455 mb_ok=2455 mb_fail=0 speed_rx=2271 last_ms=123960 id=004 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=123977
+OIDRX n=4 rx=2271 last_ms=123960 id=004 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=123977
+SENS init=1 create=1/1 task=1 rxarm=7424 rxcplt=7424 bytes=7424 frame=1856 post=1856 consume=1855 feed=1855 accept=1855 gen=1817 send=1817 txok=1817 txfail=0 txdone=1817 err=0 routes=d9/t9/m1799 absent=38 unsupported=0 snapshot=0 gap=38 silent=38 last=04,A8,53,FF raw=A8 cmd=A0 addr=8 route=MEASUREMENT_SENSOR_FOUND
+SENS9 disc_req=1 disc_rsp=1 type_req=1 type_rsp=1 meas_req=193 meas_rsp=193 last_req_ms=15243 last_rsp_ms=15244 txfail=0 err=0
+TELSRC bms_v=0 bms_i=0 soc=0 wheel1=0 wheel2=0 wheel3=0 wheel4=0 ground_cmps=0 work_mode=1 run_permission=1 fault=0x0140 blade_rpm=0
+IBUS_PROBE ch11=1113 ch12=1960 ch13=1500 ch14=1500 seq=32296 frames=306 avg_period_us=3856 fresh=1 timeout_seq=0 last_ms=125047 age_ms=1 sampled_at_ms=125048
+WHEEL n=1 valid=1 age_ms=2 erpm=0 speed=0 actual_speed_update_tick=125060 sampled_at_ms=125062
+OID n=1 q_try=2477 q_queued=2477 mb_ok=2477 mb_fail=0 speed_rx=2380 last_ms=125060 id=001 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=125070
+OIDRX n=1 rx=2380 last_ms=125060 id=001 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=125070
+WHEEL n=2 valid=1 age_ms=52 erpm=0 speed=0 actual_speed_update_tick=125010 sampled_at_ms=125062
+OID n=2 q_try=2477 q_queued=2477 mb_ok=2477 mb_fail=0 speed_rx=1229 last_ms=125010 id=002 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=125099
+OIDRX n=2 rx=1229 last_ms=125010 id=002 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=125099
+WHEEL n=3 valid=1 age_ms=1 erpm=0 speed=0 actual_speed_update_tick=125061 sampled_at_ms=125062
+OID n=3 q_try=2478 q_queued=2478 mb_ok=2478 mb_fail=0 speed_rx=2380 last_ms=125111 id=003 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=125128
+OIDRX n=3 rx=2380 last_ms=125111 id=003 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=125128
+WHEEL n=4 valid=1 age_ms=2 erpm=0 speed=0 actual_speed_update_tick=125060 sampled_at_ms=125062
+OID n=4 q_try=2478 q_queued=2478 mb_ok=2478 mb_fail=0 speed_rx=2292 last_ms=125110 id=004 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=125157
+OIDRX n=4 rx=2292 last_ms=125110 id=004 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=125157
+SENS init=1 create=1/1 task=1 rxarm=7424 rxcplt=7424 bytes=7424 frame=1856 post=1856 consume=1855 feed=1855 accept=1855 gen=1817 send=1817 txok=1817 txfail=0 txdone=1817 err=0 routes=d9/t9/m1799 absent=38 unsupported=0 snapshot=0 gap=38 silent=38 last=04,A8,53,FF raw=A8 cmd=A0 addr=8 route=MEASUREMENT_SENSOR_FOUND
+SENS9 disc_req=1 disc_rsp=1 type_req=1 type_rsp=1 meas_req=193 meas_rsp=193 last_req_ms=15243 last_rsp_ms=15244 txfail=0 err=0
+TELSRC bms_v=0 bms_i=0 soc=0 wheel1=0 wheel2=0 wheel3=0 wheel4=0 ground_cmps=0 work_mode=1 run_permission=1 fault=0x0140 blade_rpm=0
+IBUS_PROBE ch11=1113 ch12=1960 ch13=1500 ch14=1500 seq=32606 frames=310 avg_period_us=3854 fresh=1 timeout_seq=0 last_ms=126242 age_ms=1 sampled_at_ms=126243
+WHEEL n=1 valid=1 age_ms=47 erpm=0 speed=0 actual_speed_update_tick=126210 sampled_at_ms=126257
+OID n=1 q_try=2501 q_queued=2501 mb_ok=2501 mb_fail=0 speed_rx=2404 last_ms=126260 id=001 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=126266
+OIDRX n=1 rx=2404 last_ms=126260 id=001 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=126266
+WHEEL n=2 valid=1 age_ms=47 erpm=0 speed=0 actual_speed_update_tick=126210 sampled_at_ms=126257
+OID n=2 q_try=2501 q_queued=2501 mb_ok=2501 mb_fail=0 speed_rx=1241 last_ms=126210 id=002 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=126295
+OIDRX n=2 rx=1241 last_ms=126210 id=002 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=126295
+WHEEL n=3 valid=1 age_ms=46 erpm=0 speed=0 actual_speed_update_tick=126211 sampled_at_ms=126257
+OID n=3 q_try=2502 q_queued=2502 mb_ok=2502 mb_fail=0 speed_rx=2404 last_ms=126311 id=003 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=126323
+OIDRX n=3 rx=2404 last_ms=126311 id=003 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=126323
+WHEEL n=4 valid=1 age_ms=47 erpm=0 speed=0 actual_speed_update_tick=126210 sampled_at_ms=126257
+OID n=4 q_try=2502 q_queued=2502 mb_ok=2502 mb_fail=0 speed_rx=2316 last_ms=126310 id=004 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=126352
+OIDRX n=4 rx=2316 last_ms=126310 id=004 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=126352
+SENS init=1 create=1/1 task=1 rxarm=7424 rxcplt=7424 bytes=7424 frame=1856 post=1856 consume=1855 feed=1855 accept=1855 gen=1817 send=1817 txok=1817 txfail=0 txdone=1817 err=0 routes=d9/t9/m1799 absent=38 unsupported=0 snapshot=0 gap=38 silent=38 last=04,A8,53,FF raw=A8 cmd=A0 addr=8 route=MEASUREMENT_SENSOR_FOUND
+SENS9 disc_req=1 disc_rsp=1 type_req=1 type_rsp=1 meas_req=193 meas_rsp=193 last_req_ms=15243 last_rsp_ms=15244 txfail=0 err=0
+TELSRC bms_v=0 bms_i=0 soc=0 wheel1=0 wheel2=0 wheel3=0 wheel4=0 ground_cmps=0 work_mode=1 run_permission=1 fault=0x0140 blade_rpm=0
+IBUS_PROBE ch11=1113 ch12=1960 ch13=1500 ch14=1500 seq=32912 frames=306 avg_period_us=3856 fresh=1 timeout_seq=0 last_ms=127421 age_ms=2 sampled_at_ms=127423
+WHEEL n=1 valid=1 age_ms=27 erpm=0 speed=0 actual_speed_update_tick=127410 sampled_at_ms=127437
+OID n=1 q_try=2524 q_queued=2524 mb_ok=2524 mb_fail=0 speed_rx=2427 last_ms=127410 id=001 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=127445
+OIDRX n=1 rx=2427 last_ms=127410 id=001 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=127445
+WHEEL n=2 valid=1 age_ms=27 erpm=0 speed=0 actual_speed_update_tick=127410 sampled_at_ms=127437
+OID n=2 q_try=2525 q_queued=2525 mb_ok=2525 mb_fail=0 speed_rx=1254 last_ms=127410 id=002 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=127474
+OIDRX n=2 rx=1254 last_ms=127410 id=002 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=127474
+WHEEL n=3 valid=1 age_ms=26 erpm=0 speed=0 actual_speed_update_tick=127411 sampled_at_ms=127437
+OID n=3 q_try=2525 q_queued=2525 mb_ok=2525 mb_fail=0 speed_rx=2427 last_ms=127461 id=003 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=127503
+OIDRX n=3 rx=2427 last_ms=127461 id=003 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=127503
+WHEEL n=4 valid=1 age_ms=27 erpm=0 speed=0 actual_speed_update_tick=127410 sampled_at_ms=127437
+OID n=4 q_try=2526 q_queued=2526 mb_ok=2526 mb_fail=0 speed_rx=2338 last_ms=127460 id=004 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=127532
+OIDRX n=4 rx=2338 last_ms=127460 id=004 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=127532
+SENS init=1 create=1/1 task=1 rxarm=7424 rxcplt=7424 bytes=7424 frame=1856 post=1856 consume=1855 feed=1855 accept=1855 gen=1817 send=1817 txok=1817 txfail=0 txdone=1817 err=0 routes=d9/t9/m1799 absent=38 unsupported=0 snapshot=0 gap=38 silent=38 last=04,A8,53,FF raw=A8 cmd=A0 addr=8 route=MEASUREMENT_SENSOR_FOUND
+SENS9 disc_req=1 disc_rsp=1 type_req=1 type_rsp=1 meas_req=193 meas_rsp=193 last_req_ms=15243 last_rsp_ms=15244 txfail=0 err=0
+TELSRC bms_v=0 bms_i=0 soc=0 wheel1=0 wheel2=0 wheel3=0 wheel4=0 ground_cmps=0 work_mode=1 run_permission=1 fault=0x0140 blade_rpm=0
+IBUS_PROBE ch11=1113 ch12=1960 ch13=1500 ch14=1500 seq=33218 frames=306 avg_period_us=3856 fresh=1 timeout_seq=0 last_ms=128601 age_ms=2 sampled_at_ms=128603
+WHEEL n=1 valid=1 age_ms=7 erpm=0 speed=0 actual_speed_update_tick=128610 sampled_at_ms=128617
+OID n=1 q_try=2548 q_queued=2548 mb_ok=2548 mb_fail=0 speed_rx=2451 last_ms=128610 id=001 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=128625
+OIDRX n=1 rx=2451 last_ms=128610 id=001 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=128625
+WHEEL n=2 valid=1 age_ms=7 erpm=0 speed=0 actual_speed_update_tick=128610 sampled_at_ms=128617
+OID n=2 q_try=2548 q_queued=2548 mb_ok=2548 mb_fail=0 speed_rx=1269 last_ms=128610 id=002 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=128654
+OIDRX n=2 rx=1269 last_ms=128610 id=002 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=128654
+WHEEL n=3 valid=1 age_ms=6 erpm=0 speed=0 actual_speed_update_tick=128611 sampled_at_ms=128617
+OID n=3 q_try=2549 q_queued=2549 mb_ok=2549 mb_fail=0 speed_rx=2451 last_ms=128661 id=003 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=128683
+OIDRX n=3 rx=2451 last_ms=128661 id=003 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=128683
+WHEEL n=4 valid=1 age_ms=7 erpm=0 speed=0 actual_speed_update_tick=128610 sampled_at_ms=128617
+OID n=4 q_try=2550 q_queued=2550 mb_ok=2550 mb_fail=0 speed_rx=2362 last_ms=128710 id=004 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=128712
+OIDRX n=4 rx=2362 last_ms=128710 id=004 dlc=6 data=0F,01,00,00,00,00 sampled_at_ms=128712

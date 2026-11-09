@@ -1,0 +1,3 @@
+debug: baseline warnings=56, current warnings=56, added=0, removed=0
+mower-ok-release: baseline warnings=57, current warnings=57, added=0, removed=0
+PASS: zero new compiler/linker warnings in both clean builds. Historical warnings are retained in full logs.

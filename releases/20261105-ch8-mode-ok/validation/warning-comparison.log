@@ -1,0 +1,11 @@
+control_chassis/Core/UserDev/lifter.c: current=0 baseline=0 new=0
+control_chassis/Core/UserApp/app_Motion.c: current=8 baseline=8 new=0
+control_chassis/Core/UserDev/chassis_control.c: current=1 baseline=2 new=0
+control_chassis/Core/UserDev/remote_backend.c: current=0 baseline=0 new=0
+control_chassis/Core/UserDev/sens_ibus_responder.c: current=0 baseline=0 new=0
+experiments/ticket03/exp3_link.c: current=0 baseline=0 new=0
+experiments/ticket03/exp3_hil.c: current=0 baseline=0 new=0
+experiments/ticket03/exp3_probe.c: current=0 baseline=0 new=0
+experiments/ticket03/stm32_adapter.c: current=0 baseline=0 new=0
+control_chassis/Core/UserDev/mower_mode_control.c: current=0 baseline=0 new=0
+PASS: no new compiler warnings in changed chassis production translation units.

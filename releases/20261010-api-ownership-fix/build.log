@@ -1,0 +1,267 @@
+[1m=== [1/9] Running Blade Driver Selection Harness ===[0m
+  [[0;32mPASS[0m] Blade Driver Selection (PWM, FTESC CAN, negative compile guards)
+[1m=== [2/9] Running Blade Manual Control Harness ===[0m
+  [[0;32mPASS[0m] Blade Manual Control (PWM & FTESC CAN confirmation state machine)
+[1m=== [3/9] Running Blade Confirm CH6 Adapter Harness ===[0m
+  [[0;32mPASS[0m] Blade Confirm CH6 Adapter (Baseline, edge debounce, duplicate rejection & BMC integration)
+[1m=== [4/9] Running FTESC Realtime Feedback Harness ===[0m
+  [[0;32mPASS[0m] FTESC Realtime Feedback (CAN packet parsing & CRC validation)
+[1m=== [5/9] Running SENS i-BUS Responder Harness ===[0m
+  [[0;32mPASS[0m] SENS i-BUS Responder (Discovery, measurement request & packet packing)
+[1m=== [6/9] Running Telemetry Snapshot Harness ===[0m
+  [[0;32mPASS[0m] Telemetry Snapshot (BMS, odometry, fault bitfield & atomic exchange)
+[1m=== [7/9] Running Remote Authorization Harness ===[0m
+  [[0;32mPASS[0m] Remote Authorization (CH8 dual-edge unlock state machine)
+[1m=== [8/9] Running Remote Backend Harness ===[0m
+  [[0;32mPASS[0m] Remote Backend (A28/E34 & FlySky i-BUS stream/framing isolation)
+  [[0;32mPASS[0m] i6X stick calibration validation and neutral fallback
+[1m=== [9/9] Running Safety Ownership Gate Harness ===[0m
+  [[0;32mPASS[0m] Safety Ownership Gate (Arbitration, latching, zero-intent enforcement)
+
+  [[0;32mPASS[0m] Ticket03 Experiment3 protocol and transport
+  [[0;32mPASS[0m] Mower OK release flow, controller runtime and home display
+  [[0;32mPASS[0m] Production API ownership and safety boundaries
+[0;32m[1mALL HOST HARNESSES PASSED![0m
+
+[1m=== Building Chassis Firmware (CMake / ARM GCC) ===[0m
+  [[0;32mPASS[0m] Chassis CMake build succeeded (ELF, HEX and BIN generated)
+Preset CMake variables:
+
+  CMAKE_BUILD_TYPE="Release"
+  CMAKE_TOOLCHAIN_FILE="/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/cmake/arm-none-eabi-gcc.cmake"
+  MOWER_BLADE_OK="ON"
+  TICKET03_EXP3_HIL="OFF"
+  TICKET03_EXP3_PWM_HIL="OFF"
+
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/build/mower-ok-release
+[1/2] Building C object CMakeFiles/control_chassis.dir/Core/UserApp/app_Motion.c.obj
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/UserApp/app_Motion.c: In function 'StartTask_Motion':
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/UserApp/app_Motion.c:382:12: warning: unused variable 'is_joystick_active' [-Wunused-variable]
+  382 |       bool is_joystick_active = (abs((int)mapped_throttle - 2048) > 200) ||
+      |            ^~~~~~~~~~~~~~~~~~
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/UserApp/app_Motion.c:169:19: warning: unused variable 'cruise_toggle_tick' [-Wunused-variable]
+  169 |   static uint32_t cruise_toggle_tick = 0;
+      |                   ^~~~~~~~~~~~~~~~~~
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/UserApp/app_Motion.c:167:18: warning: unused variable 'cruise_key_lock' [-Wunused-variable]
+  167 |   static uint8_t cruise_key_lock = 0;
+      |                  ^~~~~~~~~~~~~~~
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/UserApp/app_Motion.c:165:18: warning: unused variable 'us_toggle_lock' [-Wunused-variable]
+  165 |   static uint8_t us_toggle_lock = 0;
+      |                  ^~~~~~~~~~~~~~
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/UserApp/app_Motion.c:153:16: warning: unused variable 'last_blade_command' [-Wunused-variable]
+  153 |   static float last_blade_command = -1.0f;
+      |                ^~~~~~~~~~~~~~~~~~
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/UserApp/app_Motion.c:152:18: warning: unused variable 'last_blade_knob' [-Wunused-variable]
+  152 |   static uint8_t last_blade_knob = 0xFF;
+      |                  ^~~~~~~~~~~~~~~
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/UserApp/app_Motion.c:149:15: warning: variable 'last_key_state' set but not used [-Wunused-but-set-variable]
+  149 |   static bool last_key_state[8] = {0};
+      |               ^~~~~~~~~~~~~~
+In file included from /media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/Inc/AXEBMS_RS485.h:4,
+                 from /media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/UserApp/app_Motion.c:37:
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/UserApp/app_Motion.c: At top level:
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/Inc/rs485.h:46:13: warning: 'RS485_Start_Receive' declared 'static' but never defined [-Wunused-function]
+   46 | static void RS485_Start_Receive(void);
+      |             ^~~~~~~~~~~~~~~~~~~
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/UserApp/app_Motion.c:152:18: warning: 'last_blade_knob' defined but not used [-Wunused-variable]
+  152 |   static uint8_t last_blade_knob = 0xFF;
+      |                  ^~~~~~~~~~~~~~~
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/UserApp/app_Motion.c:153:16: warning: 'last_blade_command' defined but not used [-Wunused-variable]
+  153 |   static float last_blade_command = -1.0f;
+      |                ^~~~~~~~~~~~~~~~~~
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/UserApp/app_Motion.c:165:18: warning: 'us_toggle_lock' defined but not used [-Wunused-variable]
+  165 |   static uint8_t us_toggle_lock = 0;
+      |                  ^~~~~~~~~~~~~~
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/UserApp/app_Motion.c:167:18: warning: 'cruise_key_lock' defined but not used [-Wunused-variable]
+  167 |   static uint8_t cruise_key_lock = 0;
+      |                  ^~~~~~~~~~~~~~~
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/UserApp/app_Motion.c:169:19: warning: 'cruise_toggle_tick' defined but not used [-Wunused-variable]
+  169 |   static uint32_t cruise_toggle_tick = 0;
+      |                   ^~~~~~~~~~~~~~~~~~
+[2/2] Linking C executable control_chassis.elf
+Memory region         Used Size  Region Size  %age Used
+             RAM:       53080 B       128 KB     40.50%
+          CCMRAM:          0 GB        64 KB      0.00%
+           FLASH:       82704 B       512 KB     15.77%
+   text	   data	    bss	    dec	    hex	filename
+  82244	    452	  52628	 135324	  2109c	/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/build/mower-ok-release/control_chassis.elf
+CMake Deprecation Warning at CMakeLists.txt:19 (cmake_policy):
+  The OLD behavior for policy CMP0023 will be removed from a future version
+  of CMake.
+
+  The cmake-policies(7) manual explains that the OLD behaviors of all
+  policies are deprecated and that a policy should be set to OLD only under
+  specific short-term circumstances.  Projects should be ported to the NEW
+  behavior and not rely on setting a policy to OLD.
+
+
+-- OpenI6X 2.3.0 @f64ed459
+-- Python executable: /usr/bin/python3.10
+-- Python bin directory: /usr/bin
+CMake Warning at CMakeLists.txt:92 (find_package):
+  By not providing "FindQt5Core.cmake" in CMAKE_MODULE_PATH this project has
+  asked CMake to find a package configuration file provided by "Qt5Core", but
+  CMake did not find one.
+
+  Could not find a package configuration file provided by "Qt5Core" with any
+  of the following names:
+
+    Qt5CoreConfig.cmake
+    qt5core-config.cmake
+
+  Add the installation prefix of "Qt5Core" to CMAKE_PREFIX_PATH or set
+  "Qt5Core_DIR" to a directory containing one of the above files.  If
+  "Qt5Core" provides a separate development package or SDK, be sure it has
+  been installed.
+
+
+CMake Warning at CMakeLists.txt:93 (find_package):
+  By not providing "FindQt5Widgets.cmake" in CMAKE_MODULE_PATH this project
+  has asked CMake to find a package configuration file provided by
+  "Qt5Widgets", but CMake did not find one.
+
+  Could not find a package configuration file provided by "Qt5Widgets" with
+  any of the following names:
+
+    Qt5WidgetsConfig.cmake
+    qt5widgets-config.cmake
+
+  Add the installation prefix of "Qt5Widgets" to CMAKE_PREFIX_PATH or set
+  "Qt5Widgets_DIR" to a directory containing one of the above files.  If
+  "Qt5Widgets" provides a separate development package or SDK, be sure it has
+  been installed.
+
+
+CMake Warning at CMakeLists.txt:94 (find_package):
+  By not providing "FindQt5Xml.cmake" in CMAKE_MODULE_PATH this project has
+  asked CMake to find a package configuration file provided by "Qt5Xml", but
+  CMake did not find one.
+
+  Could not find a package configuration file provided by "Qt5Xml" with any
+  of the following names:
+
+    Qt5XmlConfig.cmake
+    qt5xml-config.cmake
+
+  Add the installation prefix of "Qt5Xml" to CMAKE_PREFIX_PATH or set
+  "Qt5Xml_DIR" to a directory containing one of the above files.  If "Qt5Xml"
+  provides a separate development package or SDK, be sure it has been
+  installed.
+
+
+CMake Warning at CMakeLists.txt:95 (find_package):
+  By not providing "FindQt5LinguistTools.cmake" in CMAKE_MODULE_PATH this
+  project has asked CMake to find a package configuration file provided by
+  "Qt5LinguistTools", but CMake did not find one.
+
+  Could not find a package configuration file provided by "Qt5LinguistTools"
+  with any of the following names:
+
+    Qt5LinguistToolsConfig.cmake
+    qt5linguisttools-config.cmake
+
+  Add the installation prefix of "Qt5LinguistTools" to CMAKE_PREFIX_PATH or
+  set "Qt5LinguistTools_DIR" to a directory containing one of the above
+  files.  If "Qt5LinguistTools" provides a separate development package or
+  SDK, be sure it has been installed.
+
+
+CMake Warning at CMakeLists.txt:96 (find_package):
+  By not providing "FindQt5PrintSupport.cmake" in CMAKE_MODULE_PATH this
+  project has asked CMake to find a package configuration file provided by
+  "Qt5PrintSupport", but CMake did not find one.
+
+  Could not find a package configuration file provided by "Qt5PrintSupport"
+  with any of the following names:
+
+    Qt5PrintSupportConfig.cmake
+    qt5printsupport-config.cmake
+
+  Add the installation prefix of "Qt5PrintSupport" to CMAKE_PREFIX_PATH or
+  set "Qt5PrintSupport_DIR" to a directory containing one of the above files.
+  If "Qt5PrintSupport" provides a separate development package or SDK, be
+  sure it has been installed.
+
+
+CMake Warning at CMakeLists.txt:97 (find_package):
+  By not providing "FindQt5Multimedia.cmake" in CMAKE_MODULE_PATH this
+  project has asked CMake to find a package configuration file provided by
+  "Qt5Multimedia", but CMake did not find one.
+
+  Could not find a package configuration file provided by "Qt5Multimedia"
+  with any of the following names:
+
+    Qt5MultimediaConfig.cmake
+    qt5multimedia-config.cmake
+
+  Add the installation prefix of "Qt5Multimedia" to CMAKE_PREFIX_PATH or set
+  "Qt5Multimedia_DIR" to a directory containing one of the above files.  If
+  "Qt5Multimedia" provides a separate development package or SDK, be sure it
+  has been installed.
+
+
+CMake Warning at CMakeLists.txt:98 (find_package):
+  By not providing "FindQt5Svg.cmake" in CMAKE_MODULE_PATH this project has
+  asked CMake to find a package configuration file provided by "Qt5Svg", but
+  CMake did not find one.
+
+  Could not find a package configuration file provided by "Qt5Svg" with any
+  of the following names:
+
+    Qt5SvgConfig.cmake
+    qt5svg-config.cmake
+
+  Add the installation prefix of "Qt5Svg" to CMAKE_PREFIX_PATH or set
+  "Qt5Svg_DIR" to a directory containing one of the above files.  If "Qt5Svg"
+  provides a separate development package or SDK, be sure it has been
+  installed.
+
+
+CMake Warning at CMakeLists.txt:149 (message):
+  Qt not found! Companion and Simulator builds disabled.
+
+
+CMake Warning (dev) at /usr/share/cmake-3.22/Modules/FindPackageHandleStandardArgs.cmake:438 (message):
+  The package name passed to `find_package_handle_standard_args` (FOX) does
+  not match the name of the calling package (Fox).  This can lead to problems
+  in calling code that expects `find_package` result variables (e.g.,
+  `_FOUND`) to follow a certain pattern.
+Call Stack (most recent call first):
+  cmake/FindFox.cmake:59 (find_package_handle_standard_args)
+  CMakeLists.txt:153 (find_package)
+This warning is for project developers.  Use -Wno-dev to suppress it.
+
+-- Could NOT find FOX (missing: FOX_INCLUDE_DIR FOX_LIBRARY) 
+Libfox not found, simu target will not be available
+TARGET simu/libsimulator: cpp compiler /usr/bin/arm-none-eabi-g++ v10.3.1
+CMake Warning at radio/src/tests/CMakeLists.txt:45 (message):
+  WARNING: gtests target will not be available (check that GTEST_INCDIR,
+  GTEST_SRCDIR, and Qt5Widgets are configured).
+
+
+TARGET firmware: cpp compiler arm-none-eabi-g++ v10.3.1
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/OpenI6X/FS-I6X/opentx/build-mower-ok-release
+[  0%] Built target 9x_xbm_1bit
+[  4%] Built target firmware_translations
+[ 27%] Built target 9x_fonts_1bit
+[ 29%] Built target 9x_bitmaps
+Scanning dependencies of target firmware
+Consolidate compiler generated dependencies of target firmware
+[ 29%] Building CXX object radio/src/CMakeFiles/firmware.dir/debug.cpp.obj
+[ 29%] Building CXX object radio/src/CMakeFiles/firmware.dir/stamp.cpp.obj
+[ 30%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/128x64/view_about.cpp.obj
+[ 30%] Building CXX object radio/src/CMakeFiles/firmware.dir/targets/common/arm/stm32/usbd_storage_msd.cpp.obj
+[ 30%] Linking CXX executable ../../firmware.elf
+Flash used: 128312 / 131072 (97%), left: 2760
+RAM used: 15692 / 16384 (95%), left: 692
+[100%] Built target firmware
+   text	   data	    bss	    dec	    hex	filename
+ 128224	     88	  15604	 143916	  2322c	/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/OpenI6X/FS-I6X/opentx/build-mower-ok-release/firmware.elf
+  82244	    452	  52628	 135324	  2109c	/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/build/mower-ok-release/control_chassis.elf
+48259e18b268d0781c2723deeb1fe03022433af1bb2ce79c7e14c41b86fe1e6d  /media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/OpenI6X/FS-I6X/opentx/build-mower-ok-release/firmware.bin
+92d8046883466b5395d416e2516b45324e7658b5dca8a618e5b68285f77da999  /media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/build/mower-ok-release/control_chassis.bin
+fd06d0da006d6545d6f1c0acf9bc4f2dfc9f8e370a1c0d4ace4591f18c886229  /media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/build/mower-ok-release/control_chassis.hex

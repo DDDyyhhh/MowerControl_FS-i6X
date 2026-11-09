@@ -1,0 +1,1368 @@
+                SFLIPSKY FTESC CAN V1.4
+IP 
+FL K FLIPSKY FTESC         V1.4
+S CAN V1.4      FT         V1.4
+                       2024/11/04
+                 
+
+FT-CM-CAN-20241104-04
+FLIPSKY Y FLIP FLIPSKY FTESC CAN
+      K  V1.4FT  20      
+
+KFYLIPSKY PFSLKIYPS FLIPSKY 
+    IPS         FLIPSKY FTESC CAN V1.4
+KFYLIPFSLKIYPSKPFYSLKIYPFSLKFYLIPFSLKIYPSK 1.4
+              
+
+              
+2024-11-04  
+                 SFLIPSKY FTESC CAN V1.4
+   LIP 1 .............................................................................................................. 1
+  F 2  ...............................................................................................1
+   K 2.1  ...............................................................................................................1
+   S 2.2  ............................................................................................................... 1
+   Y P 2.3 CRC  ......................................................................................................... 2
+   K I 2.4 CAN COMMAND  ..................................................................................... 3
+  S L 3 /  .....................................................................................4
+
+                    3.1  .............................................................................................................. 4
+
+    P F 3.1.1 CAN_SET_CURRENT_GEAR_CRC16 (00H) ..............................................4
+    I 3.1.2 CAN_SET_CURRENT_BRAKE_CRC16 (01H) ............................................ 4
+    L3.1.3 CAN_SET_DUTY_GEAR_CRC16 (02H) ......................................................5
+    F Y 3.1.4 CAN_SET_CURRENT_PERCENT_CRC16 (03H) ....................................... 5
+    K 3.1.5 CAN_SET_CURRENT_PERCENT_GEAR_CRC16 (04H) ........................... 6
+    S 3.1.6 CAN_SET_CURRENT_BRAKE_PERCENT_CRC16 (05H) ......................... 6
+
+                         3.1.7 CAN_ESC_REALTIME_DATA_0_CRC16 (0BH) ..........................................7
+
+ Y P 3.1.8 CAN_ESC_REALTIME_DATA_1_CRC16 (0CH) ......................................... 7
+K I 3.1.9 CAN_ESC_REALTIME_DATA_2_CRC16 (0DH) ......................................... 8
+
+    L 3.1.10 CAN_SET_ERPM_GEAR_CRC16 (12H) ................................................... 8
+    F Y 3.1.11 CAN_SET_POSITION_GEAR_CRC16 (13H) .............................................9
+    K 3.1.12 CAN_SET_ID_CURRENT_CRC16 (14H) ...................................................9
+
+                         3.1.13 CAN_SET_CURRENT_GEAR (15H) ........................................................10
+
+    S 3.1.14 CAN_SET_CURRENT_PERCENT_GEAR (16H) .....................................10
+    Y P 3.1.15 CAN_SET_DUTY_GEAR (17H) ............................................................... 11
+    K I 3.1.16 CAN_SET_ERPM_GEAR (18H) ...............................................................11
+    S L 3.1.17 CAN_SET_POSITION_GEAR (19H) ........................................................ 11
+
+                         3.1.18 CAN_SET_CURRENT_BRAKE (20H) ......................................................12
+
+    P F 3.1.19 CAN_SET_CURRENT_BRAKE_PERCENT (21H) ...................................12
+   I3.2 / C ............................................................................13
+ L 3.2.1 ECU ........................................................................................ 13
+F PSKY 3.2.2 CAN(0BH0CH0DH) ......................................................16
+PS 1                                                                             FLIPSKY FTESC CAN V1.4
+
+LI Motor Control UnitMCUElectronic Control Unit
+F ECUCANMCU FTECU
+K CANCANFT
+S 
+KY IP 2 
+S L FTCANECUCANMCU
+P F 2.1 
+I  250K500K750K1000K
+L IDE ID
+F Y EID 29 bitbit0~bit7CAN IDbit8~bit15ID
+K RTR
+S 
+Y P SOF
+DLC
+
+K I 1 bit bits 26-28 bits 18-25 1 bit 1 bit bits 16-17 bits 8-15                           Data     CRC    ACK
+Top 11 Bits of ID  SRR IDE     Bottom 18 Bits of ID               RTR    Reserved DLC      Field           2 bit  EOF
+L 1                                                               1 bit                   8 bytes    15           7bits
+                                           bits 0-7                      2 bits  4bits               bits
+                                                                    0                    data[0-8]
+                                             CAN
+                                       COMMAND ID
+0F KY 2.2 0        0  1     0  MCU ID                                    0       length
+
+Y PS 
+K I (1)  uint16_t int16_t uint32_t  int32_t 
+
+       
+
+S L (2)  uint8_t 
+FLIP PSKY F 1
+                 SFLIPSKY FTESC CAN V1.4
+  2.3 CRC  IP static const unsigned char aucCRCHi[] = {
+
+                   0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0, 0x80, 0x41, 0x01, 0xC0, 0x80, 0x41,
+
+  L 0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0, 0x80, 0x41, 0x00, 0xC1, 0x81, 0x40,
+
+                   0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0, 0x80, 0x41, 0x01, 0xC0, 0x80, 0x41,
+
+  F 0x00, 0xC1, 0x81, 0x40, 0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0, 0x80, 0x41,
+  K 0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0, 0x80, 0x41, 0x01, 0xC0, 0x80, 0x41,
+
+                   0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0, 0x80, 0x41, 0x00, 0xC1, 0x81, 0x40,
+
+  S 0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0, 0x80, 0x41, 0x00, 0xC1, 0x81, 0x40,
+
+                   0x01, 0xC0, 0x80, 0x41, 0x01, 0xC0, 0x80, 0x41, 0x00, 0xC1, 0x81, 0x40,
+
+  Y P 0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0, 0x80, 0x41, 0x01, 0xC0, 0x80, 0x41,
+
+                   0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0, 0x80, 0x41, 0x00, 0xC1, 0x81, 0x40,
+
+  K I 0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0, 0x80, 0x41, 0x01, 0xC0, 0x80, 0x41,
+
+                   0x00, 0xC1, 0x81, 0x40, 0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0, 0x80, 0x41,
+
+  S L 0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0, 0x80, 0x41, 0x01, 0xC0, 0x80, 0x41,
+  P F 0x00, 0xC1, 0x81, 0x40, 0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0, 0x80, 0x41,
+
+                   0x01, 0xC0, 0x80, 0x41, 0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0, 0x80, 0x41,
+
+  I 0x00, 0xC1, 0x81, 0x40, 0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0, 0x80, 0x41,
+
+                   0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0, 0x80, 0x41, 0x01, 0xC0, 0x80, 0x41,
+
+  L 0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0, 0x80, 0x41, 0x00, 0xC1, 0x81, 0x40,
+
+                   0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0, 0x80, 0x41, 0x01, 0xC0, 0x80, 0x41,
+
+  F Y 0x00, 0xC1, 0x81, 0x40, 0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0, 0x80, 0x41,
+  K 0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0, 0x80, 0x41, 0x01, 0xC0, 0x80, 0x41,
+
+                   0x00, 0xC1, 0x81, 0x40
+
+  S };
+ Y P static const unsigned char aucCRCLo[] = {
+
+                   0x00, 0xC0, 0xC1, 0x01, 0xC3, 0x03, 0x02, 0xC2, 0xC6, 0x06, 0x07, 0xC7,
+
+K I 0x05, 0xC5, 0xC4, 0x04, 0xCC, 0x0C, 0x0D, 0xCD, 0x0F, 0xCF, 0xCE, 0x0E,
+
+                   0x0A, 0xCA, 0xCB, 0x0B, 0xC9, 0x09, 0x08, 0xC8, 0xD8, 0x18, 0x19, 0xD9,
+
+  L 0x1B, 0xDB, 0xDA, 0x1A, 0x1E, 0xDE, 0xDF, 0x1F, 0xDD, 0x1D, 0x1C, 0xDC,
+  F Y 0x14, 0xD4, 0xD5, 0x15, 0xD7, 0x17, 0x16, 0xD6, 0xD2, 0x12, 0x13, 0xD3,
+
+                   0x11, 0xD1, 0xD0, 0x10, 0xF0, 0x30, 0x31, 0xF1, 0x33, 0xF3, 0xF2, 0x32,
+
+  K 0x36, 0xF6, 0xF7, 0x37, 0xF5, 0x35, 0x34, 0xF4, 0x3C, 0xFC, 0xFD, 0x3D,
+
+                   0xFF, 0x3F, 0x3E, 0xFE, 0xFA, 0x3A, 0x3B, 0xFB, 0x39, 0xF9, 0xF8, 0x38,
+
+  S 0x28, 0xE8, 0xE9, 0x29, 0xEB, 0x2B, 0x2A, 0xEA, 0xEE, 0x2E, 0x2F, 0xEF,
+  Y P 0x2D, 0xED, 0xEC, 0x2C, 0xE4, 0x24, 0x25, 0xE5, 0x27, 0xE7, 0xE6, 0x26,
+
+                   0x22, 0xE2, 0xE3, 0x23, 0xE1, 0x21, 0x20, 0xE0, 0xA0, 0x60, 0x61, 0xA1,
+
+  K I 0x63, 0xA3, 0xA2, 0x62, 0x66, 0xA6, 0xA7, 0x67, 0xA5, 0x65, 0x64, 0xA4,
+
+                   0x6C, 0xAC, 0xAD, 0x6D, 0xAF, 0x6F, 0x6E, 0xAE, 0xAA, 0x6A, 0x6B, 0xAB,
+
+  S L 0x69, 0xA9, 0xA8, 0x68, 0x78, 0xB8, 0xB9, 0x79, 0xBB, 0x7B, 0x7A, 0xBA,
+
+                   0xBE, 0x7E, 0x7F, 0xBF, 0x7D, 0xBD, 0xBC, 0x7C, 0xB4, 0x74, 0x75, 0xB5,
+
+  P F 0x77, 0xB7, 0xB6, 0x76, 0x72, 0xB2, 0xB3, 0x73, 0xB1, 0x71, 0x70, 0xB0,
+
+                   0x50, 0x90, 0x91, 0x51, 0x93, 0x53, 0x52, 0x92, 0x96, 0x56, 0x57, 0x97,
+
+  I0x55, 0x95, 0x94, 0x54, 0x9C, 0x5C, 0x5D, 0x9D, 0x5F, 0x9F, 0x9E, 0x5E,
+ L0x5A, 0x9A, 0x9B, 0x5B, 0x99, 0x59, 0x58, 0x98, 0x88, 0x48, 0x49, 0x89,
+
+                   0x4B, 0x8B, 0x8A, 0x4A, 0x4E, 0x8E, 0x8F, 0x4F, 0x8D, 0x4D, 0x4C, 0x8C,
+
+F Y 0x44, 0x84, 0x85, 0x45, 0x87, 0x47, 0x46, 0x86, 0x82, 0x42, 0x43, 0x83,
+                   0x41, 0x81, 0x80, 0x40
+  K };
+          PS 2
+FLIPSKY FTESC CAN V1.4S uint16_t crc16(uint8_t *Buffer, uint32_t Length)
+P {
+
+   uint8_t ucCRCHi = 0xFF;
+
+I uint8_t ucCRCLo = 0xFF;
+L int i = 0;
+
+   while( Length-- )
+
+F {
+      i = ucCRCLo ^ *( Buffer++ );
+K ucCRCLo = ( uint8_t )( ucCRCHi ^ aucCRCHi[i] );
+      ucCRCHi = aucCRCLo[i];
+
+S }
+Y P return (uint16_t)((((uint16_t)ucCRCHi) << 8) | ucCRCLo);
+
+}
+
+K I 2.4 CAN COMMAND 
+  S L typedef enum {
+   P F CAN_SET_CURRENT_GEAR_CRC16
+
+                            CAN_SET_CURRENT_BRAKE_CRC16
+
+   I CAN_SET_DUTY_GEAR_CRC16
+
+                            CAN_SET_CURRENT_PERCENT_CRC16
+
+   LCAN_SET_CURRENT_PERCENT_GEAR_CRC16
+   F Y CAN_SET_CURRENT_BRAKE_PERCENT_CRC16
+
+                            ...
+
+   K CAN_ESC_REALTIME_DATA_0_CRC16
+
+                            CAN_ESC_REALTIME_DATA_1_CRC16
+
+   S CAN_ESC_REALTIME_DATA_2_CRC16
+
+                            ...
+
+ Y P CAN_SET_ERPM_GEAR_CRC16
+K I CAN_SET_POSITION_GEAR_CRC16
+
+                            CAN_SET_ID_CURRENT_CRC16
+= 0, // CRC16
+= 1, // CRC16
+= 2, // CRC16
+= 3, // CRC16
+= 4, // CRC16
+= 5, // CRC16
+
+= 11,// 20ms
+= 12,// 
+= 13,// MOS
+
+= 18,// CRC16
+= 19,// CRC16
+= 20,// D
+ L // CRC16
+ F Y CAN_SET_CURRENT_GEAR
+ K CAN_SET_CURRENT_PERCENT_GEAR
+
+        CAN_SET_DUTY_GEAR
+
+ S CAN_SET_ERPM_GEAR
+
+        CAN_SET_POSITION_GEAR
+
+ Y P CAN_SET_CURRENT_BRAKE
+
+        CAN_SET_CURRENT_BRAKE_PERCENT
+
+K I } CAN_COMMAND;
+= 21,// 
+= 22,// 
+= 23,// 
+= 24,// 
+= 25,// 
+= 26,// 
+= 27,// 
+FLIPS PSKY FL 3
+          PS 3 /                                                                               FLIPSKY FTESC CAN V1.4
+          I 3.1 
+        FL CANFTInput Signal Type
+        K OffECUMCUCAN
+        S 3.1.1 CAN_SET_CURRENT_GEAR_CRC16 (00H)
+          Y P 1
+           K I CRC16
+
+                450ms
+      S L SOF Top 11 Bits of ID SRR IDE
+      P F 1bit
+      I 1                                    Bottom 18 Bits of ID     RTR Reserved DLC                     Data Field
+
+            bits  bits      1 bit  1      bits   bits   bits          1 bit  2 bits  4bits D7  D6      D5  D4          D3 D2 D1 D0
+
+            26-28 18-25            bit 16-17 8-15       0-7
+        FL Y 2Data Field 
+            0     0         0      1      0      MCU CMD:             0      0       7     0 crc16_high crc16_low gear motor current*100000
+
+                                                 ID     00H
+
+                                                                                                                       Int32_t
+
+          SK D0 D1 D2 D3                
+                                                                      
+
+                                                                      (:A)100000
+                                                                      50A
+                                                                      1000005000000
+                                                                      00H: 
+                                                                      01H: 
+                                                                      02H: 
+                                                                      03H: 
+                                                                      04H: 
+                                                                      D400H
+                                                                      3.2.1
+KY LIP D4                               Motor
+    F KY D5D6                           current*100000
+
+                                        Gear
+                                        CRC16
+          SKY LIPS 3.1.2 CAN_SET_CURRENT_BRAKE_CRC16 (01H)
+L 1bitISOF
+          1 
+
+          P F CRC163.1.1
+
+            Top 11 Bits of  SRR IDE             Bottom 18 Bits of ID  RTR Reserved DLC                     Data Field
+                   ID
+F Y 1
+            bits  bits      1 bit  1       bits   bits   bits         1 bit  2 bits  4bits D7 D6   D5      D4          D3 D2 D1 D0
+                                          16-17  8-15    0-7
+            26-28 18-25            bit           MCU   PSK4CMD:
+                                            0     ID     01H
+            0     0         0      1                                     0      0       6  0 0 crc16_high crc16_low    Brake*100000
+
+                                                                                                                       Int32_t
+       S 2Data Field 
+       P 
+                                                                                                   FLIPSKY FTESC CAN V1.4
+
+                                                             
+                                                             (:A)100000
+                                                             
+       I D0 D1 D2 D3 Brake*100000
+       L D4 D5
+       F K 3.1.3 CAN_SET_DUTY_GEAR_CRC16 (02H)CRC16
+
+       1 
+
+        S CRC163.1.1
+Y P SOF Top 11 Bits of ID SRR IDE
+       K I 26-28 18-25                                                                            Data Field
+                                    Bottom 18 Bits of ID     RTR Reserved DLC
+S L 1
+1 bit  bits  bits   1 bit  1     bits  bits  bits            1 bit  2 bits  4bits D7  D6      D5  D4           D3 D2 D1 D0
+
+                           bit 16-17 8-15    0-7
+
+       0P F 2Data Field 00 1     0     MCU CMD:              0      0       7                                  Duty*1000000
+                                                                                  0 crc16_high crc16_low gear
+                                       ID    02H
+
+       I                                                                                                       Int32_t
+
+       LD0 D1 D2 D3 Duty*1000000                             
+    F SKY D4
+KY LIP D5D6                   Gear                           0.2
+                              CRC16                          0.2*1000000=200000
+                                                             00H: 
+                                                             01H: 
+                                                             02H: 
+                                                             03H: 
+                                                             04H: 
+                                                             D400H
+       F Y 3.1.4 CAN_SET_CURRENT_PERCENT_CRC16 (03H)
+       K 1 
+        S CRC163.1.1
+Y P SOF Top11 Bits of ID SRR IDE
+                    K I MCU                                                                       Data Field
+                                       Bottom 18 Bits of ID  RTR Reserved DLC
+
+1 bit  bits  S L Int32_tbits1 bit 1 bitbitsbitsbits 0-7 1 bit       2 bits  4bits D7 D6   D5      D4           D3 D2 D1 D0
+
+       26-28 18-25               16-17 8-15
+
+1      P F 2Data Field 000 1     0           CMD: 03H 0                0       6  0 0 crc16_high crc16_low     Current Percent
+
+                                       ID                                                                      *100000
+
+I
+FL PSKY D0D1D2D3                                             
+                                                             0.2
+                           Current Percent                          0.2*100000=20000      
+                           *100000                           0.2*Motor Current
+                                                             Motor Current
+
+                                                                       5
+       IPS D4 D5                                                                FLIPSKY FTESC CAN V1.4
+
+                                                     
+                           CRC16
+       FL 3.1.5 CAN_SET_CURRENT_PERCENT_GEAR_CRC16 (04H)
+       K 1 
+        S CRC163.1.1
+Y P SOF Top 11 Bits of ID SRR IDE
+                                  Bottom 18 Bits of IDK I MCU CMD:
+                                                           RTR Reserved DLC                 Data Field
+
+       bits  bits          1   bits  bits
+1 bit               1 bit      S LInt32_t  bits 0-7 1 bit     2 bits  4bits D7  D6      D5
+       26-28 18-25         bit 16-17 8-15                                                   D4 D3 D2 D1 D0
+
+1      0     0      0      1   0                           0  0       7      0 crc16_high crc16_low gear  Current Percent
+
+       P F                           ID    04H                                                            *100000
+
+       FLI Y D0D1D2D3
+       2Data Field 
+
+                                                           
+
+                           Current                         0.2
+                           Percent*100000                         0.2*100000=20000      
+                                                           0.2*Motor Current
+
+                                                           Motor Current
+                                                           
+ Y PSK D4
+K FLI Y D5D6
+                           Gear                            00H: 
+                           CRC16                           01H: 
+                                                           02H: 
+                                                           03H: 
+                                                           04H: 
+                                                           D400H
+       K 3.1.6 CAN_SET_CURRENT_BRAKE_PERCENT_CRC16 (05H)
+       S 1 
+        Y P CRC163.1.1
+       K I bits
+             S L MCU
+SOF Top 11 Bits of ID SRR IDE        Bottom 18 Bits of ID  RTR Reserved DLC                 Data Field
+
+             bits              bits  bits                                           D5                    D3 D2 D1 D0
+1 bit 26-28 18-25 1 bit 1 bit 16-17 8-15   bits 0-7 1 bit     2 bits 4bits D7 D6            D4
+       P F 2Data Field 
+1      0     0      0      1   0           CMD: 05H 0            0       6   0 0 crc16_high crc16_low     Brake Current Percent
+
+I                                    ID                                                                   *100000
+
+                                                                                                          Int32_t
+
+FL KY D0D1D2D3                                             
+
+                           Brake Current                   0.2
+                           Percent*100000                           0.2*100000=20000    
+                                                           0.2*Motor Current Brake
+                                                           Motor Current Brake
+                                           PS 6
+       IPS D4 D5                                                                      FLIPSKY FTESC CAN V1.4
+
+                                                           
+                                 CRC16
+       L 3.1.7 CAN_ESC_REALTIME_DATA_0_CRC16 (0BH)
+       F 1 
+        K MCU0
+       S CRC16
+
+             
+
+        Y P 1 MCU10msCAN
+       K I 0
+
+              2 MCU ID
+S L SOF
+       Top 11 Bits ofP F bits
+              ID
+I 1                    SRR IDE        Bottom 18 Bits of ID  RTR Reserved DLC                       Data Field
+
+1 bit     bits         1 bit  1    bits bits 8-  bits 0-7 1 bit    2 bits  4bits  D7  D6           D5 D4 D3 D2 D1 D0
+
+       L2Data Field 26-28 18-25bit 16-17  15
+
+       0  0            0      1    0      MCU CMD:          0      0       8 crc16_high crc16_low  battery       motor
+
+       F Y                                ID     0BH                                               current*1000  current*1000
+
+                                                                                                   Int32_t       Int32_t
+
+   K D0 D1 D2                                               
+ Y PS D3D4D5
+K I D6D7                         Motor Current
+                                 Percent*1000               10001000
+                                 Battery Current            
+                                 Percent*1000
+                                 CRC16                      10001000
+                                                            
+
+       L 3.1.8 CAN_ESC_REALTIME_DATA_1_CRC16 (0CH)
+       F Y 1
+        K MCU1
+
+       CRC16
+S SOF
+       Y P bitsTop 11 Bits of
+              ID
+K I 1                                 Bottom 18 Bits of ID
+                       SRR IDE                              RTR Reserved DLC                       Data Field
+
+1 bit     bits         1 bit  1     bits   bits   bits      1 bit  2 bits  4bits  D7  D6           D5 D4 D3 D2 D1 D0
+                                   16-17  8-15    0-7
+       26-28 18-25S L         bit         MCU    CMD:
+                                     0     ID    0CH
+       0  0            0      1                                0      0    8 crc16_high crc16_low  duty*1000     motor erpm
+
+       P F 1 MCU10msCAN                                                                            Int32_t       Int32_t
+
+       1
+I 2 MCU ID
+L 2Data Field 
+F Y 
+                                                 PSK7        
+                                                            *
+       D0 D1 D2                  Motor erpm
+       PS D3 D4 D5
+       I D6 D7
+                              duty*1000                                                            FLIPSKY FTESC CAN V1.4
+                              CRC16
+                                                          10001000
+                                                          
+       L 3.1.9 CAN_ESC_REALTIME_DATA_2_CRC16 (0DH)
+       F 1 
+        K MCU2MOS
+
+       CRC16
+
+        S 
+        Y P 1 MCU10msCAN
+
+       2
+
+        K I 2 MCU ID
+S L SOF
+       Top 11 Bits ofP F bitsSRR IDE                                                               Data Field
+              ID                    Bottom 18 Bits of ID  RTR Reserved DLC
+                       I ID
+1 bit         bits     1 bit  1  bits bits 8-  bits 0-7 1 bit  2 bits  4bits     D7      D6        D5 D4 D3 D2 D1 D0
+
+       26-28 18-25            bit 16-17  15
+       L2Data Field 
+1      0      0        0      1  0       MCU CMD:         0    0       8 crc16_high crc16_low      Battery     motor             mosfet
+
+                                               0DH                                                 voltage*100 temp*100 temp*100
+       F Y 
+                                                                                                   Int16_t     Int16_t  Int16_t
+
+       K D0 D1                                            
+       S D4 D5
+                              MOSFET temp*100MOSFET100
+
+Y P D6D7
+       D2 D3                  Motor temp*100 100
+
+                              Battery voltage*100100
+K LI 3.1.10 CAN_SET_ERPM_GEAR_CRC16 (12H)
+   F Y 1                      CRC16
+
+                             CRC163.1.1
+K SOF Top 11 Bits of ID SRR IDE
+S 1 bit
+                              Y P IDBottom 18 Bits of ID
+                                                          RTR Reserved DLC                         Data Field
+
+       bits   bits     1 bit  1  bits bits 8-  bits 0-7 1 bit  2 bits  4bits D7      D6        D5  D4 D3 D2 D1 D0
+
+       26-28 18-25            bit 16-17  15
+       K I 2Data Field 
+1      0      0        0      1  0       MCU CMD:         0    0       7      0 crc16_high crc16_low gear      motor erpm
+
+                                               12H
+
+       S L                                                                                                              Int32_t
+
+FLIP KY F D4                                              
+
+       D0 D1 D2 D3 Motor erpm                             *
+                                                           00H: 
+                              Gear                         01H: 
+                                                           02H: 
+                                                           03H: 
+                                                           04H: 
+                                                           D400H
+                                             PS 8
+       S D5 D6
+       IP 3.1.11 CAN_SET_POSITION_GEAR_CRC16 (13H)
+       L 1 
+
+             CRC163.1.1
+                                                                                            FLIPSKY FTESC CAN V1.4
+
+                               CRC16
+
+F SOF Top 11 Bits of ID SRR IDE
+       K bits
+S 1                                                                                                     Data Field
+                                       Bottom 18 Bits of ID        RTR Reserved DLC
+
+1 bit       bits        1 bit  1    bits  bits  bits               1 bit  2 bits  4bits D7  D6      D5  D4           D3 D2 D1 D0
+
+       26-28 18-25             bit 16-17 8-15   0-7
+       Y P 2Data Field 
+       0    0           0      1    0     MCU CMD:                 0      0       7     0 crc16_high crc16_low gear  Position*100000
+
+                                          ID    13H
+       K I 
+                                                                                                                     Int32_t
+
+       S L D0 D1 D2 D3                                             
+       LIP F D4
+       F SKY D5D6
+                                                        -180°~180°100000
+                               Position*100000 45.6°
+
+                                                       45.6*100000=4560000
+
+                                                                   00H: 
+
+                                                                   01H: 
+
+                               Gear                                02H: 
+                                                                   03H: 
+
+                                                                   04H: 
+
+                                                                   D400H
+ Y P 3.1.12 CAN_SET_ID_CURRENT_CRC16 (14H)
+K I 1                          CRC16
+
+    L DCRC16
+   F Y D
+
+                       
+
+    K 3.1.1
+S SOF Top 11 Bits of ID SRR IDE
+KY IP 1                                   Bottom 18 Bits of ID                                          Data Field
+                                                                   RTR Reserved DLC
+
+1 bit  bits 26 bits 18  1 bit  1 bits 16 bits                bits  1 bit  2 bits  4bits D7 D6   D5      D4           D3 D2 D1 D0
+
+       -28  -25                bit  -17   8-15               0-7
+
+       0    0           0      1    0     MCU CMD:                    0      0       6  0 0 crc16_high crc16_low     current*100000
+
+       S L                                ID    14H
+
+                                                                                                                     Int32_t
+
+P F D0 D1 D2 D3
+ID4 D5
+       2Data Field 
+
+                                                                   
+
+                               Current*100000 D100000
+                               CRC16
+FL PSKY9
+                    SFLIPSKY FTESC CAN V1.4
+
+       3.1.13 CAN_SET_CURRENT_GEAR (15H)
+
+       P 1 
+        I 3.1.1
+L SOF
+F 1
+       Top 11 Bits of ID         SRR IDE              Bottom 18 Bits of ID     RTR Reserved DLC          Data Field
+       K 2Data Field 
+1 bit bits 26-28 bits 18-25 1 bit 1 bit bits 16-17 bits 8-15 bits 0-7 1 bit         2 bits    4bits D7 D6 D5 D4 D3 D2 D1 D0
+
+          0        0             0     1       0        MCU ID CMD: 15H 0              0      5      0 0 0 gear          Current*100000
+
+       S                                                                                                                 Int32_t
+
+       Y P D0 D1 D2 D3 Current*100000  
+                                                                   
+
+                                                                   (:A)100000
+                                                                   50A
+                                                                   1000005000000
+                                                                   00H: 
+                                                                   01H: 
+                                                                   02H: 
+                                                                   03H: 
+                                                                   04H: 
+                                                                   D400H
+       LIPSK FLI D4                    Gear
+
+  F KY 3.1.14 CAN_SET_CURRENT_PERCENT_GEAR (16H)
+  S 1 
+Y P 3.1.1
+K I SOF Top 11 Bits of ID SRR IDE
+       L 26-28 18-25                                               RTR Reserved DLC
+                                             Bottom 18 Bits of ID                                        Data Field
+                                                      F YInt32_t
+1 bit  bits  bits         1 bit     1     bits bits 8-  bits 0-7 1 bit      2 bits  4bits D7     D6  D5  D4 D3 D2 D1 D0
+
+                                    bit 16-17     15
+
+       0K 2Data Field     0         1     0    MCU CMD:            0        0       7                                    Current Percent
+1            0                                                                              0 crc16_high crc16_low gear
+                                                  ID    16H                                                              *100000
+
+       S 
+       KY IP D0D1D2D3               
+                                                                   
+FLIPS PSKY FL D4                    Current
+                                    Percent*100000                 0.2
+                                                                            0.2*100000=20000    
+                                    Gear                           0.2*Motor Current
+                                                                   Motor Current
+                                                                   
+
+                                                                   00H: 
+                                                                   01H: 
+                                                                   02H: 
+                                                                   03H: 
+                                                                   04H: 
+                                                                   D400H
+
+                                                                            10
+                  SFLIPSKY FTESC CAN V1.4
+
+     3.1.15 CAN_SET_DUTY_GEAR (17H)
+
+     P 1 
+      I 3.1.1
+L SOF
+                        SRR IDE                Bottom 18 Bits of ID        F Int32_t         Data Field
+     Top 11 Bits of ID                                                     RTR Reserved DLC
+     SK 2Data Field 
+  1 bit bits 26-28 bits 18-25 1 bit 1 bit bits 16-17 bits 8-15 bits 0-7 1 bit     2 bits  4bits D7 D6 D5 D4 D3 D2 D1 D0
+
+  1  0  0               0              1    0           MCU ID CMD: 17H 0         0       5  0 0 0 gear  Duty*1000000
+
+     Y P D0 D1 D2 D3 Duty*1000000
+     K I D4D5                        
+                                                              
+
+                                                              0.2
+                                                              0.2*1000000=200000
+     PS FL 3.1.16 CAN_SET_ERPM_GEAR (18H)
+     I 1                             CRC16
+      L3.1.1
+F Y SOF
+     Top 11 Bits of ID  SRR IDE                Bottom 18 Bits of ID        RTR Reserved DLCK Int32_tData Field
+
+  1 bit bits 26-28 bits 18-25 1 bit 1 bit bits 16-17 bits 8-15 bits 0-7 1 bit     2 bits  4bits D7 D6 D5 D4 D3 D2 D1 D0
+     S 2Data Field 
+  1  0  0               0              1    0           MCU ID CMD: 18H 0         0       5  0 0 0 gear  motor erpm
+
+Y P D0 D1 D2 D3 Motor erpm
+K FLI SKY D4                                                  
+
+                           Gear                               *
+                                                               00H: 
+                                                               01H: 
+                                                               02H: 
+                                                               03H: 
+                                                               04H: 
+                                                               D400H
+     KY IP 3.1.17 CAN_SET_POSITION_GEAR (19H)
+
+     1 
+
+      S L 3.1.1
+I1P F SOF
+     Top 11 Bits of ID  SRR IDE                Bottom 18 Bits of ID        RTR Reserved DLC  Data Field
+
+L 2Data Field                          1    bits 16-17  bits         bits  1 bit  2 bits  4bits D7 D6 D5 D4 D3 D2 D1 D0
+  1 bit bits 26-28 bits 18-25 1 bit
+                                       bit              8-15         0-7
+
+F Y 
+     0  0               0              1    0           MCU ID CMD: 19H 0         0       5  0 0 0 gear  Position*100000
+
+                                                                                                         Int32_t
+
+     K D0 D1 D2 D3 Position*100000                            
+                                                              -180°~180°100000
+                                               PS 11
+                                                                                              SFLIPSKY FTESC CAN V1.4
+                                            45.6°
+
+                                            P 45.6*100000=4560000
+                                            I 00H: 
+   FL D4
+                                            01H: 
+
+                                            K 04H: 
+                            Gear            02H: 
+                                            03H: 
+   Y PS 3.1.18 CAN_SET_CURRENT_BRAKE (20H)
+   K I 1
+
+         3.1.1
+                                            D400H
+
+S L SOF
+P F 1 bit bits 26-28 bits 18-25 1 bit 1 bit bits 16-17 bits 8-15 bits 0-7
+   I 2Data Field Top 11 Bits of IDSRR IDEBottom 18 Bits of ID    RTR Reserved DLC                Data Field
+
+                                                                 1 bit          2 bits     4bits D7 D6 D5 D4 D3 D2 D1 D0
+
+1  0     0               0     1     0     MCU ID CMD: 20H 0                    0          4     0000        Brake*100000
+   L
+                                                                                                                   Int32_t
+
+   F Y D0 D1 D2 D3 Brake*100000             
+  SK 3.1.19 CAN_SET_CURRENT_BRAKE_PERCENT (21H)
+
+                 1 
+
+Y P 3.1.1
+                                            (:A)100000
+                                            
+
+K I SOF
+   L 1                                                           RTR Reserved DLC
+      Top 11 Bits of ID     SRR IDE        Bottom 18 Bits of ID                                        Data Field
+                                         F YInt32_t
+   1 bit bits 26-28 bits 18-25 1 bit 1 bit bits 16-17 bits 8-15 bits 0-7 1 bit     2 bits     4bits D7 D6 D5 D4 D3 D2 D1 D0
+
+      0               0     0     1     0  MCU ID CMD: 21H 0                       0          4  0000              Brake Current
+   K 
+                                                                                                                   Percent*100000
+
+   KY IPS D0D1D2D3
+   2Data Field 
+
+                                            
+
+                            Brake Current   0.2
+                            Percent*100000           0.2*100000=20000    
+                                            0.2*Motor Current Brake
+
+                                            Motor Current Brake
+                                            
+FLIPS PSKY FL 12
+FLIPSKY FTESC CAN V1.4PS 3.2 / C
+I 3.2.1 ECU
+   FL typedef enum {
+                                   REMOTE_SPEED_NON = 0,
+    K REMOTE_SPEED_LOW,
+    S REMOTE_SPEED_MIDDLE,
+                                   REMOTE_SPEED_HIGH,
+    Y P SMART_REVERSE
+                           } Motor_Gear;
+
+   K I // 
+   S L // ftescId: ID
+
+                           // duty:  [-1.0, 1.0]
+
+   P F // gear: REMOTE_SPEED_NON
+   I void canControlDutyGear(uint8_t ftescId, float duty, Motor_Gear gear) {
+
+                                   int32_t buff_index_t = 0;
+
+    Luint8_t can_signalframe_buff[8];
+
+                                   valueDecompose_I32(can_signalframe_buff, (int32_t)(duty * 1000000.0f), &buff_index_t);
+
+    F Y can_signalframe_buff[buff_index_t++] = gear;
+    K unsigned short crc = crc16(can_signalframe_buff, buff_index_t);
+
+                                   can_signalframe_buff[buff_index_t++] = (uint8_t)(crc >> 8);
+
+    S can_signalframe_buff[buff_index_t++] = (uint8_t)(crc & 0xFF);
+
+                                   canPackTransmitLowHardware(ftescId, CAN_SET_DUTY_GEAR_CRC16, can_signalframe_buff,
+
+ Y P buff_index_t);
+                           }
+
+K I // 
+   L // ftescId: ID
+   F Y // erpm: 
+
+                           // gear: REMOTE_SPEED_NON
+
+   K void canControlErpmGear(uint8_t ftescId, float erpm, Motor_Gear gear) {
+                                   int32_t buff_index_t = 0;
+    S uint8_t can_signalframe_buff[8];
+    Y P valueDecompose_I32(can_signalframe_buff, (int32_t)(erpm), &buff_index_t);
+                                   can_signalframe_buff[buff_index_t++] = gear;
+    K I unsigned short crc = crc16(can_signalframe_buff, buff_index_t);
+                                   can_signalframe_buff[buff_index_t++] = (uint8_t)(crc >> 8);
+    S L can_signalframe_buff[buff_index_t++] = (uint8_t)(crc & 0xFF);
+                                   canPackTransmitLowHardware(ftescId, CAN_SET_ERPM_GEAR_CRC16, can_signalframe_buff,
+    P F buff_index_t);
+                           }
+
+   I// 
+ L // ftescId: ID
+F Y // pos: , [-180°, 180°]
+
+                           // gear: REMOTE_SPEED_NON
+
+   K void canControlPositionGear(uint8_t ftescId, float pos, Motor_Gear gear) {
+          PS 13
+              SFLIPSKY FTESC CAN V1.4
+
+         int32_t buff_index_t = 0;
+
+  P uint8_t can_signalframe_buff[8];
+
+         valueDecompose_I32(can_signalframe_buff, (int32_t)(pos * 100000.0f), &buff_index_t);
+
+  I can_signalframe_buff[buff_index_t++] = gear;
+  L unsigned short crc = crc16(can_signalframe_buff, buff_index_t);
+
+         can_signalframe_buff[buff_index_t++] = (uint8_t)(crc >> 8);
+
+  F can_signalframe_buff[buff_index_t++] = (uint8_t)(crc & 0xFF);
+
+         canPackTransmitLowHardware(ftescId, CAN_SET_POSITION_GEAR_CRC16, can_signalframe_buff,
+
+       K buff_index_t);
+
+ }
+Y PS // 
+
+// ftescId: ID
+
+K I // current: A
+
+// gear: REMOTE_SPEED_NON
+
+S L void canControlCurrentGear(uint8_t ftescId, float current, Motor_Gear gear) {
+        int32_t buff_index_t = 0;
+ P F uint8_t can_signalframe_buff[8];
+        valueDecompose_I32(can_signalframe_buff, (int32_t)(current * 100000.0f), &buff_index_t);
+ Ican_signalframe_buff[buff_index_t++] = gear;
+ Lunsigned short crc = crc16(can_signalframe_buff, buff_index_t);
+        can_signalframe_buff[buff_index_t++] = (uint8_t)(crc >> 8);
+F Y can_signalframe_buff[buff_index_t++] = (uint8_t)(crc & 0xFF);
+        canPackTransmitLowHardware(ftescId, CAN_SET_CURRENT_GEAR_CRC16, can_signalframe_buff,
+      K buff_index_t);
+
+S }
+Y P // D
+K I // current: DA
+   L int32_t buff_index_t = 0;
+// ftescId: ID
+
+   F Y uint8_t can_signalframe_buff[8];
+void canControlIdCurrent(uint8_t ftescId, float current) {
+
+   K can_signalframe_buff[buff_index_t++] = 0;
+   S can_signalframe_buff[buff_index_t++] = (uint8_t)(crc >> 8);
+   valueDecompose_I32(can_signalframe_buff, (int32_t)(current * 100000.0f), &buff_index_t);
+
+   Y P canPackTransmitLowHardware(ftescId,
+   unsigned short crc = crc16(can_signalframe_buff, buff_index_t);
+
+ K I buff_index_t);
+   can_signalframe_buff[buff_index_t++] = (uint8_t)(crc & 0xFF);
+
+                                CAN_SET_ID_CURRENT_CRC16,           can_signalframe_buff,
+  S L // 
+  P F // ftescId: ID}
+
+                   // current: A
+
+  Ivoid canControlCurrentBrake(uint8_t ftescId, float current) {
+                            int32_t buff_index_t = 0;
+
+ L uint8_t can_signalframe_buff[8];
+F Y valueDecompose_I32(can_signalframe_buff, (int32_t)(current * 100000.0f), &buff_index_t);
+
+                            unsigned short crc = crc16(can_signalframe_buff, buff_index_t);
+
+   K can_signalframe_buff[buff_index_t++] = (uint8_t)(crc >> 8);
+         PS 14
+                 SFLIPSKY FTESC CAN V1.4
+
+                                   can_signalframe_buff[buff_index_t++] = (uint8_t)(crc & 0xFF);
+
+    P canPackTransmitLowHardware(ftescId, CAN_SET_CURRENT_BRAKE_CRC16, can_signalframe_buff,
+                                                                                buff_index_t);
+
+   I }
+   L // 
+   F // ftescId: ID
+
+                           // current_percent: [-1.0, 1.0]
+
+   K void comm_can_set_current_rel(uint8_t ftescId, float current_percent) {
+
+                                   int32_t buff_index_t = 0;
+
+    S uint8_t can_signalframe_buff[8];
+    Y P valueDecompose_F32(can_signalframe_buff, current_percent, 1e5, &buff_index_t);
+
+                                   unsigned short crc = crc16(can_signalframe_buff, buff_index_t);
+
+    K I can_signalframe_buff[buff_index_t++] = (uint8_t)(crc >> 8);
+
+                                   can_signalframe_buff[buff_index_t++] = (uint8_t)(crc & 0xFF);
+
+    S L canPackTransmitLowHardware(ftescId, CAN_SET_CURRENT_PERCENT_CRC16, can_signalframe_buff,
+                                                                                 buff_index_t);
+
+   P F }
+   I // 
+   L// ftescId: ID
+
+                           // current_percent: [-1.0, 1.0]
+
+   F Y // gear: REMOTE_SPEED_NON
+
+                           void canControlCurrentPercentGear(uint8_t ftescId, float current_percent, Motor_Gear gear) {
+
+    K int32_t buff_index_t = 0;
+    S uint8_t can_signalframe_buff[8];
+
+                                   valueDecompose_F32(can_signalframe_buff, current_percent, 1e5, &buff_index_t);
+
+ Y P can_signalframe_buff[buff_index_t++] = gear;
+                                   unsigned short crc = crc16(can_signalframe_buff, buff_index_t);
+
+K I can_signalframe_buff[buff_index_t++] = (uint8_t)(crc >> 8);
+                                   can_signalframe_buff[buff_index_t++] = (uint8_t)(crc & 0xFF);
+    L canPackTransmitLowHardware(ftescId, CAN_SET_CURRENT_PERCENT_GEAR_CRC16, can_signalframe_buff,
+          F Y buff_index_t);
+                           }
+   K // 
+   S // ftescId: ID
+                           // current_percent: [-1.0, 1.0]
+   Y P void canControlCurrentBrakePercent(uint8_t ftescId, float current_percent) {
+    K I int32_t buff_index_t = 0;
+                                   uint8_t can_signalframe_buff[8];
+    S L valueDecompose_F32(can_signalframe_buff, current_percent, 1e5, &buff_index_t);
+                                   unsigned short crc = crc16(can_signalframe_buff, buff_index_t);
+    P F can_signalframe_buff[buff_index_t++] = (uint8_t)(crc >> 8);
+                                   can_signalframe_buff[buff_index_t++] = (uint8_t)(crc & 0xFF);
+   I canPackTransmitLowHardware(ftescId, CAN_SET_CURRENT_BRAKE_PERCENT_CRC16, can_signalframe_buff,
+                                                                                 buff_index_t);
+ L}
+F PSKY15
+                 SFLIPSKY FTESC CAN V1.4
+
+                      3.2.2 CAN(0BH0CH0DH)
+
+   IP #define ESC_NUM_MAX 4
+   L typedef struct {
+    F uint8_t esc_id;
+
+                                   float motorCurrent;
+
+    K float BatteryCurrent;
+   S } can_esc_data_0;
+   Y P typedef struct {
+
+                                   uint8_t esc_id;
+
+    K I float erpm;
+
+                                   float duty;
+
+   S L } can_esc_data_1;
+   P F typedef struct {
+    Iuint8_t esc_id;
+
+                                   float mosfetTemp;
+
+    Lfloat motorTemp;
+
+                                   float battVoltage;
+
+   F Y } can_esc_data_2;
+   K can_esc_data_0 esc_data_0[ESC_NUM_MAX];
+   S can_esc_data_1 esc_data_1[ESC_NUM_MAX];
+
+                           can_esc_data_2 esc_data_2[ESC_NUM_MAX];
+
+KY IP // extern_id:ID
+                           // buff:CAN 
+   L // length:
+   F Y static void canCommIDHandle(uint32_t extern_id, uint8_t *buff, int length) {
+                                   int32_t buff_index_t = 0;
+    K uint8_t crc16_low = 0;
+                                   uint8_t crc16_high = 0;
+    S uint8_t esc_id = (extern_id >> 8);//ID
+    Y P CAN_COMMAND can_comm_id = (CAN_COMMAND)(extern_id & 0xFF);//
+    K I switch (can_comm_id) {
+    S L case CAN_ESC_REALTIME_DATA_0_CRC16:
+                                   {
+    P F crc16_high = buff[6];
+                                            crc16_low = buff[7];
+   I if (crc16(buff, 6) == ((unsigned short) crc16_high << 8 | (unsigned short) crc16_low))
+                                            {
+ L for (int i = 0; i < ESC_NUMBER_MAX; i++) {
+F Y can_esc_data_0 *esc_data_status_0 = &esc_data_0[i];
+                                                            //"-2"ID
+       K if (esc_data_status_0->esc_id == esc_id ||
+          PS 16
+           P {                                  SFLIPSKY FTESC CAN V1.4
+           I esc_data_status_0->motorCurrent =
+           esc_data_status_0->esc_id == -2)
+
+                   buff_index_t = 0;
+                   L (float)valueCompose_I24(buff, &buff_index_t)*0.001f;
+                   esc_data_status_0->esc_id = esc_id;
+
+                   F(float)valueCompose_I24(buff, &buff_index_t)*0.001f;
+           K }
+           esc_data_status_0->BatteryCurrent =
+
+S }        break;
+
+Y P }   }
+
+    K I case CAN_ESC_REALTIME_DATA_1_CRC16:break;
+    S L {
+
+                                            crc16_high = buff[6];
+
+     P F crc16_low = buff[7];
+
+                                            if (crc16(buff, 6) == ((unsigned short) crc16_high << 8 | (unsigned short) crc16_low))
+
+     I{
+     L for (int i = 0; i < ESC_NUMBER_MAX; i++) {
+
+                                                            can_esc_data_1 *esc_data_status_1 = &esc_data_1[i];
+
+    F Y if (esc_data_status_1->esc_id == esc_id ||
+                                                                     esc_data_status_1->esc_id == -2) {
+        K buff_index_t = 0;
+        S esc_data_status_1->esc_id = esc_id;
+                                                                     esc_data_status_1->erpm =
+
+ Y P (float)valueCompose_I24(buff, &buff_index_t);
+                                                                     esc_data_status_1->duty =
+
+K I (float)valueCompose_I24(buff, &buff_index_t)*0.001f;
+                                                                     break;
+       L }
+      F Y }
+                                            }
+    K }
+                                   break;
+   S case CAN_ESC_REALTIME_DATA_2_CRC16:
+   Y P {
+    K I crc16_high = buff[6];
+
+                                    crc16_low = buff[7];
+
+    S L if (crc16(buff, 6) == ((unsigned short) crc16_high << 8 | (unsigned short) crc16_low))
+                                    {
+
+   P F for (int i = 0; i < ESC_NUMBER_MAX; i++) {
+                                                     can_esc_data_2 *esc_data_status_2 = &esc_data_2[i];
+
+  I if (esc_data_status_2->esc_id == esc_id ||
+                                                           esc_data_status_2->esc_id == -2) {
+
+ L buff_index_t = 0;
+F Y esc_data_status_2->esc_id = esc_id;
+
+                                                              esc_data_status_2->mosfetTemp =
+
+        K (float)valueCompose_I24(buff, &buff_index_t)*0.01f;
+         PS 17
+                 SFLIPSKY FTESC CAN V1.4
+
+                                                                     esc_data_status_2->motorTemp =
+
+         P (float)valueCompose_I24(buff, &buff_index_t)*0.01f;
+
+                                                                     esc_data_status_2->battVoltage =
+
+         I (float)valueCompose_I24(buff, &buff_index_t)*0.01f;
+        L break;
+
+                                                            }
+
+      F }
+
+                                            }
+
+    K }
+
+                                   break;
+
+    Y PS default:
+                                            break;
+
+    K I }
+
+                           }
+
+   S L // (int16_t), 
+   P F void valueDecompose_I16(uint8_t* dataNum, int16_t value, int16_t *numInd) {
+
+                              dataNum[(*numInd)++] = value >> 8;
+
+   I dataNum[(*numInd)++] = value;
+   L}
+   F Y // (uint16_t), 
+
+                           void valueDecompose_U16(uint8_t* dataNum, uint16_t value, int16_t *numInd) {
+
+   K dataNum[(*numInd)++] = value >> 8;
+   S dataNum[(*numInd)++] = value;
+
+                           }
+
+ Y P // (int32_t)8bit
+K I // 24bit, 
+
+                           // :-8388608~8388607
+
+   L void valueDecompose_I24(uint8_t* dataNum, int32_t value, int16_t *numInd) {
+   F Y dataNum[(*numInd)++] = value >> 16;
+
+                              dataNum[(*numInd)++] = value >> 8;
+
+   K dataNum[(*numInd)++] = value;
+
+                           }
+
+   S // (uint32_t)8bit
+   Y P // 24bit, 
+   K I // :0~16777215
+
+                           void valueDecompose_U24(uint8_t* dataNum, uint32_t value, int16_t *numInd) {
+
+   S L dataNum[(*numInd)++] = value >> 16;
+
+                              dataNum[(*numInd)++] = value >> 8;
+
+   P F dataNum[(*numInd)++] = value;
+
+                           }
+
+   I// (int32_t), 
+ L void valueDecompose_I32(uint8_t* dataNum, int32_t value, int16_t *numInd) {
+F Y dataNum[(*numInd)++] = value >> 24;
+
+                              dataNum[(*numInd)++] = value >> 16;
+
+   K dataNum[(*numInd)++] = value >> 8;
+          PS 18
+FLIPSKY FTESC CAN V1.4S dataNum[(*numInd)++] = value;
+P }
+I // (uint32_t), 
+L void valueDecompose_U32(uint8_t* dataNum, uint32_t value, int16_t *numInd) {
+
+   dataNum[(*numInd)++] = value >> 24;
+
+F dataNum[(*numInd)++] = value >> 16;
+
+   dataNum[(*numInd)++] = value >> 8;
+
+K dataNum[(*numInd)++] = value;
+
+}
+Y PS // (int16_t), 
+
+int16_t valueCompose_I16(const uint8_t *dataNum, int16_t *numInd) {
+
+K I int16_t retval = ((uint16_t) dataNum[*numInd]) << 8 |
+                ((uint16_t) dataNum[*numInd + 1]);
+
+S L *numInd += 2;
+
+   return retval;
+
+P F }
+I // (uint16_t), 
+Luint16_t valueCompose_U16(const uint8_t *dataNum, int16_t *numInd) {
+
+   uint16_t retval = ((uint16_t) dataNum[*numInd]) << 8 |
+
+F Y ((uint16_t) dataNum[*numInd + 1]);
+
+   *numInd += 2;
+
+K return retval;
+S }
+ Y P // (int32_t)
+                           // , 
+
+K I int32_t valueCompose_I32(const uint8_t *dataNum, int16_t *numInd) {
+                              int32_t retval = ((uint32_t) dataNum[*numInd]) << 16 |
+     L ((uint32_t) dataNum[*numInd + 1]) << 8 |
+     F Y ((uint32_t) dataNum[*numInd + 2]);
+                              *numInd += 3;
+   K return retval;
+                           }
+S // (uint32_t), 
+Y P uint32_t valueCompose_U32(const uint8_t *dataNum, int16_t *numInd) {
+K I uint32_t retval = ((uint32_t) dataNum[*numInd]) << 16 |
+
+                ((uint32_t) dataNum[*numInd + 1]) << 8 |
+
+ S L ((uint32_t) dataNum[*numInd + 2]);
+
+   *numInd += 3;
+
+P F return retval;
+
+}
+  I// (uint32_t), 
+ L uint32_t valueCompose_U32(const uint8_t *dataNum, int16_t *numInd) {
+F Y uint32_t retval = ((uint32_t) dataNum[*numInd]) << 24 |
+
+                                    ((uint32_t) dataNum[*numInd + 1]) << 16 |
+
+    K ((uint32_t) dataNum[*numInd + 2]) << 8 |
+         PS 19
+  S ((uint32_t) dataNum[*numInd + 3]);FLIPSKY FTESC CAN V1.4
+P *numInd += 4;
+
+   return retval;
+
+I }
+L // (int32_t), 
+F int32_t valueCompose_I32(const uint8_t *dataNum, int16_t *numInd) {
+
+   int32_t retval = ((uint32_t) dataNum[*numInd]) << 24 |
+
+  K ((uint32_t) dataNum[*numInd + 1]) << 16 |
+
+                ((uint32_t) dataNum[*numInd + 2]) << 8 |
+
+  S ((uint32_t) dataNum[*numInd + 3]);
+Y P *numInd += 4;
+
+   return retval;
+
+K I }
+S L // (uint32_t), 
+
+uint32_t valueCompose_U32(const uint8_t *dataNum, int16_t *numInd) {
+
+P F uint32_t retval = ((uint32_t) dataNum[*numInd]) << 24 |
+
+                ((uint32_t) dataNum[*numInd + 1]) << 16 |
+
+  I((uint32_t) dataNum[*numInd + 2]) << 8 |
+ L((uint32_t) dataNum[*numInd + 3]);
+
+   *numInd += 4;
+
+F Y return retval;
+
+}
+  SK // floatint16_t, 
+
+                  void valueDecompose_F16(uint8_t* dataNum, float value, float multiple, int32_t *numInd) {
+
+Y P valueDecompose_I16(dataNum, (int16_t)(value * multiple), numInd);
+                  }
+K I // floatint32_t, 
+   L void valueDecompose_F32(uint8_t* dataNum, float value, float multiple, int32_t *numInd) {
+    F Y valueDecompose_I32(dataNum, (int32_t)(value * multiple), numInd);
+
+                           }
+K // (int16_t), float
+S float valueCompose_F16(const uint8_t *dataNum, float multiple, int16_t *numInd) {
+
+      return (float)valueCompose_I16(dataNum, numInd) / multiple;
+
+Y P }
+K I // (int32_t), float
+S L float valueCompose_F32(const uint8_t *dataNum, float multiple, int16_t *numInd) {
+
+      return (float)valueCompose_I32(dataNum, numInd) / multiple;
+
+P F }
+FLI PSKY20
+

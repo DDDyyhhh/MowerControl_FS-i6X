@@ -1,0 +1,12 @@
+{
+  "control_chassis/Core/Src/tim.c": {
+    "crlf": 525,
+    "bare_lf": 0,
+    "sha256": "4731c272af5bdc879b2216f518e190bc4bdde3a3b0d33bdcd481df14cc7b2fef"
+  },
+  "control_chassis/concrol.ioc": {
+    "crlf": 582,
+    "bare_lf": 10,
+    "sha256": "2bb5ed3d2865542b84a219be4af6b00210cd0f6082c2efb215304cd6d7f9114d"
+  }
+}

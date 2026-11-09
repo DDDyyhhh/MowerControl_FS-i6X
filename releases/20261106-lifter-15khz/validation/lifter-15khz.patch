@@ -1,0 +1,22 @@
+--- a/control_chassis/Core/Src/tim.c
++++ b/control_chassis/Core/Src/tim.c
+@@ -169,7 +169,7 @@
+   htim3.Instance = TIM3;
+   htim3.Init.Prescaler = 0;
+   htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
+-  htim3.Init.Period = 8399;
++  htim3.Init.Period = 5599;
+   htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+   htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+   if (HAL_TIM_PWM_Init(&htim3) != HAL_OK)
+--- a/control_chassis/concrol.ioc
++++ b/control_chassis/concrol.ioc
+@@ -557,7 +557,7 @@
+ TIM3.Channel-PWM\ Generation3\ CH3=TIM_CHANNEL_3
+ TIM3.Channel-PWM\ Generation4\ CH4=TIM_CHANNEL_4
+ TIM3.IPParameters=Channel-PWM Generation3 CH3,Channel-PWM Generation4 CH4,Period
+-TIM3.Period=8399
++TIM3.Period=5599
+ TIM4.Channel-PWM\ Generation1\ CH1=TIM_CHANNEL_1
+ TIM4.IPParameters=Channel-PWM Generation1 CH1,Prescaler,Period,Pulse-PWM Generation1 CH1
+ TIM4.Period=999

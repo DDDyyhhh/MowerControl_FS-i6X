@@ -1,0 +1,305 @@
+$ cmake --preset debug -S control_chassis
+-- Configuring done (0.0s)
+-- Generating done (0.0s)
+-- Build files have been written to: /Users/dyh/Documents/Codex/MowerControl/control_chassis/build/debug
+$ cmake --build control_chassis/build/debug --clean-first -j 8
+[1/1] Cleaning all built files...
+Cleaning... 90 files.
+[1/90] Building C object CMakeFiles/control_chassis.dir/Core/Src/adc.c.obj
+[2/90] Building C object CMakeFiles/control_chassis.dir/Core/Src/can.c.obj
+[3/90] Building C object CMakeFiles/control_chassis.dir/Core/Src/freertos.c.obj
+In file included from /Users/dyh/Documents/Codex/MowerControl/control_chassis/Core/Src/freertos.c:34:
+/Users/dyh/Documents/Codex/MowerControl/control_chassis/Core/Inc/rs485.h:46:13: warning: 'RS485_Start_Receive' declared 'static' but never defined [-Wunused-function]
+   46 | static void RS485_Start_Receive(void);
+      |             ^~~~~~~~~~~~~~~~~~~
+[4/90] Building C object CMakeFiles/control_chassis.dir/Core/Src/spi.c.obj
+[5/90] Building C object CMakeFiles/control_chassis.dir/Core/Src/dma.c.obj
+[6/90] Building C object CMakeFiles/control_chassis.dir/Core/Src/flash_storage.c.obj
+/Users/dyh/Documents/Codex/MowerControl/control_chassis/Core/Src/flash_storage.c:14:22: warning: 'g_app_settings' defined but not used [-Wunused-variable]
+   14 | static AppSettings_t g_app_settings;
+      |                      ^~~~~~~~~~~~~~
+[7/90] Building C object CMakeFiles/control_chassis.dir/Core/Src/gpio.c.obj
+[8/90] Building C object CMakeFiles/control_chassis.dir/Core/Src/main.c.obj
+/Users/dyh/Documents/Codex/MowerControl/control_chassis/Core/Src/main.c: In function 'main':
+/Users/dyh/Documents/Codex/MowerControl/control_chassis/Core/Src/main.c:201:9: warning: unused variable 'angles' [-Wunused-variable]
+  201 |   float angles[3];
+      |         ^~~~~~
+In file included from /Users/dyh/Documents/Codex/MowerControl/control_chassis/Core/Src/main.c:57:
+/Users/dyh/Documents/Codex/MowerControl/control_chassis/Core/Inc/rs485.h: At top level:
+/Users/dyh/Documents/Codex/MowerControl/control_chassis/Core/Inc/rs485.h:46:13: warning: 'RS485_Start_Receive' declared 'static' but never defined [-Wunused-function]
+   46 | static void RS485_Start_Receive(void);
+      |             ^~~~~~~~~~~~~~~~~~~
+/Users/dyh/Documents/Codex/MowerControl/control_chassis/Core/Src/main.c:170:17: warning: 'obstacle_clear_timestamp' defined but not used [-Wunused-variable]
+  170 | static uint32_t obstacle_clear_timestamp = 0; // 鐢ㄤ簬寤惰繜娓呴櫎鐨勮鏃跺櫒
+      |                 ^~~~~~~~~~~~~~~~~~~~~~~~
+/Users/dyh/Documents/Codex/MowerControl/control_chassis/Core/Src/main.c:168:17: warning: 'g_key_press_time' defined but not used [-Wunused-variable]
+  168 | static uint32_t g_key_press_time[8] = {0}; // 淇濆瓨8涓寜閿殑鎸変笅璧峰鏃堕棿
+      |                 ^~~~~~~~~~~~~~~~
+/Users/dyh/Documents/Codex/MowerControl/control_chassis/Core/Src/main.c:165:16: warning: 'key1_was_pressed' defined but not used [-Wunused-variable]
+  165 | static uint8_t key1_was_pressed = 0;
+      |                ^~~~~~~~~~~~~~~~
+/Users/dyh/Documents/Codex/MowerControl/control_chassis/Core/Src/main.c:164:16: warning: 'key0_was_pressed' defined but not used [-Wunused-variable]
+  164 | static uint8_t key0_was_pressed = 0;
+      |                ^~~~~~~~~~~~~~~~
+/Users/dyh/Documents/Codex/MowerControl/control_chassis/Core/Src/main.c:159:16: warning: 'g_stopwatch_running' defined but not used [-Wunused-variable]
+  159 | static uint8_t g_stopwatch_running = 0;
+      |                ^~~~~~~~~~~~~~~~~~~
+/Users/dyh/Documents/Codex/MowerControl/control_chassis/Core/Src/main.c:158:17: warning: 'g_stopwatch_start_time' defined but not used [-Wunused-variable]
+  158 | static uint32_t g_stopwatch_start_time = 0;
+      |                 ^~~~~~~~~~~~~~~~~~~~~~
+/Users/dyh/Documents/Codex/MowerControl/control_chassis/Core/Src/main.c:106:14: warning: 'g_ultrasonic_distance_cm' defined but not used [-Wunused-variable]
+  106 | static float g_ultrasonic_distance_cm = -1.0f; // 鐢ㄤ簬淇濆瓨鏈€鏂扮殑鏈夋晥璺濈
+      |              ^~~~~~~~~~~~~~~~~~~~~~~~
+[9/90] Building C object CMakeFiles/control_chassis.dir/Core/Src/stm32f4xx_hal_timebase_tim.c.obj
+[10/90] Building C object CMakeFiles/control_chassis.dir/Core/Src/stm32f4xx_hal_msp.c.obj
+[11/90] Building C object CMakeFiles/control_chassis.dir/Core/Src/system_stm32f4xx.c.obj
+[12/90] Building C object CMakeFiles/control_chassis.dir/Core/Src/usart.c.obj
+[13/90] Building C object CMakeFiles/control_chassis.dir/Core/Src/stm32f4xx_it.c.obj
+In file included from /Users/dyh/Documents/Codex/MowerControl/control_chassis/Core/Src/stm32f4xx_it.c:30:
+/Users/dyh/Documents/Codex/MowerControl/control_chassis/Core/Inc/rs485.h:46:13: warning: 'RS485_Start_Receive' declared 'static' but never defined [-Wunused-function]
+   46 | static void RS485_Start_Receive(void);
+      |             ^~~~~~~~~~~~~~~~~~~
+[14/90] Building C object CMakeFiles/control_chassis.dir/Core/Src/tim.c.obj
+[15/90] Building C object CMakeFiles/control_chassis.dir/Core/UserApp/app_Comm.c.obj
+[16/90] Building C object CMakeFiles/control_chassis.dir/Core/UserApp/app_BMS_Sensor.c.obj
+In file included from /Users/dyh/Documents/Codex/MowerControl/control_chassis/Core/Inc/AXEBMS_RS485.h:4,
+                 from /Users/dyh/Documents/Codex/MowerControl/control_chassis/Core/UserApp/app_BMS_Sensor.c:113:
+/Users/dyh/Documents/Codex/MowerControl/control_chassis/Core/Inc/rs485.h:46:13: warning: 'RS485_Start_Receive' declared 'static' but never defined [-Wunused-function]
+   46 | static void RS485_Start_Receive(void);
+      |             ^~~~~~~~~~~~~~~~~~~
+[17/90] Building C object CMakeFiles/control_chassis.dir/Core/UserApp/safety_ownership_gate.c.obj
+[18/90] Building C object CMakeFiles/control_chassis.dir/Core/UserApp/blade_manual_control.c.obj
+[19/90] Building C object CMakeFiles/control_chassis.dir/Core/UserApp/telemetry_snapshot.c.obj
+[20/90] Building C object CMakeFiles/control_chassis.dir/Core/UserApp/app_SerialTX.c.obj
+[21/90] Building C object CMakeFiles/control_chassis.dir/Core/UserApp/app_Report.c.obj
+[22/90] Building C object CMakeFiles/control_chassis.dir/Core/UserApp/app_context.c.obj
+[23/90] Building C object CMakeFiles/control_chassis.dir/Core/UserApp/app_Motion.c.obj
+/Users/dyh/Documents/Codex/MowerControl/control_chassis/Core/UserApp/app_Motion.c: In function 'StartTask_Motion':
+/Users/dyh/Documents/Codex/MowerControl/control_chassis/Core/UserApp/app_Motion.c:396:12: warning: unused variable 'is_joystick_active' [-Wunused-variable]
+  396 |       bool is_joystick_active = (abs((int)mapped_throttle - 2048) > 200) ||
+      |            ^~~~~~~~~~~~~~~~~~
+/Users/dyh/Documents/Codex/MowerControl/control_chassis/Core/UserApp/app_Motion.c:172:19: warning: unused variable 'cruise_toggle_tick' [-Wunused-variable]
+  172 |   static uint32_t cruise_toggle_tick = 0;
+      |                   ^~~~~~~~~~~~~~~~~~
+/Users/dyh/Documents/Codex/MowerControl/control_chassis/Core/UserApp/app_Motion.c:170:18: warning: unused variable 'cruise_key_lock' [-Wunused-variable]
+  170 |   static uint8_t cruise_key_lock = 0;
+      |                  ^~~~~~~~~~~~~~~
+/Users/dyh/Documents/Codex/MowerControl/control_chassis/Core/UserApp/app_Motion.c:168:18: warning: unused variable 'us_toggle_lock' [-Wunused-variable]
+  168 |   static uint8_t us_toggle_lock = 0;
+      |                  ^~~~~~~~~~~~~~
+/Users/dyh/Documents/Codex/MowerControl/control_chassis/Core/UserApp/app_Motion.c:156:16: warning: unused variable 'last_blade_command' [-Wunused-variable]
+  156 |   static float last_blade_command = -1.0f;
+      |                ^~~~~~~~~~~~~~~~~~
+/Users/dyh/Documents/Codex/MowerControl/control_chassis/Core/UserApp/app_Motion.c:155:18: warning: unused variable 'last_blade_knob' [-Wunused-variable]
+  155 |   static uint8_t last_blade_knob = 0xFF;
+      |                  ^~~~~~~~~~~~~~~
+/Users/dyh/Documents/Codex/MowerControl/control_chassis/Core/UserApp/app_Motion.c:152:15: warning: variable 'last_key_state' set but not used [-Wunused-but-set-variable]
+  152 |   static bool last_key_state[8] = {0};
+      |               ^~~~~~~~~~~~~~
+In file included from /Users/dyh/Documents/Codex/MowerControl/control_chassis/Core/Inc/AXEBMS_RS485.h:4,
+                 from /Users/dyh/Documents/Codex/MowerControl/control_chassis/Core/UserApp/app_Motion.c:37:
+/Users/dyh/Documents/Codex/MowerControl/control_chassis/Core/Inc/rs485.h: At top level:
+/Users/dyh/Documents/Codex/MowerControl/control_chassis/Core/Inc/rs485.h:46:13: warning: 'RS485_Start_Receive' declared 'static' but never defined [-Wunused-function]
+   46 | static void RS485_Start_Receive(void);
+      |             ^~~~~~~~~~~~~~~~~~~
+[24/90] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/blade_confirm_ch6_adapter.c.obj
+[25/90] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/A28.c.obj
+[26/90] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/AXEBMS_RS485.c.obj
+/Users/dyh/Documents/Codex/MowerControl/control_chassis/Core/UserDev/AXEBMS_RS485.c: In function 'AXEBMS_RS485_Process':
+/Users/dyh/Documents/Codex/MowerControl/control_chassis/Core/UserDev/AXEBMS_RS485.c:235:21: warning: unused variable 'lastRequestTime' [-Wunused-variable]
+  235 |     static uint32_t lastRequestTime = 0;
+      |                     ^~~~~~~~~~~~~~~
+In file included from /Users/dyh/Documents/Codex/MowerControl/control_chassis/Core/Inc/AXEBMS_RS485.h:4,
+                 from /Users/dyh/Documents/Codex/MowerControl/control_chassis/Core/UserDev/AXEBMS_RS485.c:21:
+/Users/dyh/Documents/Codex/MowerControl/control_chassis/Core/Inc/rs485.h: At top level:
+/Users/dyh/Documents/Codex/MowerControl/control_chassis/Core/Inc/rs485.h:46:13: warning: 'RS485_Start_Receive' declared 'static' but never defined [-Wunused-function]
+   46 | static void RS485_Start_Receive(void);
+      |             ^~~~~~~~~~~~~~~~~~~
+/Users/dyh/Documents/Codex/MowerControl/control_chassis/Core/UserDev/AXEBMS_RS485.c:206:13: warning: 'parseResponseData' defined but not used [-Wunused-function]
+  206 | static void parseResponseData(AXEBMS_RS485* bms) {
+      |             ^~~~~~~~~~~~~~~~~
+/Users/dyh/Documents/Codex/MowerControl/control_chassis/Core/UserDev/AXEBMS_RS485.c:180:13: warning: 'receiveResponseFrame' defined but not used [-Wunused-function]
+  180 | static bool receiveResponseFrame(AXEBMS_RS485* bms) {
+      |             ^~~~~~~~~~~~~~~~~~~~
+/Users/dyh/Documents/Codex/MowerControl/control_chassis/Core/UserDev/AXEBMS_RS485.c:140:13: warning: 'sendRequestFrame' defined but not used [-Wunused-function]
+  140 | static void sendRequestFrame(AXEBMS_RS485* bms) {
+      |             ^~~~~~~~~~~~~~~~
+[27/90] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/BladeMotor.c.obj
+[28/90] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/E34.C.obj
+[29/90] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/EG2104.c.obj
+[30/90] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/blade_hil_uart_debug.c.obj
+[31/90] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/buzzer.c.obj
+[32/90] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/bsp_imu_solver.c.obj
+[33/90] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/flysky_ibus_servo.c.obj
+/Users/dyh/Documents/Codex/MowerControl/control_chassis/Core/UserDev/flysky_ibus_servo.c: In function 'FlySkyIbusServo_ReadSnapshot':
+/Users/dyh/Documents/Codex/MowerControl/control_chassis/Core/UserDev/flysky_ibus_servo.c:509:50: warning: 'sequence_after' may be used uninitialized [-Wmaybe-uninitialized]
+  509 |     } while ((sequence_before != sequence_after) ||
+      |              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~
+  510 |              ((sequence_after & 1U) != 0U));
+      |              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~        
+/Users/dyh/Documents/Codex/MowerControl/control_chassis/Core/UserDev/flysky_ibus_servo.c:491:14: note: 'sequence_after' was declared here
+  491 |     uint32_t sequence_after;
+      |              ^~~~~~~~~~~~~~
+[34/90] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/connet_check.c.obj
+[35/90] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/car_Control.c.obj
+/Users/dyh/Documents/Codex/MowerControl/control_chassis/Core/UserDev/car_Control.c: In function 'v_ctl_uart':
+/Users/dyh/Documents/Codex/MowerControl/control_chassis/Core/UserDev/car_Control.c:448:17: warning: unused variable 'current_sign' [-Wunused-variable]
+  448 |     const char *current_sign = (current_int < 0) ? "-" : "";
+      |                 ^~~~~~~~~~~~
+/Users/dyh/Documents/Codex/MowerControl/control_chassis/Core/UserDev/car_Control.c:447:9: warning: unused variable 'current_abs' [-Wunused-variable]
+  447 |     int current_abs = (current_int < 0) ? -current_int : current_int;
+      |         ^~~~~~~~~~~
+/Users/dyh/Documents/Codex/MowerControl/control_chassis/Core/UserDev/car_Control.c:444:17: warning: unused variable 'speed_sign' [-Wunused-variable]
+  444 |     const char *speed_sign = (speed_int < 0) ? "-" : "";
+      |                 ^~~~~~~~~~
+/Users/dyh/Documents/Codex/MowerControl/control_chassis/Core/UserDev/car_Control.c:443:9: warning: unused variable 'speed_abs' [-Wunused-variable]
+  443 |     int speed_abs = (speed_int < 0) ? -speed_int : speed_int;
+      |         ^~~~~~~~~
+/Users/dyh/Documents/Codex/MowerControl/control_chassis/Core/UserDev/car_Control.c:422:20: warning: unused variable 'reset_counter' [-Wunused-variable]
+  422 |     static uint8_t reset_counter[4] = {0, 0, 0, 0};
+      |                    ^~~~~~~~~~~~~
+/Users/dyh/Documents/Codex/MowerControl/control_chassis/Core/UserDev/car_Control.c:420:18: warning: variable 'last_speed' set but not used [-Wunused-but-set-variable]
+  420 |     static float last_speed[4] = {0.0f, 0.0f, 0.0f, 0.0f};
+      |                  ^~~~~~~~~~
+/Users/dyh/Documents/Codex/MowerControl/control_chassis/Core/UserDev/car_Control.c:416:13: warning: variable 'motor_axis_id' set but not used [-Wunused-but-set-variable]
+  416 |     uint8_t motor_axis_id;
+      |             ^~~~~~~~~~~~~
+/Users/dyh/Documents/Codex/MowerControl/control_chassis/Core/UserDev/car_Control.c: In function 'MotionControl_Parking':
+/Users/dyh/Documents/Codex/MowerControl/control_chassis/Core/UserDev/car_Control.c:529:11: warning: unused variable 'hold_rpm' [-Wunused-variable]
+  529 |     float hold_rpm = 0.0f;
+      |           ^~~~~~~~
+/Users/dyh/Documents/Codex/MowerControl/control_chassis/Core/UserDev/car_Control.c: In function 'Send_Motor_Command':
+/Users/dyh/Documents/Codex/MowerControl/control_chassis/Core/UserDev/car_Control.c:585:17: warning: unused variable 'current_sign' [-Wunused-variable]
+  585 |     const char *current_sign = (current_int < 0) ? "-" : "";
+      |                 ^~~~~~~~~~~~
+/Users/dyh/Documents/Codex/MowerControl/control_chassis/Core/UserDev/car_Control.c:584:9: warning: unused variable 'current_abs' [-Wunused-variable]
+  584 |     int current_abs = (current_int < 0) ? -current_int : current_int;
+      |         ^~~~~~~~~~~
+/Users/dyh/Documents/Codex/MowerControl/control_chassis/Core/UserDev/car_Control.c:581:17: warning: unused variable 'speed_sign' [-Wunused-variable]
+  581 |     const char *speed_sign = (speed_int < 0) ? "-" : "";
+      |                 ^~~~~~~~~~
+/Users/dyh/Documents/Codex/MowerControl/control_chassis/Core/UserDev/car_Control.c:580:9: warning: unused variable 'speed_abs' [-Wunused-variable]
+  580 |     int speed_abs = (speed_int < 0) ? -speed_int : speed_int;
+      |         ^~~~~~~~~
+/Users/dyh/Documents/Codex/MowerControl/control_chassis/Core/UserDev/car_Control.c:561:13: warning: variable 'motor_axis_id' set but not used [-Wunused-but-set-variable]
+  561 |     uint8_t motor_axis_id;
+      |             ^~~~~~~~~~~~~
+[36/90] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/chassis_control.c.obj
+/Users/dyh/Documents/Codex/MowerControl/control_chassis/Core/UserDev/chassis_control.c: In function 'chassis_control_parse_host_frame':
+/Users/dyh/Documents/Codex/MowerControl/control_chassis/Core/UserDev/chassis_control.c:168:12: warning: unused variable 'vy_raw' [-Wunused-variable]
+  168 |     int8_t vy_raw = (int8_t)payload[2];
+      |            ^~~~~~
+/Users/dyh/Documents/Codex/MowerControl/control_chassis/Core/UserDev/chassis_control.c: At top level:
+/Users/dyh/Documents/Codex/MowerControl/control_chassis/Core/UserDev/chassis_control.c:434:13: warning: 'chassis_control_send_oid_wheel_speed_feedback' defined but not used [-Wunused-function]
+  434 | static void chassis_control_send_oid_wheel_speed_feedback(void)
+      |             ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+[37/90] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/cruise_control.c.obj
+/Users/dyh/Documents/Codex/MowerControl/control_chassis/Core/UserDev/cruise_control.c:73:14: warning: 'Yaw_PID_Compute' defined but not used [-Wunused-function]
+   73 | static float Yaw_PID_Compute(float target, float current)
+      |              ^~~~~~~~~~~~~~~
+/Users/dyh/Documents/Codex/MowerControl/control_chassis/Core/UserDev/cruise_control.c:62:14: warning: 'Get_Angle_Diff' defined but not used [-Wunused-function]
+   62 | static float Get_Angle_Diff(float start_angle, float current_angle)
+      |              ^~~~~~~~~~~~~~
+/Users/dyh/Documents/Codex/MowerControl/control_chassis/Core/UserDev/cruise_control.c:42:14: warning: 'Normalize_Angle' defined but not used [-Wunused-function]
+   42 | static float Normalize_Angle(float angle)
+      |              ^~~~~~~~~~~~~~~
+/Users/dyh/Documents/Codex/MowerControl/control_chassis/Core/UserDev/cruise_control.c:33:16: warning: 'obstacle_filter_count' defined but not used [-Wunused-variable]
+   33 | static uint8_t obstacle_filter_count = 0;
+      |                ^~~~~~~~~~~~~~~~~~~~~
+/Users/dyh/Documents/Codex/MowerControl/control_chassis/Core/UserDev/cruise_control.c:30:14: warning: 'g_u_turn_start_yaw' defined but not used [-Wunused-variable]
+   30 | static float g_u_turn_start_yaw = 0.0f;  // 掉头起始航向
+      |              ^~~~~~~~~~~~~~~~~~
+[38/90] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/grass_bag_control.c.obj
+[39/90] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/flipsky_can.c.obj
+[40/90] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/heartbeat.c.obj
+[41/90] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/icm42688.c.obj
+[42/90] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/modbus_rtu_bus.c.obj
+In file included from /Users/dyh/Documents/Codex/MowerControl/control_chassis/Core/UserDev/modbus_rtu_bus.c:17:
+/Users/dyh/Documents/Codex/MowerControl/control_chassis/Core/Inc/rs485.h:46:13: warning: 'RS485_Start_Receive' declared 'static' but never defined [-Wunused-function]
+   46 | static void RS485_Start_Receive(void);
+      |             ^~~~~~~~~~~~~~~~~~~
+[43/90] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/mssd_can.c.obj
+[44/90] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/lifter.c.obj
+[45/90] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/mower_mode_control.c.obj
+[46/90] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/remote_authorization.c.obj
+[47/90] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/odrive_can.c.obj
+/Users/dyh/Documents/Codex/MowerControl/control_chassis/Core/UserDev/odrive_can.c: In function 'odrive_set_input_vel':
+/Users/dyh/Documents/Codex/MowerControl/control_chassis/Core/UserDev/odrive_can.c:316:14: warning: unused variable 'can_id' [-Wunused-variable]
+  316 |     uint32_t can_id = (node_id << 5) | ODRIVE_MSG_SET_INPUT_VEL;
+      |              ^~~~~~
+[48/90] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/oid_can.c.obj
+/Users/dyh/Documents/Codex/MowerControl/control_chassis/Core/UserDev/oid_can.c:70:13: warning: 'oid_send_cmd_int16' defined but not used [-Wunused-function]
+   70 | static void oid_send_cmd_int16(uint8_t node_id, uint8_t cmd, int16_t value)
+      |             ^~~~~~~~~~~~~~~~~~
+[49/90] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/pairing_receiver.c.obj
+[50/90] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/read_adc.c.obj
+[51/90] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/sens_ibus_responder.c.obj
+[52/90] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/rs485.c.obj
+[53/90] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/serial_port.c.obj
+[54/90] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/remote_backend.c.obj
+[55/90] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/sr04_uart.c.obj
+/Users/dyh/Documents/Codex/MowerControl/control_chassis/Core/UserDev/sr04_uart.c:133:14: warning: 'SR04_Filter' defined but not used [-Wunused-function]
+  133 | static float SR04_Filter(float current, float last)
+      |              ^~~~~~~~~~~
+[56/90] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/tricolor_led.c.obj
+[57/90] Building C object CMakeFiles/control_chassis.dir/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal.c.obj
+[58/90] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/sens_ibus_usart2.c.obj
+/Users/dyh/Documents/Codex/MowerControl/control_chassis/Core/UserDev/sens_ibus_usart2.c: In function 'SensIbusUsart2_ReadTelemetrySourceDiag':
+/Users/dyh/Documents/Codex/MowerControl/control_chassis/Core/UserDev/sens_ibus_usart2.c:252:50: warning: 'sequence_after' may be used uninitialized [-Wmaybe-uninitialized]
+  252 |     } while ((sequence_before != sequence_after) ||
+      |              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~
+  253 |              ((sequence_after & 1U) != 0U));
+      |              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~        
+/Users/dyh/Documents/Codex/MowerControl/control_chassis/Core/UserDev/sens_ibus_usart2.c:227:14: note: 'sequence_after' was declared here
+  227 |     uint32_t sequence_after;
+      |              ^~~~~~~~~~~~~~
+[59/90] Building C object CMakeFiles/control_chassis.dir/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc.c.obj
+[60/90] Building C object CMakeFiles/control_chassis.dir/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c.obj
+[61/90] Building C object CMakeFiles/control_chassis.dir/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_cortex.c.obj
+[62/90] Building C object CMakeFiles/control_chassis.dir/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_dma_ex.c.obj
+[63/90] Building C object CMakeFiles/control_chassis.dir/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_exti.c.obj
+[64/90] Building C object CMakeFiles/control_chassis.dir/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_can.c.obj
+[65/90] Building C object CMakeFiles/control_chassis.dir/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_dma.c.obj
+[66/90] Building C object CMakeFiles/control_chassis.dir/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash.c.obj
+[67/90] Building C object CMakeFiles/control_chassis.dir/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash_ex.c.obj
+[68/90] Building C object CMakeFiles/control_chassis.dir/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash_ramfunc.c.obj
+[69/90] Building C object CMakeFiles/control_chassis.dir/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pwr.c.obj
+[70/90] Building C object CMakeFiles/control_chassis.dir/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pwr_ex.c.obj
+[71/90] Building C object CMakeFiles/control_chassis.dir/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_gpio.c.obj
+[72/90] Building C object CMakeFiles/control_chassis.dir/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_ll_adc.c.obj
+[73/90] Building C object CMakeFiles/control_chassis.dir/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc_ex.c.obj
+[74/90] Building C object CMakeFiles/control_chassis.dir/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc.c.obj
+[75/90] Building C object CMakeFiles/control_chassis.dir/Middlewares/Third_Party/FreeRTOS/Source/croutine.c.obj
+[76/90] Building C object CMakeFiles/control_chassis.dir/Middlewares/Third_Party/FreeRTOS/Source/list.c.obj
+[77/90] Building C object CMakeFiles/control_chassis.dir/Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F/port.c.obj
+[78/90] Building C object CMakeFiles/control_chassis.dir/Middlewares/Third_Party/FreeRTOS/Source/event_groups.c.obj
+[79/90] Building C object CMakeFiles/control_chassis.dir/Middlewares/Third_Party/FreeRTOS/Source/portable/MemMang/heap_4.c.obj
+[80/90] Building C object CMakeFiles/control_chassis.dir/Middlewares/Third_Party/FreeRTOS/Source/stream_buffer.c.obj
+[81/90] Building C object CMakeFiles/control_chassis.dir/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_spi.c.obj
+[82/90] Building C object CMakeFiles/control_chassis.dir/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim_ex.c.obj
+[83/90] Building ASM object CMakeFiles/control_chassis.dir/startup_stm32f407xx.s.obj
+[84/90] Building C object CMakeFiles/control_chassis.dir/Middlewares/Third_Party/FreeRTOS/Source/queue.c.obj
+[85/90] Building C object CMakeFiles/control_chassis.dir/Middlewares/Third_Party/FreeRTOS/Source/timers.c.obj
+[86/90] Building C object CMakeFiles/control_chassis.dir/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_uart.c.obj
+[87/90] Building C object CMakeFiles/control_chassis.dir/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim.c.obj
+[88/90] Building C object CMakeFiles/control_chassis.dir/Middlewares/Third_Party/FreeRTOS/Source/tasks.c.obj
+[89/90] Building C object CMakeFiles/control_chassis.dir/Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/cmsis_os2.c.obj
+[90/90] Linking C executable control_chassis.elf; Generating HEX/BIN images and reporting firmware size
+/Applications/ArmGNUToolchain/15.3.rel2/arm-none-eabi/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/bin/ld: /Applications/ArmGNUToolchain/15.3.rel2/arm-none-eabi/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard/libg_nano.a(libc_a-closer.o): in function `_close_r':
+closer.c:(.text._close_r+0xc): warning: _close is not implemented and will always fail
+/Applications/ArmGNUToolchain/15.3.rel2/arm-none-eabi/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/bin/ld: /Applications/ArmGNUToolchain/15.3.rel2/arm-none-eabi/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard/libg_nano.a(libc_a-closer.o): note: the message above does not take linker garbage collection into account
+/Applications/ArmGNUToolchain/15.3.rel2/arm-none-eabi/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/bin/ld: /Applications/ArmGNUToolchain/15.3.rel2/arm-none-eabi/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard/libg_nano.a(libc_a-lseekr.o): in function `_lseek_r':
+lseekr.c:(.text._lseek_r+0x10): warning: _lseek is not implemented and will always fail
+/Applications/ArmGNUToolchain/15.3.rel2/arm-none-eabi/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/bin/ld: /Applications/ArmGNUToolchain/15.3.rel2/arm-none-eabi/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard/libg_nano.a(libc_a-lseekr.o): note: the message above does not take linker garbage collection into account
+/Applications/ArmGNUToolchain/15.3.rel2/arm-none-eabi/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/bin/ld: /Applications/ArmGNUToolchain/15.3.rel2/arm-none-eabi/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard/libg_nano.a(libc_a-readr.o): in function `_read_r':
+readr.c:(.text._read_r+0x10): warning: _read is not implemented and will always fail
+/Applications/ArmGNUToolchain/15.3.rel2/arm-none-eabi/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/bin/ld: /Applications/ArmGNUToolchain/15.3.rel2/arm-none-eabi/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard/libg_nano.a(libc_a-readr.o): note: the message above does not take linker garbage collection into account
+/Applications/ArmGNUToolchain/15.3.rel2/arm-none-eabi/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/bin/ld: /Applications/ArmGNUToolchain/15.3.rel2/arm-none-eabi/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard/libg_nano.a(libc_a-writer.o): in function `_write_r':
+writer.c:(.text._write_r+0x10): warning: _write is not implemented and will always fail
+/Applications/ArmGNUToolchain/15.3.rel2/arm-none-eabi/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/bin/ld: /Applications/ArmGNUToolchain/15.3.rel2/arm-none-eabi/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard/libg_nano.a(libc_a-writer.o): note: the message above does not take linker garbage collection into account
+Memory region         Used Size  Region Size  %age Used
+             RAM:       51504 B       128 KB     39.29%
+          CCMRAM:           0 B        64 KB      0.00%
+           FLASH:       82792 B       512 KB     15.79%
+   text	   data	    bss	    dec	    hex	filename
+  82356	    428	  51076	 133860	  20ae4	/Users/dyh/Documents/Codex/MowerControl/control_chassis/build/debug/control_chassis.elf

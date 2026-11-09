@@ -1,0 +1,80 @@
+
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/releases/20261012-wheel-210mm-candidate/control_chassis.elf:     file format elf32-littlearm
+
+
+Disassembly of section .text:
+
+0800816c <set_chassis_velocity>:
+ 800816c:	b508      	push	{r3, lr}
+ 800816e:	eeb5 0a40 	vcmp.f32	s0, #0.0
+ 8008172:	eef1 fa10 	vmrs	APSR_nzcv, fpscr
+ 8008176:	ed2d 8b08 	vpush	{d8-d11}
+ 800817a:	eeb0 9a40 	vmov.f32	s18, s0
+ 800817e:	eeb0 8a41 	vmov.f32	s16, s2
+ 8008182:	d16a      	bne.n	800825a <set_chassis_velocity+0xee>
+ 8008184:	eef5 0a40 	vcmp.f32	s1, #0.0
+ 8008188:	eef1 fa10 	vmrs	APSR_nzcv, fpscr
+ 800818c:	d165      	bne.n	800825a <set_chassis_velocity+0xee>
+ 800818e:	eeb5 1a40 	vcmp.f32	s2, #0.0
+ 8008192:	eef1 fa10 	vmrs	APSR_nzcv, fpscr
+ 8008196:	bf14      	ite	ne
+ 8008198:	2101      	movne	r1, #1
+ 800819a:	2100      	moveq	r1, #0
+ 800819c:	f7ff f86a 	bl	8007274 <SafetyOwnershipGate_Authorize>
+ 80081a0:	eddf 8a2f 	vldr	s17, [pc, #188]	; 8008260 <set_chassis_velocity+0xf4>
+ 80081a4:	b918      	cbnz	r0, 80081ae <set_chassis_velocity+0x42>
+ 80081a6:	eeb0 8a68 	vmov.f32	s16, s17
+ 80081aa:	eeb0 9a68 	vmov.f32	s18, s17
+ 80081ae:	ed9f 1a2d 	vldr	s2, [pc, #180]	; 8008264 <set_chassis_velocity+0xf8>
+ 80081b2:	ed9f ba2d 	vldr	s22, [pc, #180]	; 8008268 <set_chassis_velocity+0xfc>
+ 80081b6:	eddf aa2d 	vldr	s21, [pc, #180]	; 800826c <set_chassis_velocity+0x100>
+ 80081ba:	ed9f aa2d 	vldr	s20, [pc, #180]	; 8008270 <set_chassis_velocity+0x104>
+ 80081be:	ee28 8a01 	vmul.f32	s16, s16, s2
+ 80081c2:	eef2 9a04 	vmov.f32	s19, #36	; 0x41200000  10.0
+ 80081c6:	ee39 7a48 	vsub.f32	s14, s18, s16
+ 80081ca:	ee79 8a28 	vadd.f32	s17, s18, s17
+ 80081ce:	ee27 7a0b 	vmul.f32	s14, s14, s22
+ 80081d2:	2001      	movs	r0, #1
+ 80081d4:	eec7 7a2a 	vdiv.f32	s15, s14, s21
+ 80081d8:	ee6a 7a67 	vnmul.f32	s15, s20, s15
+ 80081dc:	ee67 7aa9 	vmul.f32	s15, s15, s19
+ 80081e0:	eefd 7ae7 	vcvt.s32.f32	s15, s15
+ 80081e4:	ee17 1a90 	vmov	r1, s15
+ 80081e8:	f001 ff7b 	bl	800a0e2 <OID_Set_Speed>
+ 80081ec:	ee38 7ac8 	vsub.f32	s14, s17, s16
+ 80081f0:	2003      	movs	r0, #3
+ 80081f2:	ee27 7a0b 	vmul.f32	s14, s14, s22
+ 80081f6:	eec7 7a2a 	vdiv.f32	s15, s14, s21
+ 80081fa:	ee6a 7a67 	vnmul.f32	s15, s20, s15
+ 80081fe:	ee67 7aa9 	vmul.f32	s15, s15, s19
+ 8008202:	eefd 7ae7 	vcvt.s32.f32	s15, s15
+ 8008206:	ee17 1a90 	vmov	r1, s15
+ 800820a:	f001 ff6a 	bl	800a0e2 <OID_Set_Speed>
+ 800820e:	ee78 8a28 	vadd.f32	s17, s16, s17
+ 8008212:	2002      	movs	r0, #2
+ 8008214:	ee68 8a8b 	vmul.f32	s17, s17, s22
+ 8008218:	eec8 7aaa 	vdiv.f32	s15, s17, s21
+ 800821c:	ee67 7a8a 	vmul.f32	s15, s15, s20
+ 8008220:	ee67 7aa9 	vmul.f32	s15, s15, s19
+ 8008224:	eefd 7ae7 	vcvt.s32.f32	s15, s15
+ 8008228:	ee17 1a90 	vmov	r1, s15
+ 800822c:	f001 ff59 	bl	800a0e2 <OID_Set_Speed>
+ 8008230:	ee38 8a09 	vadd.f32	s16, s16, s18
+ 8008234:	2004      	movs	r0, #4
+ 8008236:	ee28 8a0b 	vmul.f32	s16, s16, s22
+ 800823a:	eec8 7a2a 	vdiv.f32	s15, s16, s21
+ 800823e:	ee67 7a8a 	vmul.f32	s15, s15, s20
+ 8008242:	ee67 7aa9 	vmul.f32	s15, s15, s19
+ 8008246:	ecbd 8b08 	vpop	{d8-d11}
+ 800824a:	eefd 7ae7 	vcvt.s32.f32	s15, s15
+ 800824e:	e8bd 4008 	ldmia.w	sp!, {r3, lr}
+ 8008252:	ee17 1a90 	vmov	r1, s15
+ 8008256:	f001 bf44 	b.w	800a0e2 <OID_Set_Speed>
+ 800825a:	2101      	movs	r1, #1
+ 800825c:	e79e      	b.n	800819c <set_chassis_velocity+0x30>
+ 800825e:	bf00      	nop
+ 8008260:	00000000 	.word	0x00000000
+ 8008264:	3ea3d70a 	.word	0x3ea3d70a
+ 8008268:	42700000 	.word	0x42700000
+ 800826c:	3f28e45b 	.word	0x3f28e45b
+ 8008270:	408dc28f 	.word	0x408dc28f

@@ -1,0 +1,33 @@
+control_chassis/Core/UserApp/app_Motion.c
+/var/folders/_c/62b23my53ds0lct_bdnhfhg00000gn/T/mower-bag-before-alomlkpl/control_chassis/Core/UserApp/app_Motion.c: In function 'StartTask_Motion':
+/var/folders/_c/62b23my53ds0lct_bdnhfhg00000gn/T/mower-bag-before-alomlkpl/control_chassis/Core/UserApp/app_Motion.c:385:12: warning: unused variable 'is_joystick_active' [-Wunused-variable]
+  385 |       bool is_joystick_active = (abs((int)mapped_throttle - 2048) > 200) ||
+      |            ^~~~~~~~~~~~~~~~~~
+/var/folders/_c/62b23my53ds0lct_bdnhfhg00000gn/T/mower-bag-before-alomlkpl/control_chassis/Core/UserApp/app_Motion.c:169:19: warning: unused variable 'cruise_toggle_tick' [-Wunused-variable]
+  169 |   static uint32_t cruise_toggle_tick = 0;
+      |                   ^~~~~~~~~~~~~~~~~~
+/var/folders/_c/62b23my53ds0lct_bdnhfhg00000gn/T/mower-bag-before-alomlkpl/control_chassis/Core/UserApp/app_Motion.c:167:18: warning: unused variable 'cruise_key_lock' [-Wunused-variable]
+  167 |   static uint8_t cruise_key_lock = 0;
+      |                  ^~~~~~~~~~~~~~~
+/var/folders/_c/62b23my53ds0lct_bdnhfhg00000gn/T/mower-bag-before-alomlkpl/control_chassis/Core/UserApp/app_Motion.c:165:18: warning: unused variable 'us_toggle_lock' [-Wunused-variable]
+  165 |   static uint8_t us_toggle_lock = 0;
+      |                  ^~~~~~~~~~~~~~
+/var/folders/_c/62b23my53ds0lct_bdnhfhg00000gn/T/mower-bag-before-alomlkpl/control_chassis/Core/UserApp/app_Motion.c:153:16: warning: unused variable 'last_blade_command' [-Wunused-variable]
+  153 |   static float last_blade_command = -1.0f;
+      |                ^~~~~~~~~~~~~~~~~~
+/var/folders/_c/62b23my53ds0lct_bdnhfhg00000gn/T/mower-bag-before-alomlkpl/control_chassis/Core/UserApp/app_Motion.c:152:18: warning: unused variable 'last_blade_knob' [-Wunused-variable]
+  152 |   static uint8_t last_blade_knob = 0xFF;
+      |                  ^~~~~~~~~~~~~~~
+/var/folders/_c/62b23my53ds0lct_bdnhfhg00000gn/T/mower-bag-before-alomlkpl/control_chassis/Core/UserApp/app_Motion.c:149:15: warning: variable 'last_key_state' set but not used [-Wunused-but-set-variable]
+  149 |   static bool last_key_state[8] = {0};
+      |               ^~~~~~~~~~~~~~
+In file included from /Users/dyh/Documents/Codex/MowerControl/control_chassis/Core/Inc/AXEBMS_RS485.h:4,
+                 from /var/folders/_c/62b23my53ds0lct_bdnhfhg00000gn/T/mower-bag-before-alomlkpl/control_chassis/Core/UserApp/app_Motion.c:37:
+/Users/dyh/Documents/Codex/MowerControl/control_chassis/Core/Inc/rs485.h: At top level:
+/Users/dyh/Documents/Codex/MowerControl/control_chassis/Core/Inc/rs485.h:46:13: warning: 'RS485_Start_Receive' declared 'static' but never defined [-Wunused-function]
+   46 | static void RS485_Start_Receive(void);
+      |             ^~~~~~~~~~~~~~~~~~~
+
+control_chassis/Core/UserApp/telemetry_snapshot.c
+
+control_chassis/Core/UserDev/sens_ibus_responder.c

@@ -1,0 +1,19 @@
+{
+  "wheel_diameter_m": 0.21,
+  "wheel_radius_m": 0.105,
+  "gear_ratio": 4.43,
+  "pole_pairs": 10,
+  "source_change_scope": "chassis_control.h geometry macros and matching comment only",
+  "old_low_speed_distance_discrepancy_resolved": false,
+  "wheel_diameter_is_user_approximation": true,
+  "flash_performed": false,
+  "physical_acceptance": false,
+  "elf_sha256": "df5e08e9435ad65328f2a01121610d52f6d92eba1fa158254f16dffb30ff9e97",
+  "canonical_build_passed": true,
+  "production_conversion_harness_passed": true,
+  "fresh_24cm_baseline_build_passed": true,
+  "new_compiler_warning_messages": [],
+  "svn_preflight": "passed with 3 pre-existing-worktree warning items",
+  "svn_commit_performed": false,
+  "compiled_feedback_diameter_m": 0.20999999344348907
+}

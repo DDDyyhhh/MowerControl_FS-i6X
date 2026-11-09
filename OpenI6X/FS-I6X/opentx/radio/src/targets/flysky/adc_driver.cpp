@@ -1,0 +1,198 @@
+/*
+ * Copyright (C) OpenTX
+ *
+ * Based on code named
+ *   th9x - http://code.google.com/p/th9x
+ *   er9x - http://code.google.com/p/er9x
+ *   gruvin9x - http://code.google.com/p/gruvin9x
+ *
+ * License GPLv2: http://www.gnu.org/licenses/gpl-2.0.html
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ */
+
+#include "opentx.h"
+
+#if defined(INVERT_GIMBAL_CH1)
+#define ADC_DIR_CH1 -1
+#pragma message("Gimbal CH1 invert active")
+#else
+#define ADC_DIR_CH1 1
+#endif
+
+#if defined(INVERT_GIMBAL_CH2)
+#define ADC_DIR_CH2 -1
+#pragma message("Gimbal CH2 invert active")
+#else
+#define ADC_DIR_CH2 1
+#endif
+
+#if defined(INVERT_GIMBAL_CH3)
+#define ADC_DIR_CH3 -1
+#pragma message("Gimbal CH3 invert active")
+#else
+#define ADC_DIR_CH3 1
+#endif
+
+#if defined(INVERT_GIMBAL_CH4)
+#define ADC_DIR_CH4 -1
+#pragma message("Gimbal CH4 invert active")
+#else
+#define ADC_DIR_CH4 1
+#endif
+
+#if defined(SIMU)
+// not needed
+#else
+const int8_t ana_direction[NUM_ANALOGS] = {ADC_DIR_CH4, ADC_DIR_CH3, ADC_DIR_CH2, ADC_DIR_CH1, 1, 1, 1, 1, 1, 1, 0};
+// ana_mapping[AnalogIndex] = 物理 ADC 通道号（board.h 的 enum Analogs 顺序）
+//   索引 0..3  = STICK1..4   → ADC 3,2,1,0
+//   索引 4..7  = SW_A..SW_D  → ADC 6,7,4,5
+//   索引 8..9  = POT1,POT2   → 实测本机 VRA/VRB 接在 ADC6/ADC7（即原 SW_A/SW_B 的位置）
+//   索引 10    = TX_VOLTAGE  → ADC 10
+// 说明：原表把 POT1/POT2 指向 ADC8/ADC9，本机实测在那两路上读不到电位器（悬空通道），
+//       现象是 CH9/CH10 只有 0~100 且只占很小一段旋钮行程。
+//       用主界面 ADC 扫描确认：跟随 VRA/VRB 变化的是映射到 ADC6/ADC7 的 SW_A/SW_B 槽位，
+//       故此处把 POT1/POT2 改到 ADC6/ADC7。
+#if defined (FLYSKY_GIMBAL)
+const uint8_t ana_mapping[NUM_ANALOGS] =  {0, 1, 2, 3, 6, 7, 4, 5, 6, 7, 10};
+#else
+const uint8_t ana_mapping[NUM_ANALOGS] = {3, 2, 1, 0, 6, 7, 4, 5, 6, 7, 10};
+#endif // FLYSKY_GIMBAL                   
+#endif // SIMU
+
+#if NUM_PWMANALOGS > 0
+#define FIRST_ANALOG_ADC (ANALOGS_PWM_ENABLED() ? NUM_PWMANALOGS : 0)
+#define NUM_ANALOGS_ADC (ANALOGS_PWM_ENABLED() ? (NUM_ANALOGS - NUM_PWMANALOGS) : NUM_ANALOGS)
+#elif defined (FLYSKY_GIMBAL)
+#define FIRST_ANALOG_ADC 4
+#define NUM_ANALOGS_ADC (NUM_ANALOGS - 4)
+#else
+#define FIRST_ANALOG_ADC 0
+#define NUM_ANALOGS_ADC (NUM_ANALOGS)
+#endif
+
+uint16_t adcValues[NUM_ANALOGS] __DMA;
+
+void adcInit()
+{
+  ADC_ClockModeConfig(ADC_MAIN, ADC_ClockMode_SynClkDiv4);
+
+  GPIO_InitTypeDef gpio_init;
+  GPIO_StructInit(&gpio_init);
+
+  // set up analog inputs ADC0...ADC7(PA0...PA7)
+  #if defined(FLYSKY_GIMBAL)
+  gpio_init.GPIO_Pin = 0b11110000;
+  #else
+  gpio_init.GPIO_Pin = 0b11111111;
+  #endif
+
+  gpio_init.GPIO_Mode = GPIO_Mode_AN;
+  GPIO_Init(GPIOA, &gpio_init);
+
+  // set up analog inputs ADC8, ADC9(PB0, PB1)
+  gpio_init.GPIO_Pin = 0b11;
+  // gpio_init.GPIO_Mode = GPIO_Mode_AN;
+  GPIO_Init(GPIOB, &gpio_init);
+
+  // battery voltage is on PC0(ADC10)
+  gpio_init.GPIO_Pin = 0b1;
+  // gpio_init.GPIO_Mode = GPIO_Mode_AN;
+  GPIO_Init(GPIOC, &gpio_init);
+
+  // Calibrate (recommended once after power-up)
+  // ADC_MAIN->CR |= ADC_CR_ADCAL;
+  // while(ADC_MAIN->CR & ADC_CR_ADCAL);
+
+  // ADC configuration
+  ADC_InitTypeDef adc_init;
+  adc_init.ADC_ContinuousConvMode = ENABLE;
+  adc_init.ADC_ExternalTrigConv = ADC_ExternalTrigConv_T1_TRGO;
+  adc_init.ADC_ExternalTrigConvEdge = ADC_ExternalTrigConvEdge_None;
+  adc_init.ADC_DataAlign = ADC_DataAlign_Right;
+  adc_init.ADC_Resolution = ADC_Resolution_12b;
+  adc_init.ADC_ScanDirection = ADC_ScanDirection_Upward;
+  ADC_Init(ADC_MAIN, &adc_init);
+
+  ADC_ChannelConfig(ADC_MAIN,
+  #if !defined(FLYSKY_GIMBAL)
+    ADC_Channel_0 | ADC_Channel_1 | ADC_Channel_2 | ADC_Channel_3 |
+  #endif
+    ADC_Channel_4 | ADC_Channel_5 | ADC_Channel_6 | ADC_Channel_7 | ADC_Channel_8 | ADC_Channel_9 | ADC_Channel_10, ADC_SAMPTIME);
+
+  ADC_Cmd(ADC_MAIN, ENABLE);
+
+  ADC_DMACmd(ADC_MAIN, ENABLE);
+
+  // reset DMA1 channe1 to default values
+  DMA_DeInit(ADC_DMA_Channel);
+
+  ADC_DMA_Channel->CPAR = (uint32_t) &ADC_MAIN->DR;
+  ADC_DMA_Channel->CMAR = (uint32_t)&adcValues[FIRST_ANALOG_ADC];
+  ADC_DMA_Channel->CNDTR = NUM_ANALOGS;
+  ADC_DMA_Channel->CCR = DMA_MemoryInc_Enable
+                              | DMA_M2M_Disable
+                              | DMA_Mode_Circular
+                              | DMA_Priority_High
+                              | DMA_DIR_PeripheralSRC
+                              | DMA_PeripheralInc_Disable
+                              | DMA_PeripheralDataSize_HalfWord
+                              | DMA_MemoryDataSize_HalfWord;
+
+  // enable the DMA1 - Channel1
+  DMA_Cmd(ADC_DMA_Channel, ENABLE);
+
+  // start conversion:
+  ADC_MAIN->CR |= (uint32_t)ADC_CR_ADSTART;
+}
+
+// Current implementation runs in circular mode
+// and does not do 4 samples averaging.
+void adcRead()
+{
+  // adc dma finished?
+  if (DMA_GetITStatus(ADC_DMA_TC_FLAG))
+  {
+
+#if NUM_PWMANALOGS > 0
+    if (ANALOGS_PWM_ENABLED())
+    {
+      analogPwmRead(adcValues);
+    }
+#endif
+    // fine, arm DMA again:
+    ADC_MAIN->CR |= (uint32_t)ADC_CR_ADSTART;
+  }
+}
+
+#if !defined(SIMU)
+uint16_t getAnalogValue(uint8_t index)
+{
+  if (IS_POT(index) && !IS_POT_SLIDER_AVAILABLE(index))
+  {
+    // Use fixed analog value for non-existing and/or non-connected pots.
+    // Non-connected analog inputs will slightly follow the adjacent connected analog inputs,
+    // which produces ghost readings on these inputs.
+    return 0;
+  }
+  index = ana_mapping[index];
+  if (ana_direction[index] < 0)
+    return 4095 - adcValues[index];
+  else
+    return adcValues[index];
+}
+#if defined(FLYSKY_GIMBAL)
+uint16_t* getAnalogValues()
+{
+  return adcValues;
+}
+#endif // FLYSKY_GIMBAL
+#endif // #if !defined(SIMU)

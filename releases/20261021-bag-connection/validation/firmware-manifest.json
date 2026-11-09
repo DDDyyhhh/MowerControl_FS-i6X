@@ -1,0 +1,47 @@
+[
+  {
+    "file": "fs-i6x-bag-connection.bin",
+    "bytes": 129884,
+    "sha256": "7a62cc61aa127469e591045a103ef791975d06ba70dab45c0dbdb89af6cdede4"
+  },
+  {
+    "file": "fs-i6x-bag-connection.elf",
+    "bytes": 2082424,
+    "sha256": "32805dec133a53cd392c571031e3c4eca7b105154a29f0a4488eff51eff3be29"
+  },
+  {
+    "file": "control-chassis-bag-connection.bin",
+    "bytes": 81324,
+    "sha256": "3f37a185ce95f11a3211bfc1f82c4ff9ca9404e7e97ebf928dbb1a279b61a56f"
+  },
+  {
+    "file": "control-chassis-bag-connection.hex",
+    "bytes": 228818,
+    "sha256": "47dee9fa3db01e9d2673388c59c5489b87307dc18546aa04517f5af158ece4b8"
+  },
+  {
+    "file": "control-chassis-bag-connection.elf",
+    "bytes": 150204,
+    "sha256": "0460616594299c27f02d80a7786ac0ae72abeef3900f9d193cadc2f2cbd64025"
+  },
+  {
+    "file": "rollback/fs-i6x-simple-ui.bin",
+    "bytes": 129424,
+    "sha256": "104001e472f4d3163d55d1b092c0b6e20c231904e27fbb9deffd72f3be21d407"
+  },
+  {
+    "file": "rollback/control-chassis-grass-bag-ch6.bin",
+    "bytes": 82704,
+    "sha256": "af6a4af72b85c5f44b73d74a4a8e2191a65158221631930e4184f22e198677c6"
+  },
+  {
+    "file": "rollback/control-chassis-grass-bag-ch6.hex",
+    "bytes": 232709,
+    "sha256": "66b7dc2180da96e5fce711d1d92347f817f19bdafa19cc0f4790dac2f85dc10d"
+  },
+  {
+    "file": "rollback/control-chassis-grass-bag-ch6.elf",
+    "bytes": 394108,
+    "sha256": "90223924ce7ddfe5bd859c194310696f75906abebca189f1e358b61039d95fc7"
+  }
+]

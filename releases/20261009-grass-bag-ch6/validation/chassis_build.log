@@ -1,0 +1,11 @@
+Using CMake: cmake version 3.22.1
+Using Toolchain: /usr/bin/arm-none-eabi-gcc
+Preset CMake variables:
+
+  CMAKE_BUILD_TYPE="Debug"
+  CMAKE_TOOLCHAIN_FILE="/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/cmake/arm-none-eabi-gcc.cmake"
+
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/build/debug
+ninja: no work to do.

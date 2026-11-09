@@ -1,0 +1,33 @@
+--- released/app_Motion.c
++++ candidate/app_Motion.c
+@@ -1363,14 +1363,26 @@
+   RemoteBackend_Advance(now_ms, safety);
+   command_available = RemoteBackend_GetCommand(&command);
+   manual_run_permitted = command.run_permitted;
++  bool api_run = Ctrl_Mode == 2U;
++  bool api_fresh = (uint32_t)(now_ms - last_host_cmd_tick) < API_TIMEOUT_MS;
++  bool owner_run_permitted = manual_run_permitted &&
++      (Ctrl_Mode == 0U || (api_run && api_fresh));
++  ExecutionOwner_t owner = EXECUTION_OWNER_NONE;
++  if (owner_run_permitted)
++  {
++    owner = api_run ? EXECUTION_OWNER_API : EXECUTION_OWNER_MANUAL_REMOTE;
++  }
++  /* API keeps the existing remote permission and all lock/latch boundaries.
++   * Its command freshness comes from CAN, not the unrelated RC frame stream. */
+   input = (SafetyOwnershipGateInput_t){
+       g_app.physical_safety_latched != 0U,
+       g_app.lock != 0U,
+       command.remote_recoverable_latched,
+-      command_available && command.connected && command.link_fresh && command.stable_online,
+-      manual_run_permitted,
+-      manual_run_permitted ? EXECUTION_OWNER_MANUAL_REMOTE : EXECUTION_OWNER_NONE,
+-      command.frame_sequence,
++      command_available && command.connected && command.link_fresh && command.stable_online &&
++          (!api_run || api_fresh),
++      owner_run_permitted,
++      owner,
++      api_run ? last_host_cmd_tick : command.frame_sequence,
+       command.command_invalidation_sequence};
+ 
+   SafetyOwnershipGate_Update(&input);

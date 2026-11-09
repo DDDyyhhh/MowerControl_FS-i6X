@@ -1,0 +1,22 @@
+--- a/control_chassis/Core/Inc/chassis_control.h
++++ b/control_chassis/Core/Inc/chassis_control.h
+@@ -10,7 +10,7 @@
+   * 1. 遥控模式：处理遥控器输入，支持死区处理和转向补偿
+   * 2. API模式：基于(vx, vy, w)输入计算四个轮子的速度
+   * 3. 支持4轮差速底盘运动学
+-  * 4. 轮子参数：直径240mm，左右轴距690mm，前后轮距640mm
++  * 4. 轮子参数：直径210mm，左右轴距690mm，前后轮距640mm
+   *
+   * 注意事项：
+   * - vx: 前进速度 (m/s)
+@@ -32,8 +32,8 @@
+ #define RC_MIN_TURN_RESPONSE 0.45f  // 最小转向响应力度
+ 
+ // 轮子参数定义
+-#define WHEEL_DIAMETER 0.24f    // 轮子直径 (m)
+-#define WHEEL_RADIUS 0.12f      // 轮子半径 (m)
++#define WHEEL_DIAMETER 0.21f    // 轮子直径 (m)
++#define WHEEL_RADIUS 0.105f      // 轮子半径 (m)
+ #define TRACK_WIDTH 0.64f       // 轮距 (m)
+ #define WHEELBASE 0.69f        // 轴距 (m)
+ #define PI 3.1415926535f
