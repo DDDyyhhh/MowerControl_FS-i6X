@@ -1,0 +1,44 @@
+PASS profile-3 actual GUI: arbitrary controller token, early OK, explicit rejection, ACK+runtime success, independent blade, no 2s hide; home/debug/router/glyph/pixel checks
+PASS English production UI, live provider, actual main-view route, CH9/CH6 boundaries, scrolling and pixel bounds: UNKNOWN inhibits OK; explicit completion, context/token isolation, late matching receipt, runtime home
+CMake Deprecation Warning at CMakeLists.txt:19 (cmake_policy):
+  The OLD behavior for policy CMP0023 will be removed from a future version
+  of CMake.
+
+  The cmake-policies(7) manual explains that the OLD behaviors of all
+  policies are deprecated and that a policy should be set to OLD only under
+  specific short-term circumstances.  Projects should be ported to the NEW
+  behavior and not rely on setting a policy to OLD.
+
+
+-- Git repository not found, revision number not available.
+-- OpenI6X 2.3.0 @0
+-- Python executable: /usr/bin/python3
+-- Python bin directory: /usr/bin
+TARGET simu/libsimulator: cpp compiler /home/dyh/.local/opt/arm-gnu-toolchain-15.3.rel1-x86_64-arm-none-eabi/bin/arm-none-eabi-g++ v15.3.1
+CMake Warning at radio/src/tests/CMakeLists.txt:45 (message):
+  WARNING: gtests target will not be available (check that GTEST_INCDIR,
+  GTEST_SRCDIR, and Qt5Widgets are configured).
+
+
+TARGET firmware: cpp compiler arm-none-eabi-g++ v15.3.1
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/variants/fs-i6x-en/build/en
+[  0%] Built target 9x_xbm_1bit
+[  4%] Built target firmware_translations
+[ 27%] Built target 9x_fonts_1bit
+[ 29%] Built target 9x_bitmaps
+Scanning dependencies of target firmware
+Consolidate compiler generated dependencies of target firmware
+[ 29%] Building CXX object radio/src/CMakeFiles/firmware.dir/debug.cpp.obj
+[ 29%] Building CXX object radio/src/CMakeFiles/firmware.dir/stamp.cpp.obj
+[ 30%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/128x64/view_about.cpp.obj
+[ 30%] Building CXX object radio/src/CMakeFiles/firmware.dir/targets/common/arm/stm32/usbd_storage_msd.cpp.obj
+[ 30%] Linking CXX executable ../../firmware.elf
+/home/dyh/.local/opt/arm-gnu-toolchain-15.3.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/bin/ld: warning: ../../firmware.elf has a LOAD segment with RWX permissions
+Flash used: 128564 / 131072 (98%), left: 2508
+RAM used: 15856 / 16384 (96%), left: 528
+[100%] Built target firmware
+   text	   data	    bss	    dec	    hex	filename
+ 128492	     72	  15784	 144348	  233dc	/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/variants/fs-i6x-en/build/en/firmware.elf
+bb754fa84f1b4f9220f43f79b3a4a0deb04ac25e698c41511fd6881dee860823  /media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/variants/fs-i6x-en/build/en/firmware.bin

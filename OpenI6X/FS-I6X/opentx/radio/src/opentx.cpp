@@ -781,6 +781,11 @@ void checkLowEEPROM() {
 
 bool isThrottleWarningAlertNeeded()
 {
+#if defined(PCBI6X) && defined(PCBI6X_MOWER_UI_SHELL)
+  // Mower controls use chassis authorization, not the aircraft throttle idle check.
+  // Keep calibration, failsafe checks and all channel values unchanged.
+  return false;
+#else
   if (g_model.disableThrottleWarning) {
     return false;
   }
@@ -798,6 +803,7 @@ bool isThrottleWarningAlertNeeded()
     v = -v;
   }
   return v > THRCHK_DEADBAND - 1024;
+#endif
 }
 
 void checkThrottleStick()

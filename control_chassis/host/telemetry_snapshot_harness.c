@@ -6,6 +6,26 @@
 
 #include "telemetry_snapshot.h"
 #include "../../experiments/ticket03/bag_connection.h"
+#include "../../experiments/ticket03/battery_status.h"
+#include "../../experiments/ticket03/mower_fast_status.h"
+
+static void TestHeightProducerHeartbeat(void)
+{
+    TelemetrySources_t sources = {0};
+    TelemetrySnapshot_t snapshot;
+    sources.height_feedback = 0x0AC6U; // hb10, valid, 7.0cm
+    TelemetrySnapshot_Update(&sources, 1000U);
+    assert(TelemetrySnapshot_Read(&snapshot));
+    assert(snapshot.values[TELEMETRY_VALUE_HEIGHT_FEEDBACK] == 0x0AC6U);
+    TelemetrySnapshot_Update(&sources, 5000U); // Motion cannot renew a frozen lifter.
+    assert(TelemetrySnapshot_Read(&snapshot));
+    assert(snapshot.values[TELEMETRY_VALUE_HEIGHT_FEEDBACK] == 0x0AC6U);
+    assert(snapshot.values[TELEMETRY_VALUE_RUN_PERMISSION] == 0U);
+    sources.height_feedback = 0U;
+    TelemetrySnapshot_Update(&sources, 5100U);
+    assert(TelemetrySnapshot_Read(&snapshot));
+    assert(snapshot.values[TELEMETRY_VALUE_HEIGHT_FEEDBACK] == 0U);
+}
 
 static void TestBagConnection(void)
 {
@@ -30,6 +50,18 @@ static void TestBagConnection(void)
     TelemetrySnapshot_Update(&sources, 1638500U);
     assert(TelemetrySnapshot_Read(&snapshot));
     assert(snapshot.values[TELEMETRY_VALUE_BAG_CONNECTION] == 4U);
+    for (unsigned mask=0U; mask<16U; ++mask) {
+        sources.bag_connection_valid = (mask & 1U) != 0U;
+        sources.bag_connected = (mask & 2U) != 0U;
+        sources.bag_full_valid = (mask & 4U) != 0U;
+        sources.bag_full = (mask & 8U) != 0U;
+        TelemetrySnapshot_Update(&sources, 2000U);
+        assert(TelemetrySnapshot_Read(&snapshot));
+        uint16_t expected=(mask & 7U)==7U ?
+            (uint16_t)(MOWER_BAG_FULL_VALID | ((mask & 8U) ? MOWER_BAG_FULL : 0U)) : 0U;
+        assert(snapshot.values[TELEMETRY_VALUE_BAG_FULL] == expected);
+        assert(snapshot.values[TELEMETRY_VALUE_RUN_PERMISSION] == 0U);
+    }
 }
 
 static TelemetrySources_t FreshSources(uint32_t now_ms)
@@ -76,7 +108,7 @@ static void TestScaledValuesAndModes(void)
     assert(snapshot.values[TELEMETRY_VALUE_BLADE_RPM] == 0U);
     assert(snapshot.values[TELEMETRY_VALUE_WORK_MODE] == TELEMETRY_WORK_MODE_MANUAL_REMOTE);
     assert(snapshot.values[TELEMETRY_VALUE_RUN_PERMISSION] == 1U);
-    assert(snapshot.values[TELEMETRY_VALUE_DETAILED_FAULT] == TELEMETRY_FAULT_BLADE_STALE);
+    assert(snapshot.values[TELEMETRY_VALUE_DETAILED_FAULT] == 0U);
 }
 
 static void TestBmsBoundariesAndFreshness(void)
@@ -185,6 +217,36 @@ static void TestBladeFeedbackPolicy(void)
     sources.blade.last_good_ms = 601U;
     snapshot = PublishAndRead(&sources, 601U);
     assert(snapshot.values[TELEMETRY_VALUE_BLADE_RPM] == 0U);
+    assert((snapshot.values[TELEMETRY_VALUE_DETAILED_FAULT] & TELEMETRY_FAULT_BLADE_STALE) == 0U);
+    assert((snapshot.values[TELEMETRY_VALUE_DETAILED_FAULT] & TELEMETRY_FAULT_FTESC_CRC) != 0U);
+}
+
+static void TestBladeDisabledAndWrap(void)
+{
+    uint32_t start = UINT32_MAX - 100U;
+    TelemetrySources_t sources = FreshSources(start);
+    TelemetrySnapshot_t snapshot;
+    /* Not enabled, no feedback: no alarm and no invented actual RPM. */
+    snapshot = PublishAndRead(&sources, start);
+    assert(snapshot.values[TELEMETRY_VALUE_DETAILED_FAULT] == 0U);
+    assert(snapshot.values[TELEMETRY_VALUE_BLADE_RPM] == 0U);
+    sources.blade.feedback_enabled = true;
+    snapshot = PublishAndRead(&sources, start);
+    assert(snapshot.values[TELEMETRY_VALUE_DETAILED_FAULT] == TELEMETRY_FAULT_BLADE_STALE);
+    sources.blade.valid = true;
+    sources.blade.last_good_ms = start;
+    sources.blade.freshness_ms = 500U;
+    snapshot = PublishAndRead(&sources, 399U);
+    assert((snapshot.values[TELEMETRY_VALUE_DETAILED_FAULT] & TELEMETRY_FAULT_BLADE_STALE) == 0U);
+    snapshot = PublishAndRead(&sources, 400U);
+    assert((snapshot.values[TELEMETRY_VALUE_DETAILED_FAULT] & TELEMETRY_FAULT_BLADE_STALE) != 0U);
+    sources.blade.feedback_enabled = false;
+    snapshot = PublishAndRead(&sources, 400U);
+    assert((snapshot.values[TELEMETRY_VALUE_DETAILED_FAULT] & TELEMETRY_FAULT_BLADE_STALE) == 0U);
+    assert((snapshot.values[TELEMETRY_VALUE_DETAILED_FAULT] & TELEMETRY_FAULT_WHEEL_STALE) != 0U);
+    sources.blade.feedback_enabled = true;
+    sources.blade.freshness_ms = 0U;
+    snapshot = PublishAndRead(&sources, start);
     assert((snapshot.values[TELEMETRY_VALUE_DETAILED_FAULT] & TELEMETRY_FAULT_BLADE_STALE) != 0U);
 }
 
@@ -196,6 +258,7 @@ static void TestFaultBitsAndFinalGateSemantics(void)
 
     sources.final_manual_run_permitted = false;
     sources.emergency_active = true;
+    sources.system_locked = true;
     sources.collision_active_or_latched = true;
     sources.tilt_active_or_latched = true;
     sources.ibus_timeout_latched = true;
@@ -203,20 +266,43 @@ static void TestFaultBitsAndFinalGateSemantics(void)
     sources.ownership_transition_latched = true;
     sources.bms.valid = false;
     sources.wheels[2].valid = false;
-    sources.blade.feedback_enabled = false;
+    sources.blade.feedback_enabled = true;
     sources.blade.crc_error = true;
 
     snapshot = PublishAndRead(&sources, 0U);
-    expected = TELEMETRY_FAULT_DEFINED_MASK;
+    expected = 0x07FFU; /* Existing faults; battery states tested separately. */
     assert(snapshot.values[TELEMETRY_VALUE_RUN_PERMISSION] == 0U);
     assert(snapshot.values[TELEMETRY_VALUE_DETAILED_FAULT] == expected);
-    assert((snapshot.values[TELEMETRY_VALUE_DETAILED_FAULT] & 0xFC00U) == 0U);
+    assert((snapshot.values[TELEMETRY_VALUE_DETAILED_FAULT] & 0xF800U) == 0U);
 
     sources.manual_remote_available = false;
     sources.final_manual_run_permitted = true;
     snapshot = PublishAndRead(&sources, 0U);
     assert(snapshot.values[TELEMETRY_VALUE_WORK_MODE] == TELEMETRY_WORK_MODE_UNAVAILABLE);
     assert(snapshot.values[TELEMETRY_VALUE_RUN_PERMISSION] == 0U);
+}
+
+static void TestBatteryDiagnostics(void)
+{
+    TelemetrySources_t s = FreshSources(1000U);
+    TelemetrySnapshot_t out;
+    s.bms.voltage_centivolts = 4700U; s.bms.soc_percent = 29U;
+    s.bms.min_cell_mv = 2930U; s.battery_reasons = 4U;
+    s.battery_status = MOWER_BATTERY_WARNING | MOWER_BATTERY_BLADE_INHIBIT;
+    s.final_manual_run_permitted = true;
+    out = PublishAndRead(&s, 1000U);
+    assert(out.values[TELEMETRY_VALUE_SOC] == 29U);
+    assert(out.values[TELEMETRY_VALUE_BATTERY_MIN_CELL] == 2930U);
+    assert(out.values[TELEMETRY_VALUE_BATTERY_REASON] == 4U);
+    assert(out.values[TELEMETRY_VALUE_DETAILED_FAULT] == s.battery_status);
+    assert(out.values[TELEMETRY_VALUE_RUN_PERMISSION] == 1U);
+    assert(TelemetrySnapshot_ReadFastStatus() & MOWER_FAST_FAULT);
+    s.battery_status = 0U;
+    out = PublishAndRead(&s, 1000U);
+    assert(!(TelemetrySnapshot_ReadFastStatus() & MOWER_FAST_FAULT));
+    out = PublishAndRead(&s, 4000U);
+    assert(out.values[TELEMETRY_VALUE_BATTERY_MIN_CELL] == 0U);
+    assert(out.values[TELEMETRY_VALUE_DETAILED_FAULT] & TELEMETRY_FAULT_BMS_INVALID);
 }
 
 static void TestCompleteSnapshotPublication(void)
@@ -247,13 +333,16 @@ static void TestCompleteSnapshotPublication(void)
 
 int main(void)
 {
+    TestBatteryDiagnostics();
     TestBagConnection();
+    TestHeightProducerHeartbeat();
     TelemetrySnapshot_Reset();
     TestScaledValuesAndModes();
     TestBmsBoundariesAndFreshness();
     TestCurrentMagnitudeAndSaturation();
     TestWheelAverageFreshnessAndSaturation();
     TestBladeFeedbackPolicy();
+    TestBladeDisabledAndWrap();
     TestFaultBitsAndFinalGateSemantics();
     TestCompleteSnapshotPublication();
     return 0;

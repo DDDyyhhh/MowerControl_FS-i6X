@@ -1,0 +1,8 @@
+PASS historical 10kHz/60% and 15kHz/40% release directories, ZIPs and checksums untouched
+PASS production chassis BIN byte-identical to original verified 10kHz/60% image
+PASS all 4 current/rollback ELF/BIN/HEX pairs, Intel HEX checksums and flash ranges
+PASS patch reproduces all 9 changed files with original line endings
+PASS 174 source snapshots and 921 unchanged radio source hashes
+PASS guide bash syntax, 10kHz/60% waveform values, ST-Link/DFU file/address/alt and reader pairs; no hardware commands executed
+PASS documented readback checker accepts both exact images and rejects a changed radio byte
+PASS 16 artifact hashes/sizes; radio changes limited to build timestamp

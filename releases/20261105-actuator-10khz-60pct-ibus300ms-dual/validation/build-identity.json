@@ -1,0 +1,40 @@
+{
+  "source_scope_verified": true,
+  "clock_hbridge_ibus_and_blade_config_unchanged": true,
+  "original_line_endings_preserved": true,
+  "historical_10khz60pct_and_15khz40pct_releases_unchanged": true,
+  "radio_source_files_unchanged": 921,
+  "new_build_warning_types": 0,
+  "pwm": {
+    "timer_input_hz": 84000000,
+    "prescaler": 0,
+    "auto_reload": 8399,
+    "frequency_hz": 10000,
+    "duty_percent": 60,
+    "compare": 5040,
+    "period_us": 100,
+    "high_us": 60,
+    "low_us": 40
+  },
+  "images": {
+    "chassis": {
+      "bytes": 90412,
+      "sha256": "4469331b6dcff4514dfb095670c205833775336c2d30a5a38ddc62b00ff82fe5",
+      "base_address": "0x08000000",
+      "flash_capacity": 524288,
+      "initial_stack": "0x20020000",
+      "reset_handler": "0x8010465"
+    },
+    "radio": {
+      "bytes": 130872,
+      "sha256": "a50063c822cccd9f0018e774742d207b58d4d0e03cdde09e9e372eb34338b4b4",
+      "base_address": "0x08000000",
+      "flash_capacity": 131072,
+      "initial_stack": "0x20004000",
+      "reset_handler": "0x801c1bd"
+    }
+  },
+  "chassis_bin_identical_to_original_10khz60pct": true,
+  "chassis_translation_units_timeout_300ms": 99,
+  "radio_changes_only_build_timestamp": true
+}

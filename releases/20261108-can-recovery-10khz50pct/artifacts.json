@@ -1,0 +1,32 @@
+{
+  "release": "20261108-can-recovery-10khz50pct",
+  "date": "2026-11-08",
+  "svn_baseline": "r109 + uncommitted working copy changes",
+  "protocol": "0x36",
+  "configuration": {
+    "actuator_hz": 10000,
+    "actuator_duty_percent": 50,
+    "actuator_arr": 8399,
+    "actuator_ccr": 4200,
+    "soft_start_ms": 400,
+    "blade_ftesc_erpm_direction": -1,
+    "can_auto_bus_off": true,
+    "grass_bag_connection_check": "enabled"
+  },
+  "software_validation": "passed; documented macOS host adapters",
+  "hardware_validation": "partial; see README",
+  "svn_committed": false,
+  "images": {
+    "chassis": {
+      "file": "control-chassis-can-recovery-10khz50pct.bin",
+      "bytes": 90892,
+      "sha256": "b7fca2be44bfca265a4eacde3a88fa1a0176ff16b4139c408e73d1540b0ccf5c"
+    },
+    "radio": {
+      "file": "fs-i6x-fast-handshake-paired.bin",
+      "bytes": 131000,
+      "sha256": "746e22f8d3754308edd3566406386b969fdba82d3f820ca8f81f60050ee93634"
+    }
+  },
+  "base_address": "0x08000000"
+}

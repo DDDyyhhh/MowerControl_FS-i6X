@@ -12,13 +12,14 @@ typedef struct
     bool input_allowed;
     bool fresh_command_required;
     bool stop_requested;
+    bool battery_stop, battery_blade_inhibit;
 } SafetyOwnershipGateState_t;
 
 static SafetyOwnershipGateState_t g_gate;
 
 static bool SafetyOwnershipGate_InputAllowsNonzero(void)
 {
-    return !g_gate.input.physical_latched &&
+    return !g_gate.battery_stop && !g_gate.input.physical_latched &&
            !g_gate.input.software_locked &&
            !g_gate.input.recoverable_remote_latched &&
            g_gate.input.link_stable &&
@@ -37,6 +38,20 @@ void SafetyOwnershipGate_Reset(void)
 {
     memset(&g_gate, 0, sizeof(g_gate));
     g_gate.last_owner = EXECUTION_OWNER_NONE;
+}
+
+void SafetyOwnershipGate_SetBatteryPolicy(bool stop, bool blade_inhibit)
+{
+    if (stop && !g_gate.battery_stop && g_gate.initialized)
+        SafetyOwnershipGate_InvalidateCurrentCommand();
+    g_gate.battery_stop = stop;
+    g_gate.battery_blade_inhibit = blade_inhibit;
+}
+
+bool SafetyOwnershipGate_AuthorizeBlade(ExecutionOwner_t owner, bool nonzero_intent)
+{
+    if (nonzero_intent && g_gate.battery_blade_inhibit) return false;
+    return SafetyOwnershipGate_Authorize(owner, nonzero_intent);
 }
 
 void SafetyOwnershipGate_Update(const SafetyOwnershipGateInput_t *input)
@@ -120,6 +135,10 @@ SafetyOwnershipGateReason_t SafetyOwnershipGate_GetReason(ExecutionOwner_t owner
     if (g_gate.input.recoverable_remote_latched)
     {
         return SAFETY_GATE_REJECT_REMOTE_LATCH;
+    }
+    if (g_gate.battery_stop)
+    {
+        return SAFETY_GATE_REJECT_BATTERY;
     }
     if (!g_gate.input.link_stable)
     {

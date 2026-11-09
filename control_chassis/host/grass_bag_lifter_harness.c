@@ -11,10 +11,12 @@ TIM_HandleTypeDef htim2 = {2}, htim3 = {3};
 BagTestContext_t g_app;
 static uint32_t now_ms;
 static int lock_depth;
-unsigned lifter_test_critical_depth;
 static bool initialized, fail_mutex, inject_target;
 static float bag_speed;
 static unsigned bag_starts;
+static int critical_depth;
+void LifterTest_EnterCritical(void) { assert(critical_depth == 0); critical_depth = 1; }
+void LifterTest_ExitCritical(void) { assert(critical_depth == 1); critical_depth = 0; }
 uint32_t HAL_GetTick(void) { return now_ms; }
 void HAL_Delay(uint32_t ms) {
     now_ms += ms;
@@ -59,29 +61,28 @@ int main(void)
     Lifter_SetGrassBagTarget(1); assert(bag_speed == 0.0f); /* default fail closed */
     Lifter_SetGrassBagPermission(true);
     now_ms = 100;
-    Lifter_SetGrassBagTarget(1); assert(bag_speed == 60.0f && bag_starts == 1);
+    Lifter_SetGrassBagTarget(1); assert(bag_speed == 50.0f && bag_starts == 1);
     now_ms = 200;
     Lifter_SetGrassBagTarget(1); assert(bag_starts == 1);
     now_ms = 20099;
-    Lifter_Task_Update(); assert(!g_app.grass_bag_status && bag_speed == 60.0f);
+    Lifter_Task_Update(); assert(!g_app.grass_bag_status && bag_speed == 50.0f);
     now_ms = 20100;
     Lifter_Task_Update(); assert(g_app.grass_bag_status && bag_speed == 0.0f);
-    Lifter_SetGrassBagTarget(0); assert(bag_speed == -60.0f);
+    Lifter_SetGrassBagTarget(0); assert(bag_speed == -50.0f);
     Lifter_SetGrassBagPermission(false); assert(bag_speed == 0.0f);
     now_ms = 60000;
     Lifter_Task_Update(); assert(g_app.grass_bag_status); /* no false completion */
     Lifter_SetGrassBagTarget(0); assert(bag_speed == 0.0f);
     Lifter_SetGrassBagPermission(true);
-    Lifter_SetGrassBagTarget(0); assert(bag_speed == -60.0f);
+    Lifter_SetGrassBagTarget(0); assert(bag_speed == -50.0f);
     now_ms = 80000;
     Lifter_Task_Update(); assert(!g_app.grass_bag_status && bag_speed == 0.0f);
-    Lifter_SetGrassBagTarget(1); assert(bag_speed == 60.0f);
-    Lifter_SetGrassBagTarget(0); assert(bag_speed == -60.0f);
+    Lifter_SetGrassBagTarget(1); assert(bag_speed == 50.0f);
+    Lifter_SetGrassBagTarget(0); assert(bag_speed == -50.0f);
     Lifter_StopGrassBag(); assert(bag_speed == 0.0f);
     now_ms = 110000;
     Lifter_Task_Update(); assert(!g_app.grass_bag_status);
     /* Command arrives during delayed height persistence before bag update. */
-    Lifter_SetHeightPermission(true);
     Lifter_SetTargetLevel(4);
     Lifter_Task_Update();
     now_ms += 2800;
@@ -89,7 +90,7 @@ int main(void)
     now_ms += 10000;
     inject_target = true;
     Lifter_Task_Update();
-    assert(bag_speed == 60.0f && !g_app.grass_bag_status);
+    assert(bag_speed == 50.0f && !g_app.grass_bag_status);
     assert(!inject_target && lock_depth == 0);
     Lifter_StopGrassBag();
     initialized = false; fail_mutex = true;

@@ -15,7 +15,7 @@
 #define BLADE_MOTOR_DRIVER_FTESC_CAN  2U
 
 #ifndef BLADE_MOTOR_DRIVER_USED
-#define BLADE_MOTOR_DRIVER_USED BLADE_MOTOR_DRIVER_PWM
+#define BLADE_MOTOR_DRIVER_USED BLADE_MOTOR_DRIVER_FTESC_CAN
 #endif
 
 #if (BLADE_MOTOR_DRIVER_USED != BLADE_MOTOR_DRIVER_PWM) && \
@@ -31,11 +31,18 @@
 #define BLADE_PWM_DUTY_LEVEL_2_PERCENT   50.0f
 #define BLADE_PWM_DUTY_LEVEL_3_PERCENT   55.0f
 
-/* Existing hardware-validated FTESC ERPM levels; do not retune here. */
-#define BLADE_FTESC_ERPM_LEVEL_1  14000.0f
-#define BLADE_FTESC_ERPM_LEVEL_2  15500.0f
+/* FTESC ERPM setpoints for low, medium and high blade speed. */
+#define BLADE_FTESC_ERPM_LEVEL_1  12000.0f
+#define BLADE_FTESC_ERPM_LEVEL_2  15000.0f
 #define BLADE_FTESC_ERPM_LEVEL_3  16000.0f
 #define BLADE_FTESC_KEEPALIVE_MS  200U
+/* Wire sign only: callers keep using positive ERPM as "run" intent. */
+#ifndef BLADE_FTESC_ERPM_DIRECTION
+#define BLADE_FTESC_ERPM_DIRECTION  (-1)
+#endif
+#if (BLADE_FTESC_ERPM_DIRECTION != 1) && (BLADE_FTESC_ERPM_DIRECTION != -1)
+#error "BLADE_FTESC_ERPM_DIRECTION must be 1 or -1"
+#endif
 
 /* FTESC protocol settings. Change the ID to match ESC Tool configuration. */
 #define FLIPSKY_ESC_ID                  154U

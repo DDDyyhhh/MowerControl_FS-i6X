@@ -1,0 +1,851 @@
+README.md: 成功
+buildable-source.tar.gz: 成功
+changes.patch: 成功
+control-chassis-bms-diag.bin: 成功
+control-chassis-bms-diag.elf: 成功
+control-chassis-bms-diag.hex: 成功
+control-chassis-bms-diag.map: 成功
+fs-i6x-bms-diag.bin: 成功
+fs-i6x-bms-diag.elf: 成功
+fs-i6x-bms-diag.hex: 成功
+fs-i6x-bms-diag.map: 成功
+rebuild.sh: 成功
+release.json: 成功
+validation/battery-policy-preview.png: 成功
+validation/changed-files.json: 成功
+validation/chassis-debug-build.log: 成功
+validation/control-chassis-bms-diag-sections.log: 成功
+validation/control-chassis-bms-diag-size.log: 成功
+validation/fs-i6x-bms-diag-sections.log: 成功
+validation/fs-i6x-bms-diag-size.log: 成功
+validation/host_api_ownership.log: 成功
+validation/host_battery_protection.log: 成功
+validation/host_blade_confirm_ch6_adapter.log: 成功
+validation/host_blade_driver_selection.log: 成功
+validation/host_blade_manual_control.log: 成功
+validation/host_blade_ok.log: 成功
+validation/host_exp3.log: 成功
+validation/host_ftesc_feedback.log: 成功
+validation/host_i6x_calibration.log: 成功
+validation/host_i6x_startup_warning.log: 成功
+validation/host_imu_solver.log: 成功
+validation/host_lifter_height.log: 成功
+validation/host_remote_authorization.log: 成功
+validation/host_remote_backend.log: 成功
+validation/host_safety_ownership_gate.log: 成功
+validation/host_sens_ibus_responder.log: 成功
+validation/host_telemetry_snapshot.log: 成功
+validation/paired-build.log: 成功
+validation/pixel-comparison.json: 成功
+validation/regression-evidence.md: 成功
+validation/rollback.json: 成功
+validation/source-files.json: 成功
+validation/source-integrity.json: 成功
+validation/source-rebuild.log: 成功
+validation/spec.md: 成功
+validation/svn-preflight.log: 成功
+validation/ui/bag-closed.pbm: 成功
+validation/ui/bag-command-unknown.pbm: 成功
+validation/ui/bag-disconnected.pbm: 成功
+validation/ui/bag-open.pbm: 成功
+validation/ui/bag-unknown.pbm: 成功
+validation/ui/battery-home-restored.pbm: 成功
+validation/ui/battery-invalid-debug.pbm: 成功
+validation/ui/battery-invalid.pbm: 成功
+validation/ui/battery-low.pbm: 成功
+validation/ui/battery-start-denied.pbm: 成功
+validation/ui/blade-high.pbm: 成功
+validation/ui/blade-low.pbm: 成功
+validation/ui/blade-middle.pbm: 成功
+validation/ui/blade-off.pbm: 成功
+validation/ui/blade-unknown.pbm: 成功
+validation/ui/confirm.pbm: 成功
+validation/ui/debug-0.pbm: 成功
+validation/ui/debug-12.pbm: 成功
+validation/ui/debug-16.pbm: 成功
+validation/ui/debug-20.pbm: 成功
+validation/ui/debug-24.pbm: 成功
+validation/ui/debug-4.pbm: 成功
+validation/ui/debug-8.pbm: 成功
+validation/ui/height-11cm-bag-disconnected.pbm: 成功
+validation/ui/height-unknown.pbm: 成功
+validation/ui/home-fault.pbm: 成功
+validation/ui/home-offline.pbm: 成功
+validation/ui/home-online.pbm: 成功
+validation/ui/maintenance.pbm: 成功
+validation/ui/startup-locked-bms-pending.pbm: 成功
+validation/ui/status-collision.pbm: 成功
+validation/ui/status-estop-fast.pbm: 成功
+validation/ui/status-estop.pbm: 成功
+validation/ui/status-locked.pbm: 成功
+validation/ui/stop-no-reply.pbm: 成功
+validation/ui/stopping.pbm: 成功
+validation/ui/unlock-confirm.pbm: 成功
+validation/ui.log: 成功
+validation/warning-comparison.json: 成功
+validation/warnings-build-mower-ok-gcc15-exp3_probe-after.log: 成功
+validation/warnings-build-mower-ok-gcc15-exp3_probe-before.log: 成功
+validation/warnings-build-mower-ok-gcc15-openi6x_adapter-after.log: 成功
+validation/warnings-build-mower-ok-gcc15-openi6x_adapter-before.log: 成功
+validation/warnings-build-mower-ok-gcc15-view_main-after.log: 成功
+validation/warnings-build-mower-ok-gcc15-view_main-before.log: 成功
+validation/warnings-debug-app_Motion-after.log: 成功
+validation/warnings-debug-app_Motion-before.log: 成功
+validation/warnings-debug-battery_monitor-after.log: 成功
+validation/warnings-debug-battery_monitor-before.log: 成功
+validation/warnings-debug-remote_authorization-after.log: 成功
+validation/warnings-debug-remote_authorization-before.log: 成功
+validation/warnings-debug-remote_backend-after.log: 成功
+validation/warnings-debug-remote_backend-before.log: 成功
+validation/warnings-debug-sens_ibus_responder-after.log: 成功
+validation/warnings-debug-sens_ibus_responder-before.log: 成功
+validation/warnings-mower-ok-release-app_Motion-after.log: 成功
+validation/warnings-mower-ok-release-app_Motion-before.log: 成功
+validation/warnings-mower-ok-release-battery_monitor-after.log: 成功
+validation/warnings-mower-ok-release-battery_monitor-before.log: 成功
+validation/warnings-mower-ok-release-exp3_probe-after.log: 成功
+validation/warnings-mower-ok-release-exp3_probe-before.log: 成功
+validation/warnings-mower-ok-release-remote_authorization-after.log: 成功
+validation/warnings-mower-ok-release-remote_authorization-before.log: 成功
+validation/warnings-mower-ok-release-remote_backend-after.log: 成功
+validation/warnings-mower-ok-release-remote_backend-before.log: 成功
+validation/warnings-mower-ok-release-sens_ibus_responder-after.log: 成功
+validation/warnings-mower-ok-release-sens_ibus_responder-before.log: 成功
+validation/warnings-mower-ok-release-stm32_adapter-after.log: 成功
+validation/warnings-mower-ok-release-stm32_adapter-before.log: 成功
+validation/warnings.log: 成功
+刷写与复测说明.md: 成功
+[1m=== Running Battery Protection Harnesses ===[0m
+  [[0;32mPASS[0m] Battery Protection (BMS publication, Motion recovery, full-speed wheel adapters and LOW latch)
+[1m=== [1/9] Running Blade Driver Selection Harness ===[0m
+  [[0;32mPASS[0m] Blade Driver Selection (default FTESC CAN, explicit PWM/FTESC CAN, negative compile guards)
+[1m=== [2/9] Running Blade Manual Control Harness ===[0m
+  [[0;32mPASS[0m] Blade Manual Control (PWM & FTESC CAN confirmation state machine)
+[1m=== [3/9] Running Blade Confirm CH6 Adapter Harness ===[0m
+  [[0;32mPASS[0m] Blade Confirm CH6 Adapter (Baseline, edge debounce, duplicate rejection & BMC integration)
+[1m=== [4/9] Running FTESC Realtime Feedback Harness ===[0m
+  [[0;32mPASS[0m] FTESC Realtime Feedback (CAN packet parsing & CRC validation)
+[1m=== [5/9] Running SENS i-BUS Responder Harness ===[0m
+  [[0;32mPASS[0m] SENS i-BUS Responder (Discovery, measurement request & packet packing)
+[1m=== [6/9] Running Telemetry Snapshot Harness ===[0m
+  [[0;32mPASS[0m] Telemetry Snapshot (BMS, odometry, fault bitfield & atomic exchange)
+[1m=== [7/9] Running Remote Authorization Harness ===[0m
+  [[0;32mPASS[0m] Remote Authorization (CH8 dual-edge unlock state machine)
+[1m=== [8/9] Running Remote Backend Harness ===[0m
+  [[0;32mPASS[0m] Remote Backend (A28/E34 & FlySky i-BUS stream/framing isolation)
+[1m=== Running Lifter Height Homing Harness (both remote backends) ===[0m
+  [[0;32mPASS[0m] Lifter Height (interruptible 10s homing, reversed PWM, latest target wins)
+  [[0;32mPASS[0m] i6X stick calibration validation and neutral fallback
+  [[0;32mPASS[0m] i6X mower direct startup, native throttle/switch warnings and calibration isolation
+[1m=== Running IMU Numeric Harness (optimized strict aliasing) ===[0m
+  [[0;32mPASS[0m] IMU Numeric (accuracy, pose and strict-aliasing optimization)
+[1m=== [9/9] Running Safety Ownership Gate Harness ===[0m
+  [[0;32mPASS[0m] Safety Ownership Gate (Arbitration, latching, zero-intent enforcement)
+
+  [[0;32mPASS[0m] Ticket03 Experiment3 protocol and transport
+  [[0;32mPASS[0m] Mower OK release flow, controller runtime and home display
+  [[0;32mPASS[0m] Production API ownership and safety boundaries
+[0;32m[1mALL HOST HARNESSES PASSED![0m
+
+[1m=== Building Chassis Firmware (CMake / ARM GCC) ===[0m
+  [[0;32mPASS[0m] Chassis CMake build succeeded (ELF, HEX and BIN generated)
+Preset CMake variables:
+
+  CMAKE_BUILD_TYPE="Release"
+  CMAKE_TOOLCHAIN_FILE="/tmp/mower-bms-diag-rebuild-jFQH1S/mower-source/control_chassis/cmake/arm-none-eabi-gcc.cmake"
+  MOWER_BLADE_OK="ON"
+  TICKET03_EXP3_HIL="OFF"
+  TICKET03_EXP3_PWM_HIL="OFF"
+
+-- The C compiler identification is GNU 15.3.1
+-- The ASM compiler identification is GNU
+-- Found assembler: /home/dyh/.local/opt/arm-gnu-toolchain-15.3.rel1-x86_64-arm-none-eabi/bin/arm-none-eabi-gcc
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: /home/dyh/.local/opt/arm-gnu-toolchain-15.3.rel1-x86_64-arm-none-eabi/bin/arm-none-eabi-gcc - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /tmp/mower-bms-diag-rebuild-jFQH1S/mower-source/control_chassis/build/gcc15/mower-ok-release
+[1/97] Building C object CMakeFiles/control_chassis.dir/Core/Src/dma.c.obj
+[2/97] Building C object CMakeFiles/control_chassis.dir/Core/UserApp/app_Comm.c.obj
+[3/97] Building C object CMakeFiles/control_chassis.dir/Core/Src/gpio.c.obj
+[4/97] Building C object CMakeFiles/control_chassis.dir/Core/Src/can.c.obj
+[5/97] Building C object CMakeFiles/control_chassis.dir/Core/Src/flash_storage.c.obj
+/tmp/mower-bms-diag-rebuild-jFQH1S/mower-source/control_chassis/Core/Src/flash_storage.c:14:22: warning: 'g_app_settings' defined but not used [-Wunused-variable]
+   14 | static AppSettings_t g_app_settings;
+      |                      ^~~~~~~~~~~~~~
+[6/97] Building C object CMakeFiles/control_chassis.dir/Core/Src/freertos.c.obj
+In file included from /tmp/mower-bms-diag-rebuild-jFQH1S/mower-source/control_chassis/Core/Src/freertos.c:34:
+/tmp/mower-bms-diag-rebuild-jFQH1S/mower-source/control_chassis/Core/Inc/rs485.h:46:13: warning: 'RS485_Start_Receive' declared 'static' but never defined [-Wunused-function]
+   46 | static void RS485_Start_Receive(void);
+      |             ^~~~~~~~~~~~~~~~~~~
+[7/97] Building C object CMakeFiles/control_chassis.dir/Core/Src/stm32f4xx_hal_msp.c.obj
+[8/97] Building C object CMakeFiles/control_chassis.dir/Core/Src/stm32f4xx_hal_timebase_tim.c.obj
+[9/97] Building C object CMakeFiles/control_chassis.dir/Core/UserApp/app_Report.c.obj
+[10/97] Building C object CMakeFiles/control_chassis.dir/Core/Src/spi.c.obj
+[11/97] Building C object CMakeFiles/control_chassis.dir/Core/Src/stm32f4xx_it.c.obj
+In file included from /tmp/mower-bms-diag-rebuild-jFQH1S/mower-source/control_chassis/Core/Src/stm32f4xx_it.c:30:
+/tmp/mower-bms-diag-rebuild-jFQH1S/mower-source/control_chassis/Core/Inc/rs485.h:46:13: warning: 'RS485_Start_Receive' declared 'static' but never defined [-Wunused-function]
+   46 | static void RS485_Start_Receive(void);
+      |             ^~~~~~~~~~~~~~~~~~~
+[12/97] Building C object CMakeFiles/control_chassis.dir/Core/Src/system_stm32f4xx.c.obj
+[13/97] Building C object CMakeFiles/control_chassis.dir/Core/Src/tim.c.obj
+[14/97] Building C object CMakeFiles/control_chassis.dir/Core/Src/usart.c.obj
+[15/97] Building C object CMakeFiles/control_chassis.dir/Core/UserApp/battery_monitor.c.obj
+[16/97] Building C object CMakeFiles/control_chassis.dir/Core/Src/adc.c.obj
+[17/97] Building C object CMakeFiles/control_chassis.dir/Core/UserApp/app_context.c.obj
+[18/97] Building C object CMakeFiles/control_chassis.dir/Core/Src/main.c.obj
+/tmp/mower-bms-diag-rebuild-jFQH1S/mower-source/control_chassis/Core/Src/main.c: In function 'main':
+/tmp/mower-bms-diag-rebuild-jFQH1S/mower-source/control_chassis/Core/Src/main.c:201:9: warning: unused variable 'angles' [-Wunused-variable]
+  201 |   float angles[3];
+      |         ^~~~~~
+In file included from /tmp/mower-bms-diag-rebuild-jFQH1S/mower-source/control_chassis/Core/Src/main.c:57:
+/tmp/mower-bms-diag-rebuild-jFQH1S/mower-source/control_chassis/Core/Inc/rs485.h: At top level:
+/tmp/mower-bms-diag-rebuild-jFQH1S/mower-source/control_chassis/Core/Inc/rs485.h:46:13: warning: 'RS485_Start_Receive' declared 'static' but never defined [-Wunused-function]
+   46 | static void RS485_Start_Receive(void);
+      |             ^~~~~~~~~~~~~~~~~~~
+/tmp/mower-bms-diag-rebuild-jFQH1S/mower-source/control_chassis/Core/Src/main.c:170:17: warning: 'obstacle_clear_timestamp' defined but not used [-Wunused-variable]
+  170 | static uint32_t obstacle_clear_timestamp = 0; // 鐢ㄤ簬寤惰繜娓呴櫎鐨勮鏃跺櫒
+      |                 ^~~~~~~~~~~~~~~~~~~~~~~~
+/tmp/mower-bms-diag-rebuild-jFQH1S/mower-source/control_chassis/Core/Src/main.c:168:17: warning: 'g_key_press_time' defined but not used [-Wunused-variable]
+  168 | static uint32_t g_key_press_time[8] = {0}; // 淇濆瓨8涓寜閿殑鎸変笅璧峰鏃堕棿
+      |                 ^~~~~~~~~~~~~~~~
+/tmp/mower-bms-diag-rebuild-jFQH1S/mower-source/control_chassis/Core/Src/main.c:165:16: warning: 'key1_was_pressed' defined but not used [-Wunused-variable]
+  165 | static uint8_t key1_was_pressed = 0;
+      |                ^~~~~~~~~~~~~~~~
+/tmp/mower-bms-diag-rebuild-jFQH1S/mower-source/control_chassis/Core/Src/main.c:164:16: warning: 'key0_was_pressed' defined but not used [-Wunused-variable]
+  164 | static uint8_t key0_was_pressed = 0;
+      |                ^~~~~~~~~~~~~~~~
+/tmp/mower-bms-diag-rebuild-jFQH1S/mower-source/control_chassis/Core/Src/main.c:159:16: warning: 'g_stopwatch_running' defined but not used [-Wunused-variable]
+  159 | static uint8_t g_stopwatch_running = 0;
+      |                ^~~~~~~~~~~~~~~~~~~
+/tmp/mower-bms-diag-rebuild-jFQH1S/mower-source/control_chassis/Core/Src/main.c:158:17: warning: 'g_stopwatch_start_time' defined but not used [-Wunused-variable]
+  158 | static uint32_t g_stopwatch_start_time = 0;
+      |                 ^~~~~~~~~~~~~~~~~~~~~~
+/tmp/mower-bms-diag-rebuild-jFQH1S/mower-source/control_chassis/Core/Src/main.c:106:14: warning: 'g_ultrasonic_distance_cm' defined but not used [-Wunused-variable]
+  106 | static float g_ultrasonic_distance_cm = -1.0f; // 鐢ㄤ簬淇濆瓨鏈€鏂扮殑鏈夋晥璺濈
+      |              ^~~~~~~~~~~~~~~~~~~~~~~~
+[19/97] Building C object CMakeFiles/control_chassis.dir/Core/UserApp/safety_ownership_gate.c.obj
+[20/97] Building C object CMakeFiles/control_chassis.dir/Core/UserApp/app_BMS_Sensor.c.obj
+[21/97] Building C object CMakeFiles/control_chassis.dir/Core/UserApp/blade_manual_control.c.obj
+[22/97] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/E34.C.obj
+[23/97] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/blade_hil_uart_debug.c.obj
+[24/97] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/A28.c.obj
+[25/97] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/EG2104.c.obj
+[26/97] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/BladeMotor.c.obj
+[27/97] Building C object CMakeFiles/control_chassis.dir/Core/UserApp/telemetry_snapshot.c.obj
+[28/97] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/AXEBMS_RS485.c.obj
+In file included from /tmp/mower-bms-diag-rebuild-jFQH1S/mower-source/control_chassis/Core/UserDev/AXEBMS_RS485.c:23:
+/tmp/mower-bms-diag-rebuild-jFQH1S/mower-source/control_chassis/Core/Inc/rs485.h:46:13: warning: 'RS485_Start_Receive' declared 'static' but never defined [-Wunused-function]
+   46 | static void RS485_Start_Receive(void);
+      |             ^~~~~~~~~~~~~~~~~~~
+/tmp/mower-bms-diag-rebuild-jFQH1S/mower-source/control_chassis/Core/UserDev/AXEBMS_RS485.c:212:13: warning: 'parseResponseData' defined but not used [-Wunused-function]
+  212 | static void parseResponseData(AXEBMS_RS485* bms) {
+      |             ^~~~~~~~~~~~~~~~~
+/tmp/mower-bms-diag-rebuild-jFQH1S/mower-source/control_chassis/Core/UserDev/AXEBMS_RS485.c:186:13: warning: 'receiveResponseFrame' defined but not used [-Wunused-function]
+  186 | static bool receiveResponseFrame(AXEBMS_RS485* bms) {
+      |             ^~~~~~~~~~~~~~~~~~~~
+/tmp/mower-bms-diag-rebuild-jFQH1S/mower-source/control_chassis/Core/UserDev/AXEBMS_RS485.c:146:13: warning: 'sendRequestFrame' defined but not used [-Wunused-function]
+  146 | static void sendRequestFrame(AXEBMS_RS485* bms) {
+      |             ^~~~~~~~~~~~~~~~
+[29/97] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/blade_confirm_ch6_adapter.c.obj
+[30/97] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/buzzer.c.obj
+[31/97] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/connet_check.c.obj
+[32/97] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/bsp_imu_solver.c.obj
+[33/97] Building C object CMakeFiles/control_chassis.dir/Core/UserApp/app_SerialTX.c.obj
+[34/97] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/grass_bag_control.c.obj
+[35/97] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/cruise_control.c.obj
+/tmp/mower-bms-diag-rebuild-jFQH1S/mower-source/control_chassis/Core/UserDev/cruise_control.c:73:14: warning: 'Yaw_PID_Compute' defined but not used [-Wunused-function]
+   73 | static float Yaw_PID_Compute(float target, float current)
+      |              ^~~~~~~~~~~~~~~
+/tmp/mower-bms-diag-rebuild-jFQH1S/mower-source/control_chassis/Core/UserDev/cruise_control.c:62:14: warning: 'Get_Angle_Diff' defined but not used [-Wunused-function]
+   62 | static float Get_Angle_Diff(float start_angle, float current_angle)
+      |              ^~~~~~~~~~~~~~
+/tmp/mower-bms-diag-rebuild-jFQH1S/mower-source/control_chassis/Core/UserDev/cruise_control.c:42:14: warning: 'Normalize_Angle' defined but not used [-Wunused-function]
+   42 | static float Normalize_Angle(float angle)
+      |              ^~~~~~~~~~~~~~~
+/tmp/mower-bms-diag-rebuild-jFQH1S/mower-source/control_chassis/Core/UserDev/cruise_control.c:33:16: warning: 'obstacle_filter_count' defined but not used [-Wunused-variable]
+   33 | static uint8_t obstacle_filter_count = 0;
+      |                ^~~~~~~~~~~~~~~~~~~~~
+/tmp/mower-bms-diag-rebuild-jFQH1S/mower-source/control_chassis/Core/UserDev/cruise_control.c:30:14: warning: 'g_u_turn_start_yaw' defined but not used [-Wunused-variable]
+   30 | static float g_u_turn_start_yaw = 0.0f;  // 掉头起始航向
+      |              ^~~~~~~~~~~~~~~~~~
+[36/97] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/car_Control.c.obj
+/tmp/mower-bms-diag-rebuild-jFQH1S/mower-source/control_chassis/Core/UserDev/car_Control.c: In function 'v_ctl_uart':
+/tmp/mower-bms-diag-rebuild-jFQH1S/mower-source/control_chassis/Core/UserDev/car_Control.c:448:17: warning: unused variable 'current_sign' [-Wunused-variable]
+  448 |     const char *current_sign = (current_int < 0) ? "-" : "";
+      |                 ^~~~~~~~~~~~
+/tmp/mower-bms-diag-rebuild-jFQH1S/mower-source/control_chassis/Core/UserDev/car_Control.c:447:9: warning: unused variable 'current_abs' [-Wunused-variable]
+  447 |     int current_abs = (current_int < 0) ? -current_int : current_int;
+      |         ^~~~~~~~~~~
+/tmp/mower-bms-diag-rebuild-jFQH1S/mower-source/control_chassis/Core/UserDev/car_Control.c:444:17: warning: unused variable 'speed_sign' [-Wunused-variable]
+  444 |     const char *speed_sign = (speed_int < 0) ? "-" : "";
+      |                 ^~~~~~~~~~
+/tmp/mower-bms-diag-rebuild-jFQH1S/mower-source/control_chassis/Core/UserDev/car_Control.c:443:9: warning: unused variable 'speed_abs' [-Wunused-variable]
+  443 |     int speed_abs = (speed_int < 0) ? -speed_int : speed_int;
+      |         ^~~~~~~~~
+/tmp/mower-bms-diag-rebuild-jFQH1S/mower-source/control_chassis/Core/UserDev/car_Control.c:422:20: warning: unused variable 'reset_counter' [-Wunused-variable]
+  422 |     static uint8_t reset_counter[4] = {0, 0, 0, 0};
+      |                    ^~~~~~~~~~~~~
+/tmp/mower-bms-diag-rebuild-jFQH1S/mower-source/control_chassis/Core/UserDev/car_Control.c:420:18: warning: variable 'last_speed' set but not used [-Wunused-but-set-variable]
+  420 |     static float last_speed[4] = {0.0f, 0.0f, 0.0f, 0.0f};
+      |                  ^~~~~~~~~~
+/tmp/mower-bms-diag-rebuild-jFQH1S/mower-source/control_chassis/Core/UserDev/car_Control.c:416:13: warning: variable 'motor_axis_id' set but not used [-Wunused-but-set-variable]
+  416 |     uint8_t motor_axis_id;
+      |             ^~~~~~~~~~~~~
+/tmp/mower-bms-diag-rebuild-jFQH1S/mower-source/control_chassis/Core/UserDev/car_Control.c: In function 'MotionControl_Parking':
+/tmp/mower-bms-diag-rebuild-jFQH1S/mower-source/control_chassis/Core/UserDev/car_Control.c:529:11: warning: unused variable 'hold_rpm' [-Wunused-variable]
+  529 |     float hold_rpm = 0.0f;
+      |           ^~~~~~~~
+/tmp/mower-bms-diag-rebuild-jFQH1S/mower-source/control_chassis/Core/UserDev/car_Control.c: In function 'Send_Motor_Command':
+/tmp/mower-bms-diag-rebuild-jFQH1S/mower-source/control_chassis/Core/UserDev/car_Control.c:585:17: warning: unused variable 'current_sign' [-Wunused-variable]
+  585 |     const char *current_sign = (current_int < 0) ? "-" : "";
+      |                 ^~~~~~~~~~~~
+/tmp/mower-bms-diag-rebuild-jFQH1S/mower-source/control_chassis/Core/UserDev/car_Control.c:584:9: warning: unused variable 'current_abs' [-Wunused-variable]
+  584 |     int current_abs = (current_int < 0) ? -current_int : current_int;
+      |         ^~~~~~~~~~~
+/tmp/mower-bms-diag-rebuild-jFQH1S/mower-source/control_chassis/Core/UserDev/car_Control.c:581:17: warning: unused variable 'speed_sign' [-Wunused-variable]
+  581 |     const char *speed_sign = (speed_int < 0) ? "-" : "";
+      |                 ^~~~~~~~~~
+/tmp/mower-bms-diag-rebuild-jFQH1S/mower-source/control_chassis/Core/UserDev/car_Control.c:580:9: warning: unused variable 'speed_abs' [-Wunused-variable]
+  580 |     int speed_abs = (speed_int < 0) ? -speed_int : speed_int;
+      |         ^~~~~~~~~
+/tmp/mower-bms-diag-rebuild-jFQH1S/mower-source/control_chassis/Core/UserDev/car_Control.c:561:13: warning: variable 'motor_axis_id' set but not used [-Wunused-but-set-variable]
+  561 |     uint8_t motor_axis_id;
+      |             ^~~~~~~~~~~~~
+[37/97] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/heartbeat.c.obj
+[38/97] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/mssd_can.c.obj
+[39/97] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/icm42688.c.obj
+[40/97] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/read_adc.c.obj
+[41/97] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/chassis_control.c.obj
+/tmp/mower-bms-diag-rebuild-jFQH1S/mower-source/control_chassis/Core/UserDev/chassis_control.c: In function 'chassis_control_parse_host_frame':
+/tmp/mower-bms-diag-rebuild-jFQH1S/mower-source/control_chassis/Core/UserDev/chassis_control.c:149:12: warning: unused variable 'vy_raw' [-Wunused-variable]
+  149 |     int8_t vy_raw = (int8_t)payload[2];
+      |            ^~~~~~
+/tmp/mower-bms-diag-rebuild-jFQH1S/mower-source/control_chassis/Core/UserDev/chassis_control.c: At top level:
+/tmp/mower-bms-diag-rebuild-jFQH1S/mower-source/control_chassis/Core/UserDev/chassis_control.c:375:13: warning: 'chassis_control_send_oid_wheel_speed_feedback' defined but not used [-Wunused-function]
+  375 | static void chassis_control_send_oid_wheel_speed_feedback(void)
+      |             ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+[42/97] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/oid_can.c.obj
+/tmp/mower-bms-diag-rebuild-jFQH1S/mower-source/control_chassis/Core/UserDev/oid_can.c:70:13: warning: 'oid_send_cmd_int16' defined but not used [-Wunused-function]
+   70 | static void oid_send_cmd_int16(uint8_t node_id, uint8_t cmd, int16_t value)
+      |             ^~~~~~~~~~~~~~~~~~
+[43/97] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/modbus_rtu_bus.c.obj
+In file included from /tmp/mower-bms-diag-rebuild-jFQH1S/mower-source/control_chassis/Core/UserDev/modbus_rtu_bus.c:17:
+/tmp/mower-bms-diag-rebuild-jFQH1S/mower-source/control_chassis/Core/Inc/rs485.h:46:13: warning: 'RS485_Start_Receive' declared 'static' but never defined [-Wunused-function]
+   46 | static void RS485_Start_Receive(void);
+      |             ^~~~~~~~~~~~~~~~~~~
+[44/97] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/flipsky_can.c.obj
+[45/97] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/remote_authorization.c.obj
+[46/97] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/sens_ibus_responder.c.obj
+[47/97] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/lifter.c.obj
+[48/97] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/pairing_receiver.c.obj
+[49/97] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/rs485.c.obj
+[50/97] Building C object CMakeFiles/control_chassis.dir/Core/UserApp/app_Motion.c.obj
+/tmp/mower-bms-diag-rebuild-jFQH1S/mower-source/control_chassis/Core/UserApp/app_Motion.c: In function 'StartTask_Motion':
+/tmp/mower-bms-diag-rebuild-jFQH1S/mower-source/control_chassis/Core/UserApp/app_Motion.c:397:12: warning: unused variable 'is_joystick_active' [-Wunused-variable]
+  397 |       bool is_joystick_active = (abs((int)mapped_throttle - 2048) > 200) ||
+      |            ^~~~~~~~~~~~~~~~~~
+/tmp/mower-bms-diag-rebuild-jFQH1S/mower-source/control_chassis/Core/UserApp/app_Motion.c:175:19: warning: unused variable 'cruise_toggle_tick' [-Wunused-variable]
+  175 |   static uint32_t cruise_toggle_tick = 0;
+      |                   ^~~~~~~~~~~~~~~~~~
+/tmp/mower-bms-diag-rebuild-jFQH1S/mower-source/control_chassis/Core/UserApp/app_Motion.c:173:18: warning: unused variable 'cruise_key_lock' [-Wunused-variable]
+  173 |   static uint8_t cruise_key_lock = 0;
+      |                  ^~~~~~~~~~~~~~~
+/tmp/mower-bms-diag-rebuild-jFQH1S/mower-source/control_chassis/Core/UserApp/app_Motion.c:171:18: warning: unused variable 'us_toggle_lock' [-Wunused-variable]
+  171 |   static uint8_t us_toggle_lock = 0;
+      |                  ^~~~~~~~~~~~~~
+/tmp/mower-bms-diag-rebuild-jFQH1S/mower-source/control_chassis/Core/UserApp/app_Motion.c:159:16: warning: unused variable 'last_blade_command' [-Wunused-variable]
+  159 |   static float last_blade_command = -1.0f;
+      |                ^~~~~~~~~~~~~~~~~~
+/tmp/mower-bms-diag-rebuild-jFQH1S/mower-source/control_chassis/Core/UserApp/app_Motion.c:158:18: warning: unused variable 'last_blade_knob' [-Wunused-variable]
+  158 |   static uint8_t last_blade_knob = 0xFF;
+      |                  ^~~~~~~~~~~~~~~
+/tmp/mower-bms-diag-rebuild-jFQH1S/mower-source/control_chassis/Core/UserApp/app_Motion.c:155:15: warning: variable 'last_key_state' set but not used [-Wunused-but-set-variable]
+  155 |   static bool last_key_state[8] = {0};
+      |               ^~~~~~~~~~~~~~
+[51/97] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/serial_port.c.obj
+[52/97] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/odrive_can.c.obj
+/tmp/mower-bms-diag-rebuild-jFQH1S/mower-source/control_chassis/Core/UserDev/odrive_can.c: In function 'odrive_set_input_vel':
+/tmp/mower-bms-diag-rebuild-jFQH1S/mower-source/control_chassis/Core/UserDev/odrive_can.c:379:14: warning: unused variable 'can_id' [-Wunused-variable]
+  379 |     uint32_t can_id = (node_id << 5) | ODRIVE_MSG_SET_INPUT_VEL;
+      |              ^~~~~~
+[53/97] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/flysky_ibus_servo.c.obj
+[54/97] Building C object CMakeFiles/control_chassis.dir/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal.c.obj
+[55/97] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/sr04_uart.c.obj
+/tmp/mower-bms-diag-rebuild-jFQH1S/mower-source/control_chassis/Core/UserDev/sr04_uart.c:133:14: warning: 'SR04_Filter' defined but not used [-Wunused-function]
+  133 | static float SR04_Filter(float current, float last)
+      |              ^~~~~~~~~~~
+[56/97] Building C object CMakeFiles/control_chassis.dir/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash_ramfunc.c.obj
+[57/97] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/remote_backend.c.obj
+[58/97] Building C object CMakeFiles/control_chassis.dir/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_cortex.c.obj
+[59/97] Building C object CMakeFiles/control_chassis.dir/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash_ex.c.obj
+[60/97] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/tricolor_led.c.obj
+[61/97] Building C object CMakeFiles/control_chassis.dir/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_dma_ex.c.obj
+[62/97] Building C object CMakeFiles/control_chassis.dir/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_exti.c.obj
+[63/97] Building C object CMakeFiles/control_chassis.dir/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pwr.c.obj
+[64/97] Building C object CMakeFiles/control_chassis.dir/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_dma.c.obj
+[65/97] Building C object CMakeFiles/control_chassis.dir/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c.obj
+[66/97] Building C object CMakeFiles/control_chassis.dir/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_ll_adc.c.obj
+[67/97] Building C object CMakeFiles/control_chassis.dir/Middlewares/Third_Party/FreeRTOS/Source/croutine.c.obj
+[68/97] Building C object CMakeFiles/control_chassis.dir/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pwr_ex.c.obj
+[69/97] Building C object CMakeFiles/control_chassis.dir/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc.c.obj
+[70/97] Building C object CMakeFiles/control_chassis.dir/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash.c.obj
+[71/97] Building C object CMakeFiles/control_chassis.dir/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc_ex.c.obj
+[72/97] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/sens_ibus_usart2.c.obj
+[73/97] Building C object CMakeFiles/control_chassis.dir/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_gpio.c.obj
+[74/97] Building C object CMakeFiles/control_chassis.dir/Middlewares/Third_Party/FreeRTOS/Source/list.c.obj
+[75/97] Building ASM object CMakeFiles/control_chassis.dir/startup_stm32f407xx.s.obj
+[76/97] Building C object CMakeFiles/control_chassis.dir/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_can.c.obj
+[77/97] Building C object CMakeFiles/control_chassis.dir/Middlewares/Third_Party/FreeRTOS/Source/portable/MemMang/heap_4.c.obj
+[78/97] Building C object CMakeFiles/control_chassis.dir/Middlewares/Third_Party/FreeRTOS/Source/event_groups.c.obj
+[79/97] Building C object CMakeFiles/control_chassis.dir/Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F/port.c.obj
+[80/97] Building C object CMakeFiles/control_chassis.dir/tmp/mower-bms-diag-rebuild-jFQH1S/mower-source/experiments/ticket03/exp3_blade_adapter.c.obj
+[81/97] Building C object CMakeFiles/control_chassis.dir/tmp/mower-bms-diag-rebuild-jFQH1S/mower-source/experiments/ticket03/exp3_link.c.obj
+[82/97] Building C object CMakeFiles/control_chassis.dir/Middlewares/Third_Party/FreeRTOS/Source/timers.c.obj
+[83/97] Building C object CMakeFiles/control_chassis.dir/tmp/mower-bms-diag-rebuild-jFQH1S/mower-source/experiments/ticket03/exp3_auto_session.c.obj
+[84/97] Building C object CMakeFiles/control_chassis.dir/tmp/mower-bms-diag-rebuild-jFQH1S/mower-source/experiments/ticket03/exp3_hil.c.obj
+[85/97] Building C object CMakeFiles/control_chassis.dir/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc.c.obj
+[86/97] Building C object CMakeFiles/control_chassis.dir/Middlewares/Third_Party/FreeRTOS/Source/stream_buffer.c.obj
+[87/97] Building C object CMakeFiles/control_chassis.dir/tmp/mower-bms-diag-rebuild-jFQH1S/mower-source/experiments/ticket03/exp3.c.obj
+[88/97] Building C object CMakeFiles/control_chassis.dir/tmp/mower-bms-diag-rebuild-jFQH1S/mower-source/experiments/ticket03/exp3_probe.c.obj
+[89/97] Building C object CMakeFiles/control_chassis.dir/Middlewares/Third_Party/FreeRTOS/Source/queue.c.obj
+[90/97] Building C object CMakeFiles/control_chassis.dir/tmp/mower-bms-diag-rebuild-jFQH1S/mower-source/experiments/ticket03/stm32_adapter.c.obj
+[91/97] Building C object CMakeFiles/control_chassis.dir/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim_ex.c.obj
+[92/97] Building C object CMakeFiles/control_chassis.dir/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_spi.c.obj
+[93/97] Building C object CMakeFiles/control_chassis.dir/Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/cmsis_os2.c.obj
+[94/97] Building C object CMakeFiles/control_chassis.dir/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_uart.c.obj
+[95/97] Building C object CMakeFiles/control_chassis.dir/Middlewares/Third_Party/FreeRTOS/Source/tasks.c.obj
+[96/97] Building C object CMakeFiles/control_chassis.dir/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim.c.obj
+[97/97] Linking C executable control_chassis.elf
+/home/dyh/.local/opt/arm-gnu-toolchain-15.3.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/bin/ld: /home/dyh/.local/opt/arm-gnu-toolchain-15.3.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard/libc_nano.a(libc_a-closer.o): in function `_close_r':
+closer.c:(.text._close_r+0xc): warning: _close is not implemented and will always fail
+/home/dyh/.local/opt/arm-gnu-toolchain-15.3.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/bin/ld: /home/dyh/.local/opt/arm-gnu-toolchain-15.3.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard/libc_nano.a(libc_a-closer.o): note: the message above does not take linker garbage collection into account
+/home/dyh/.local/opt/arm-gnu-toolchain-15.3.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/bin/ld: /home/dyh/.local/opt/arm-gnu-toolchain-15.3.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard/libc_nano.a(libc_a-lseekr.o): in function `_lseek_r':
+lseekr.c:(.text._lseek_r+0x10): warning: _lseek is not implemented and will always fail
+/home/dyh/.local/opt/arm-gnu-toolchain-15.3.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/bin/ld: /home/dyh/.local/opt/arm-gnu-toolchain-15.3.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard/libc_nano.a(libc_a-lseekr.o): note: the message above does not take linker garbage collection into account
+/home/dyh/.local/opt/arm-gnu-toolchain-15.3.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/bin/ld: /home/dyh/.local/opt/arm-gnu-toolchain-15.3.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard/libc_nano.a(libc_a-readr.o): in function `_read_r':
+readr.c:(.text._read_r+0x10): warning: _read is not implemented and will always fail
+/home/dyh/.local/opt/arm-gnu-toolchain-15.3.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/bin/ld: /home/dyh/.local/opt/arm-gnu-toolchain-15.3.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard/libc_nano.a(libc_a-readr.o): note: the message above does not take linker garbage collection into account
+/home/dyh/.local/opt/arm-gnu-toolchain-15.3.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/bin/ld: /home/dyh/.local/opt/arm-gnu-toolchain-15.3.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard/libc_nano.a(libc_a-writer.o): in function `_write_r':
+writer.c:(.text._write_r+0x10): warning: _write is not implemented and will always fail
+/home/dyh/.local/opt/arm-gnu-toolchain-15.3.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/bin/ld: /home/dyh/.local/opt/arm-gnu-toolchain-15.3.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard/libc_nano.a(libc_a-writer.o): note: the message above does not take linker garbage collection into account
+Memory region         Used Size  Region Size  %age Used
+             RAM:       54224 B       128 KB     41.37%
+          CCMRAM:           0 B        64 KB      0.00%
+           FLASH:       85976 B       512 KB     16.40%
+   text	   data	    bss	    dec	    hex	filename
+  85464	    504	  53720	 139688	  221a8	/tmp/mower-bms-diag-rebuild-jFQH1S/mower-source/control_chassis/build/gcc15/mower-ok-release/control_chassis.elf
+-- The C compiler identification is GNU 15.3.1
+-- The CXX compiler identification is GNU 15.3.1
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: /home/dyh/.local/opt/arm-gnu-toolchain-15.3.rel1-x86_64-arm-none-eabi/bin/arm-none-eabi-gcc - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /home/dyh/.local/opt/arm-gnu-toolchain-15.3.rel1-x86_64-arm-none-eabi/bin/arm-none-eabi-g++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+CMake Deprecation Warning at CMakeLists.txt:19 (cmake_policy):
+  The OLD behavior for policy CMP0023 will be removed from a future version
+  of CMake.
+
+  The cmake-policies(7) manual explains that the OLD behaviors of all
+  policies are deprecated and that a policy should be set to OLD only under
+  specific short-term circumstances.  Projects should be ported to the NEW
+  behavior and not rely on setting a policy to OLD.
+
+
+-- Found Git: /usr/bin/git (found version "2.34.1") 
+-- Git repository not found, revision number not available.
+-- OpenI6X 2.3.0 @0
+-- Found Python3: /usr/bin/python3.10 (found version "3.10.12") found components: Interpreter 
+-- Python executable: /usr/bin/python3.10
+-- Python bin directory: /usr/bin
+CMake Warning at CMakeLists.txt:92 (find_package):
+  By not providing "FindQt5Core.cmake" in CMAKE_MODULE_PATH this project has
+  asked CMake to find a package configuration file provided by "Qt5Core", but
+  CMake did not find one.
+
+  Could not find a package configuration file provided by "Qt5Core" with any
+  of the following names:
+
+    Qt5CoreConfig.cmake
+    qt5core-config.cmake
+
+  Add the installation prefix of "Qt5Core" to CMAKE_PREFIX_PATH or set
+  "Qt5Core_DIR" to a directory containing one of the above files.  If
+  "Qt5Core" provides a separate development package or SDK, be sure it has
+  been installed.
+
+
+CMake Warning at CMakeLists.txt:93 (find_package):
+  By not providing "FindQt5Widgets.cmake" in CMAKE_MODULE_PATH this project
+  has asked CMake to find a package configuration file provided by
+  "Qt5Widgets", but CMake did not find one.
+
+  Could not find a package configuration file provided by "Qt5Widgets" with
+  any of the following names:
+
+    Qt5WidgetsConfig.cmake
+    qt5widgets-config.cmake
+
+  Add the installation prefix of "Qt5Widgets" to CMAKE_PREFIX_PATH or set
+  "Qt5Widgets_DIR" to a directory containing one of the above files.  If
+  "Qt5Widgets" provides a separate development package or SDK, be sure it has
+  been installed.
+
+
+CMake Warning at CMakeLists.txt:94 (find_package):
+  By not providing "FindQt5Xml.cmake" in CMAKE_MODULE_PATH this project has
+  asked CMake to find a package configuration file provided by "Qt5Xml", but
+  CMake did not find one.
+
+  Could not find a package configuration file provided by "Qt5Xml" with any
+  of the following names:
+
+    Qt5XmlConfig.cmake
+    qt5xml-config.cmake
+
+  Add the installation prefix of "Qt5Xml" to CMAKE_PREFIX_PATH or set
+  "Qt5Xml_DIR" to a directory containing one of the above files.  If "Qt5Xml"
+  provides a separate development package or SDK, be sure it has been
+  installed.
+
+
+CMake Warning at CMakeLists.txt:95 (find_package):
+  By not providing "FindQt5LinguistTools.cmake" in CMAKE_MODULE_PATH this
+  project has asked CMake to find a package configuration file provided by
+  "Qt5LinguistTools", but CMake did not find one.
+
+  Could not find a package configuration file provided by "Qt5LinguistTools"
+  with any of the following names:
+
+    Qt5LinguistToolsConfig.cmake
+    qt5linguisttools-config.cmake
+
+  Add the installation prefix of "Qt5LinguistTools" to CMAKE_PREFIX_PATH or
+  set "Qt5LinguistTools_DIR" to a directory containing one of the above
+  files.  If "Qt5LinguistTools" provides a separate development package or
+  SDK, be sure it has been installed.
+
+
+CMake Warning at CMakeLists.txt:96 (find_package):
+  By not providing "FindQt5PrintSupport.cmake" in CMAKE_MODULE_PATH this
+  project has asked CMake to find a package configuration file provided by
+  "Qt5PrintSupport", but CMake did not find one.
+
+  Could not find a package configuration file provided by "Qt5PrintSupport"
+  with any of the following names:
+
+    Qt5PrintSupportConfig.cmake
+    qt5printsupport-config.cmake
+
+  Add the installation prefix of "Qt5PrintSupport" to CMAKE_PREFIX_PATH or
+  set "Qt5PrintSupport_DIR" to a directory containing one of the above files.
+  If "Qt5PrintSupport" provides a separate development package or SDK, be
+  sure it has been installed.
+
+
+CMake Warning at CMakeLists.txt:97 (find_package):
+  By not providing "FindQt5Multimedia.cmake" in CMAKE_MODULE_PATH this
+  project has asked CMake to find a package configuration file provided by
+  "Qt5Multimedia", but CMake did not find one.
+
+  Could not find a package configuration file provided by "Qt5Multimedia"
+  with any of the following names:
+
+    Qt5MultimediaConfig.cmake
+    qt5multimedia-config.cmake
+
+  Add the installation prefix of "Qt5Multimedia" to CMAKE_PREFIX_PATH or set
+  "Qt5Multimedia_DIR" to a directory containing one of the above files.  If
+  "Qt5Multimedia" provides a separate development package or SDK, be sure it
+  has been installed.
+
+
+CMake Warning at CMakeLists.txt:98 (find_package):
+  By not providing "FindQt5Svg.cmake" in CMAKE_MODULE_PATH this project has
+  asked CMake to find a package configuration file provided by "Qt5Svg", but
+  CMake did not find one.
+
+  Could not find a package configuration file provided by "Qt5Svg" with any
+  of the following names:
+
+    Qt5SvgConfig.cmake
+    qt5svg-config.cmake
+
+  Add the installation prefix of "Qt5Svg" to CMAKE_PREFIX_PATH or set
+  "Qt5Svg_DIR" to a directory containing one of the above files.  If "Qt5Svg"
+  provides a separate development package or SDK, be sure it has been
+  installed.
+
+
+CMake Warning at CMakeLists.txt:149 (message):
+  Qt not found! Companion and Simulator builds disabled.
+
+
+CMake Warning (dev) at /usr/share/cmake-3.22/Modules/FindPackageHandleStandardArgs.cmake:438 (message):
+  The package name passed to `find_package_handle_standard_args` (FOX) does
+  not match the name of the calling package (Fox).  This can lead to problems
+  in calling code that expects `find_package` result variables (e.g.,
+  `_FOUND`) to follow a certain pattern.
+Call Stack (most recent call first):
+  cmake/FindFox.cmake:59 (find_package_handle_standard_args)
+  CMakeLists.txt:153 (find_package)
+This warning is for project developers.  Use -Wno-dev to suppress it.
+
+-- Could NOT find FOX (missing: FOX_INCLUDE_DIR FOX_LIBRARY) 
+Libfox not found, simu target will not be available
+TARGET simu/libsimulator: cpp compiler /home/dyh/.local/opt/arm-gnu-toolchain-15.3.rel1-x86_64-arm-none-eabi/bin/arm-none-eabi-g++ v15.3.1
+CMake Warning at radio/src/tests/CMakeLists.txt:45 (message):
+  WARNING: gtests target will not be available (check that GTEST_INCDIR,
+  GTEST_SRCDIR, and Qt5Widgets are configured).
+
+
+-- The ASM compiler identification is GNU
+-- Found assembler: /home/dyh/.local/opt/arm-gnu-toolchain-15.3.rel1-x86_64-arm-none-eabi/bin/arm-none-eabi-gcc
+TARGET firmware: cpp compiler arm-none-eabi-g++ v15.3.1
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /tmp/mower-bms-diag-rebuild-jFQH1S/mower-source/OpenI6X/FS-I6X/opentx/build-mower-ok-gcc15
+[  0%] Generating cz.h
+[  0%] Generating sticks.lbm
+[  0%] Generating es.h
+[  0%] Generating en.h
+[  0%] Generating font_03x05.lbm
+[  0%] Generating font_04x06_extra.lbm
+[  3%] Generating font_04x06.lbm
+[  3%] Generating de.h
+[  4%] Generating fi.h
+[  4%] Generating fr.h
+[  4%] Generating nl.h
+[  4%] Generating it.h
+[  4%] Generating font_05x07_extra.lbm
+[  6%] Generating font_05x07_B_compressed.lbm
+[  6%] Generating font_05x07.lbm
+[  6%] Generating pt.h
+[  8%] Generating pl.h
+[  8%] Generating se.h
+[  8%] Generating font_08x10.lbm
+[  8%] Built target 9x_xbm_1bit
+[  8%] Generating font_10x14.lbm
+[  9%] Generating font_10x14_extra.lbm
+[  9%] Generating font_10x14_compressed.lbm
+[  9%] Built target firmware_translations
+[ 11%] Generating font_cz_04x06.lbm
+[ 11%] Generating font_cz_05x07.lbm
+[ 11%] Generating font_22x38_num.lbm
+[ 11%] Generating font_cz_08x10.lbm
+[ 11%] Generating font_cz_10x14.lbm
+[ 12%] Generating font_de_04x06.lbm
+[ 12%] Generating font_de_05x07.lbm
+[ 14%] Generating font_de_08x10.lbm
+[ 14%] Generating font_de_10x14.lbm
+[ 14%] Generating font_es_04x06.lbm
+[ 14%] Generating font_es_05x07.lbm
+[ 14%] Generating font_es_08x10.lbm
+[ 16%] Generating font_es_10x14.lbm
+[ 16%] Generating font_fi_04x06.lbm
+[ 16%] Generating font_fi_05x07.lbm
+[ 17%] Generating font_fi_08x10.lbm
+[ 17%] Generating font_fi_10x14.lbm
+[ 17%] Generating font_fr_04x06.lbm
+[ 17%] Generating font_fr_05x07.lbm
+[ 19%] Generating font_fr_08x10.lbm
+[ 19%] Generating font_fr_10x14.lbm
+[ 19%] Generating font_it_04x06.lbm
+[ 20%] Generating font_it_05x07.lbm
+[ 20%] Generating font_it_08x10.lbm
+[ 20%] Generating font_it_10x14.lbm
+[ 20%] Generating font_pl_04x06.lbm
+[ 20%] Generating font_pl_08x10.lbm
+[ 22%] Generating font_pl_05x07.lbm
+[ 22%] Generating font_pl_10x14.lbm
+[ 24%] Generating font_pt_04x06.lbm
+[ 24%] Generating font_pt_05x07.lbm
+[ 24%] Generating font_pt_08x10.lbm
+[ 24%] Generating font_pt_10x14.lbm
+[ 25%] Generating font_se_04x06.lbm
+[ 25%] Generating font_se_05x07.lbm
+[ 25%] Generating font_se_08x10.lbm
+[ 27%] Generating font_se_10x14.lbm
+[ 27%] Built target 9x_fonts_1bit
+[ 27%] Generating splash_i6x_neg_trim.lbm
+[ 27%] Generating asterisk.lbm
+[ 27%] Generating sleep.lbm
+[ 27%] Generating splash_i6x_trim.lbm
+[ 27%] Generating about.lbm
+[ 29%] Generating splash.lbm
+[ 29%] Built target 9x_bitmaps
+Scanning dependencies of target firmware
+[ 32%] Building C object radio/src/CMakeFiles/firmware.dir/tmp/mower-bms-diag-rebuild-jFQH1S/mower-source/experiments/ticket03/exp3_auto_session.c.obj
+[ 29%] Building CXX object radio/src/CMakeFiles/firmware.dir/targets/common/arm/stm32/rtc_driver.cpp.obj
+[ 29%] Building CXX object radio/src/CMakeFiles/firmware.dir/targets/flysky/telemetry_driver.cpp.obj
+[ 29%] Building CXX object radio/src/CMakeFiles/firmware.dir/targets/flysky/keys_driver.cpp.obj
+[ 32%] Building CXX object radio/src/CMakeFiles/firmware.dir/targets/common/arm/stm32/aux_serial_driver.cpp.obj
+[ 32%] Building CXX object radio/src/CMakeFiles/firmware.dir/targets/common/arm/stm32/cpu_id.cpp.obj
+[ 32%] Building C object radio/src/CMakeFiles/firmware.dir/tmp/mower-bms-diag-rebuild-jFQH1S/mower-source/experiments/ticket03/exp3_probe.c.obj
+[ 32%] Building C object radio/src/CMakeFiles/firmware.dir/tmp/mower-bms-diag-rebuild-jFQH1S/mower-source/experiments/ticket03/openi6x_adapter.c.obj
+[ 32%] Building C object radio/src/CMakeFiles/firmware.dir/tmp/mower-bms-diag-rebuild-jFQH1S/mower-source/experiments/ticket03/exp3_hil.c.obj
+[ 33%] Building C object radio/src/CMakeFiles/firmware.dir/tmp/mower-bms-diag-rebuild-jFQH1S/mower-source/experiments/ticket03/exp3_link.c.obj
+[ 33%] Building C object radio/src/CMakeFiles/firmware.dir/tmp/mower-bms-diag-rebuild-jFQH1S/mower-source/experiments/ticket03/exp3.c.obj
+[ 33%] Building CXX object radio/src/CMakeFiles/firmware.dir/targets/common/arm/stm32/mixer_scheduler_driver.cpp.obj
+[ 35%] Building CXX object radio/src/CMakeFiles/firmware.dir/targets/flysky/crc_driver.cpp.obj
+[ 35%] Building CXX object radio/src/CMakeFiles/firmware.dir/targets/flysky/i2c_driver.cpp.obj
+[ 35%] Building CXX object radio/src/CMakeFiles/firmware.dir/targets/flysky/adc_driver.cpp.obj
+[ 35%] Building CXX object radio/src/CMakeFiles/firmware.dir/targets/flysky/extmodule_driver.cpp.obj
+[ 37%] Building CXX object radio/src/CMakeFiles/firmware.dir/targets/flysky/backlight_driver.cpp.obj
+[ 37%] Building CXX object radio/src/CMakeFiles/firmware.dir/targets/flysky/buzzer_driver.cpp.obj
+[ 37%] Building CXX object radio/src/CMakeFiles/firmware.dir/targets/flysky/board.cpp.obj
+[ 38%] Building CXX object radio/src/CMakeFiles/firmware.dir/targets/common/arm/stm32/timers_driver.cpp.obj
+[ 38%] Building CXX object radio/src/CMakeFiles/firmware.dir/targets/flysky/trainer_driver.cpp.obj
+[ 38%] Building CXX object radio/src/CMakeFiles/firmware.dir/targets/flysky/intmodule_pulses_driver.cpp.obj
+[ 38%] Building CXX object radio/src/CMakeFiles/firmware.dir/targets/flysky/AFHDS2A_a7105.cpp.obj
+[ 40%] Building CXX object radio/src/CMakeFiles/firmware.dir/targets/flysky/A7105_SPI.cpp.obj
+[ 40%] Building C object radio/src/CMakeFiles/firmware.dir/thirdparty/mini_print/mini_vsnprintf.c.obj
+[ 40%] Building CXX object radio/src/CMakeFiles/firmware.dir/buzzer.cpp.obj
+[ 41%] Building CXX object radio/src/CMakeFiles/firmware.dir/telemetry/crossfire.cpp.obj
+[ 41%] Building CXX object radio/src/CMakeFiles/firmware.dir/telemetry/flysky_ibus.cpp.obj
+[ 41%] Building CXX object radio/src/CMakeFiles/firmware.dir/translations/tts_en.cpp.obj
+[ 41%] Building CXX object radio/src/CMakeFiles/firmware.dir/main.cpp.obj
+[ 43%] Building CXX object radio/src/CMakeFiles/firmware.dir/tasks.cpp.obj
+[ 43%] Building CXX object radio/src/CMakeFiles/firmware.dir/telemetry/telemetry.cpp.obj
+[ 43%] Building CXX object radio/src/CMakeFiles/firmware.dir/telemetry/telemetry_holders.cpp.obj
+[ 45%] Building CXX object radio/src/CMakeFiles/firmware.dir/telemetry/telemetry_sensors.cpp.obj
+[ 45%] Building CXX object radio/src/CMakeFiles/firmware.dir/vario.cpp.obj
+[ 45%] Building CXX object radio/src/CMakeFiles/firmware.dir/debug.cpp.obj
+[ 45%] Building CXX object radio/src/CMakeFiles/firmware.dir/storage/storage_common.cpp.obj
+[ 46%] Building CXX object radio/src/CMakeFiles/firmware.dir/storage/eeprom_common.cpp.obj
+[ 46%] Building CXX object radio/src/CMakeFiles/firmware.dir/storage/eeprom_rlc.cpp.obj
+[ 46%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/common/widgets.cpp.obj
+[ 48%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/navigation/navigation_9x.cpp.obj
+[ 48%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/navigation/common.cpp.obj
+[ 48%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/common/arm/widgets.cpp.obj
+[ 48%] Building CXX object radio/src/CMakeFiles/firmware.dir/curves.cpp.obj
+[ 50%] Building CXX object radio/src/CMakeFiles/firmware.dir/gvars.cpp.obj
+[ 50%] Building CXX object radio/src/CMakeFiles/firmware.dir/rtc.cpp.obj
+[ 50%] Building CXX object radio/src/CMakeFiles/firmware.dir/opentx.cpp.obj
+[ 51%] Building CXX object radio/src/CMakeFiles/firmware.dir/functions.cpp.obj
+[ 51%] Building CXX object radio/src/CMakeFiles/firmware.dir/strhelpers.cpp.obj
+[ 51%] Building CXX object radio/src/CMakeFiles/firmware.dir/switches.cpp.obj
+[ 51%] Building CXX object radio/src/CMakeFiles/firmware.dir/mixer.cpp.obj
+[ 53%] Building CXX object radio/src/CMakeFiles/firmware.dir/mixer_scheduler.cpp.obj
+[ 53%] Building CXX object radio/src/CMakeFiles/firmware.dir/stamp.cpp.obj
+[ 53%] Building CXX object radio/src/CMakeFiles/firmware.dir/timers.cpp.obj
+[ 54%] Building CXX object radio/src/CMakeFiles/firmware.dir/trainer.cpp.obj
+[ 54%] Building CXX object radio/src/CMakeFiles/firmware.dir/model_init.cpp.obj
+[ 54%] Building CXX object radio/src/CMakeFiles/firmware.dir/keys.cpp.obj
+[ 54%] Building CXX object radio/src/CMakeFiles/firmware.dir/maths.cpp.obj
+[ 56%] Building CXX object radio/src/CMakeFiles/firmware.dir/translations.cpp.obj
+[ 56%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/gui_common.cpp.obj
+[ 56%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/128x64/model_input_edit.cpp.obj
+[ 58%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/128x64/model_mix_edit.cpp.obj
+[ 58%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/128x64/model_display.cpp.obj
+[ 58%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/128x64/radio_diagkeys.cpp.obj
+[ 58%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/128x64/radio_diaganas.cpp.obj
+[ 59%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/128x64/radio_hardware.cpp.obj
+[ 59%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/128x64/view_channels.cpp.obj
+[ 59%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/128x64/view_telemetry.cpp.obj
+[ 61%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/128x64/view_about.cpp.obj
+[ 61%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/128x64/model_gvars.cpp.obj
+[ 61%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/128x64/lcd.cpp.obj
+[ 61%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/128x64/splash.cpp.obj
+[ 62%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/128x64/fonts.cpp.obj
+[ 62%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/128x64/popups.cpp.obj
+[ 62%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/128x64/widgets.cpp.obj
+[ 64%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/128x64/menus.cpp.obj
+[ 64%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/128x64/menu_model.cpp.obj
+[ 64%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/128x64/model_select.cpp.obj
+[ 64%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/128x64/model_setup.cpp.obj
+[ 66%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/128x64/model_outputs.cpp.obj
+[ 66%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/128x64/model_logical_switches.cpp.obj
+[ 66%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/128x64/model_special_functions.cpp.obj
+[ 67%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/128x64/model_telemetry.cpp.obj
+[ 67%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/128x64/menu_radio.cpp.obj
+[ 67%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/128x64/radio_setup.cpp.obj
+[ 67%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/128x64/radio_version.cpp.obj
+[ 69%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/128x64/radio_calibration.cpp.obj
+[ 69%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/128x64/view_main.cpp.obj
+[ 69%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/128x64/view_statistics.cpp.obj
+[ 70%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/common/stdlcd/widgets.cpp.obj
+[ 70%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/common/stdlcd/popups.cpp.obj
+[ 70%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/common/stdlcd/radio_tools.cpp.obj
+[ 70%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/common/stdlcd/model_heli.cpp.obj
+[ 72%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/common/stdlcd/model_inputs_mixes_common.cpp.obj
+[ 72%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/common/stdlcd/model_inputs.cpp.obj
+[ 74%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/common/stdlcd/view_text.cpp.obj
+[ 74%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/common/stdlcd/model_mixes.cpp.obj
+[ 74%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/common/stdlcd/radio_trainer.cpp.obj
+[ 74%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/common/stdlcd/model_curves.cpp.obj
+[ 74%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/128x64/model_curve_edit.cpp.obj
+[ 75%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/128x64/model_flightmodes.cpp.obj
+[ 75%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/gui_common_arm.cpp.obj
+[ 75%] Building CXX object radio/src/CMakeFiles/firmware.dir/pulses/crossfire.cpp.obj
+[ 77%] Building CXX object radio/src/CMakeFiles/firmware.dir/pulses/pulses.cpp.obj
+[ 77%] Building CXX object radio/src/CMakeFiles/firmware.dir/pulses/ppm.cpp.obj
+[ 77%] Building CXX object radio/src/CMakeFiles/firmware.dir/serial.cpp.obj
+[ 77%] Building C object radio/src/CMakeFiles/firmware.dir/syscalls.c.obj
+[ 79%] Building C object radio/src/CMakeFiles/firmware.dir/thirdparty/STM32F0xx_StdPeriph_Lib_V1.5.0/Libraries/STM32F0xx_StdPeriph_Driver/src/stm32f0xx_crs.c.obj
+[ 79%] Building C object radio/src/CMakeFiles/firmware.dir/thirdparty/STM32F0xx_StdPeriph_Lib_V1.5.0/Libraries/STM32F0xx_StdPeriph_Driver/src/stm32f0xx_misc.c.obj
+[ 79%] Building C object radio/src/CMakeFiles/firmware.dir/thirdparty/STM32F0xx_StdPeriph_Lib_V1.5.0/Libraries/STM32F0xx_StdPeriph_Driver/src/stm32f0xx_gpio.c.obj
+[ 80%] Building C object radio/src/CMakeFiles/firmware.dir/thirdparty/STM32F0xx_StdPeriph_Lib_V1.5.0/Libraries/STM32F0xx_StdPeriph_Driver/src/stm32f0xx_dbgmcu.c.obj
+[ 80%] Building C object radio/src/CMakeFiles/firmware.dir/thirdparty/STM32F0xx_StdPeriph_Lib_V1.5.0/Libraries/STM32F0xx_StdPeriph_Driver/src/stm32f0xx_rcc.c.obj
+[ 80%] Building C object radio/src/CMakeFiles/firmware.dir/thirdparty/STM32F0xx_StdPeriph_Lib_V1.5.0/Libraries/STM32F0xx_StdPeriph_Driver/src/stm32f0xx_spi.c.obj
+[ 80%] Building C object radio/src/CMakeFiles/firmware.dir/thirdparty/STM32F0xx_StdPeriph_Lib_V1.5.0/Libraries/STM32F0xx_StdPeriph_Driver/src/stm32f0xx_i2c.c.obj
+[ 82%] Building C object radio/src/CMakeFiles/firmware.dir/thirdparty/STM32F0xx_StdPeriph_Lib_V1.5.0/Libraries/STM32F0xx_StdPeriph_Driver/src/stm32f0xx_dma.c.obj
+[ 83%] Building C object radio/src/CMakeFiles/firmware.dir/thirdparty/STM32F0xx_StdPeriph_Lib_V1.5.0/Libraries/STM32F0xx_StdPeriph_Driver/src/stm32f0xx_rtc.c.obj
+[ 83%] Building C object radio/src/CMakeFiles/firmware.dir/thirdparty/STM32F0xx_StdPeriph_Lib_V1.5.0/Libraries/STM32F0xx_StdPeriph_Driver/src/stm32f0xx_usart.c.obj
+[ 83%] Building C object radio/src/CMakeFiles/firmware.dir/thirdparty/STM32F0xx_StdPeriph_Lib_V1.5.0/Libraries/STM32F0xx_StdPeriph_Driver/src/stm32f0xx_pwr.c.obj
+[ 83%] Building C object radio/src/CMakeFiles/firmware.dir/thirdparty/STM32F0xx_StdPeriph_Lib_V1.5.0/Libraries/STM32F0xx_StdPeriph_Driver/src/stm32f0xx_adc.c.obj
+[ 83%] Building C object radio/src/CMakeFiles/firmware.dir/thirdparty/STM32F0xx_StdPeriph_Lib_V1.5.0/Libraries/STM32F0xx_StdPeriph_Driver/src/stm32f0xx_crc.c.obj
+[ 83%] Building C object radio/src/CMakeFiles/firmware.dir/thirdparty/STM32F0x2_USB-FS-Device_Lib_V1.0.0/Libraries/STM32_USB_Device_Driver/src/usb_core.c.obj
+[ 85%] Building C object radio/src/CMakeFiles/firmware.dir/thirdparty/STM32F0x2_USB-FS-Device_Lib_V1.0.0/Libraries/STM32_USB_Device_Driver/src/usb_dcd.c.obj
+[ 85%] Building C object radio/src/CMakeFiles/firmware.dir/thirdparty/STM32F0x2_USB-FS-Device_Lib_V1.0.0/Libraries/STM32_USB_Device_Driver/src/usb_dcd_int.c.obj
+[ 85%] Building C object radio/src/CMakeFiles/firmware.dir/thirdparty/STM32F0x2_USB-FS-Device_Lib_V1.0.0/Libraries/STM32_USB_Device_Library/Core/src/usbd_core.c.obj
+[ 87%] Building C object radio/src/CMakeFiles/firmware.dir/thirdparty/STM32F0x2_USB-FS-Device_Lib_V1.0.0/Libraries/STM32_USB_Device_Library/Core/src/usbd_req.c.obj
+[ 85%] Building C object radio/src/CMakeFiles/firmware.dir/thirdparty/STM32F0x2_USB-FS-Device_Lib_V1.0.0/Libraries/STM32_USB_Device_Library/Core/src/usbd_ioreq.c.obj
+[ 87%] Building C object radio/src/CMakeFiles/firmware.dir/thirdparty/STM32F0x2_USB-FS-Device_Lib_V1.0.0/Libraries/STM32_USB_Device_Library/Class/msc/src/usbd_msc_data.c.obj
+[ 87%] Building C object radio/src/CMakeFiles/firmware.dir/thirdparty/STM32F0x2_USB-FS-Device_Lib_V1.0.0/Libraries/STM32_USB_Device_Library/Class/msc/src/usbd_msc_scsi.c.obj
+[ 88%] Building C object radio/src/CMakeFiles/firmware.dir/thirdparty/STM32F0x2_USB-FS-Device_Lib_V1.0.0/Libraries/STM32_USB_Device_Library/Class/msc/src/usbd_msc_bot.c.obj
+[ 88%] Building C object radio/src/CMakeFiles/firmware.dir/thirdparty/STM32F0x2_USB-FS-Device_Lib_V1.0.0/Libraries/STM32_USB_Device_Library/Class/msc/src/usbd_msc_core.c.obj
+[ 88%] Building C object radio/src/CMakeFiles/firmware.dir/thirdparty/CoOS/kernel/core.c.obj
+[ 88%] Building C object radio/src/CMakeFiles/firmware.dir/thirdparty/CoOS/kernel/hook.c.obj
+[ 90%] Building C object radio/src/CMakeFiles/firmware.dir/thirdparty/CoOS/kernel/task.c.obj
+[ 90%] Building C object radio/src/CMakeFiles/firmware.dir/thirdparty/CoOS/kernel/event.c.obj
+[ 90%] Building C object radio/src/CMakeFiles/firmware.dir/thirdparty/CoOS/kernel/time.c.obj
+[ 90%] Building C object radio/src/CMakeFiles/firmware.dir/thirdparty/CoOS/kernel/flag.c.obj
+[ 91%] Building C object radio/src/CMakeFiles/firmware.dir/thirdparty/CoOS/kernel/timer.c.obj
+[ 91%] Building C object radio/src/CMakeFiles/firmware.dir/thirdparty/CoOS/kernel/mutex.c.obj
+[ 91%] Building C object radio/src/CMakeFiles/firmware.dir/thirdparty/CoOS/kernel/serviceReq.c.obj
+[ 93%] Building C object radio/src/CMakeFiles/firmware.dir/thirdparty/CoOS/portable/GCC/port.c.obj
+[ 93%] Building C object radio/src/CMakeFiles/firmware.dir/thirdparty/CoOS/portable/arch.c.obj
+[ 93%] Building CXX object radio/src/CMakeFiles/firmware.dir/targets/flysky/lcd_driver.cpp.obj
+[ 95%] Building CXX object radio/src/CMakeFiles/firmware.dir/targets/flysky/pwr_driver.cpp.obj
+[ 95%] Building ASM object radio/src/CMakeFiles/firmware.dir/targets/flysky/startup_stm32f072.s.obj
+[ 95%] Building CXX object radio/src/CMakeFiles/firmware.dir/targets/common/arm/stm32/delays.cpp.obj
+[ 95%] Building C object radio/src/CMakeFiles/firmware.dir/targets/common/arm/stm32/f0/system_stm32f0xx.c.obj
+[ 96%] Building C object radio/src/CMakeFiles/firmware.dir/targets/common/arm/stm32/usb_bsp.c.obj
+[ 96%] Building C object radio/src/CMakeFiles/firmware.dir/targets/common/arm/stm32/usbd_pwr.c.obj
+[ 96%] Building C object radio/src/CMakeFiles/firmware.dir/targets/common/arm/stm32/usbd_desc.c.obj
+[ 98%] Building CXX object radio/src/CMakeFiles/firmware.dir/targets/common/arm/stm32/usbd_usr.cpp.obj
+[ 98%] Building CXX object radio/src/CMakeFiles/firmware.dir/targets/common/arm/stm32/usb_driver.cpp.obj
+[ 98%] Building CXX object radio/src/CMakeFiles/firmware.dir/targets/common/arm/stm32/flash_driver.cpp.obj
+[100%] Building CXX object radio/src/CMakeFiles/firmware.dir/targets/common/arm/stm32/usbd_storage_msd.cpp.obj
+[100%] Building C object radio/src/CMakeFiles/firmware.dir/targets/common/arm/stm32/usbd_hid_joystick.c.obj
+[100%] Linking CXX executable ../../firmware.elf
+/home/dyh/.local/opt/arm-gnu-toolchain-15.3.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/bin/ld: warning: ../../firmware.elf has a LOAD segment with RWX permissions
+Flash used: 130864 / 131072 (99%), left: 208
+RAM used: 15836 / 16384 (96%), left: 548
+[100%] Built target firmware
+   text	   data	    bss	    dec	    hex	filename
+ 130788	     76	  15760	 146624	  23cc0	/tmp/mower-bms-diag-rebuild-jFQH1S/mower-source/OpenI6X/FS-I6X/opentx/build-mower-ok-gcc15/firmware.elf
+  85464	    504	  53720	 139688	  221a8	/tmp/mower-bms-diag-rebuild-jFQH1S/mower-source/control_chassis/build/gcc15/mower-ok-release/control_chassis.elf
+f07cfe9c9d3f035cacbc5c977a690403ed42da87158e99a8953ee812b6c00eb4  /tmp/mower-bms-diag-rebuild-jFQH1S/mower-source/OpenI6X/FS-I6X/opentx/build-mower-ok-gcc15/firmware.bin
+47d222f74b84837f2f1fd1335b22020fd78d724a160723b260dc5f19fd2f363c  /tmp/mower-bms-diag-rebuild-jFQH1S/mower-source/control_chassis/build/gcc15/mower-ok-release/control_chassis.bin
+c4ed74c1764d7dfe57d5f9f13865bd2b337958d5a075842308fe556e2dee9cad  /tmp/mower-bms-diag-rebuild-jFQH1S/mower-source/control_chassis/build/gcc15/mower-ok-release/control_chassis.hex
+源码复建目录：/tmp/mower-bms-diag-rebuild-jFQH1S/mower-source

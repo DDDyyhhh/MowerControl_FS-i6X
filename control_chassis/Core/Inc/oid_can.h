@@ -65,6 +65,9 @@ typedef struct {
     int32_t  actual_speed_erpm;   // 实际速度 (erpm)
     uint32_t actual_speed_update_tick;
     uint8_t  actual_speed_valid;
+    uint32_t speed_query_attempts, speed_query_queued;
+    uint32_t speed_mailbox_ok, speed_mailbox_fail, speed_responses;
+    uint32_t speed_max_gap_ms;
     float    bus_voltage;         // 母线电压 (V)
     float    bus_current;         // 母线电流 (A)
     int16_t  motor_temp;          // 电机温度 (℃)
@@ -148,5 +151,6 @@ void OID_Heartbeat(uint8_t node_id);
  * @brief 解析 CAN 接收报文 (在 CAN RX 任务中调用)
  */
 void OID_Parse_Rx_Message(uint32_t can_id, uint8_t *data, uint8_t dlc);
+void OID_Parse_Rx_MessageAt(uint32_t can_id, uint8_t *data, uint8_t dlc, uint32_t rx_tick);
 
 #endif /* __OID_CAN_H */

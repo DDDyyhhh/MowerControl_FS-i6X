@@ -10,10 +10,15 @@ sources=(
     "$root_dir/Core/UserApp/safety_ownership_gate.c"
 )
 
-"$cc" "${common[@]}" "${sources[@]}" -lm -o /tmp/blade_driver_pwm_harness
+"$cc" "${common[@]}" -DEXPECTED_BLADE_DRIVER=2U \
+    "${sources[@]}" -lm -o /tmp/blade_driver_default_harness
+/tmp/blade_driver_default_harness
+
+"$cc" "${common[@]}" -DBLADE_MOTOR_DRIVER_USED=1U -DEXPECTED_BLADE_DRIVER=1U \
+    "${sources[@]}" -lm -o /tmp/blade_driver_pwm_harness
 /tmp/blade_driver_pwm_harness
 
-"$cc" "${common[@]}" -DBLADE_MOTOR_DRIVER_USED=2U \
+"$cc" "${common[@]}" -DBLADE_MOTOR_DRIVER_USED=2U -DEXPECTED_BLADE_DRIVER=2U \
     "${sources[@]}" -lm -o /tmp/blade_driver_ftesc_harness
 /tmp/blade_driver_ftesc_harness
 

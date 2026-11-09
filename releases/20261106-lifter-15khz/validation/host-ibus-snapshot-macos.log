@@ -1,0 +1,24 @@
+PASS 100ms running gaps 100/200/299/300/301; Comm and Motion-only watchdogs
+PASS i-BUS ownership, timeout, publication preemption and IRQ restore
+PASS -O0 production=0 timeout_ms=100
+PASS 100ms running gaps 100/200/299/300/301; Comm and Motion-only watchdogs
+PASS i-BUS ownership, timeout, publication preemption and IRQ restore
+PASS -O0 production=1 timeout_ms=100
+PASS 100ms running gaps 100/200/299/300/301; Comm and Motion-only watchdogs
+PASS i-BUS ownership, timeout, publication preemption and IRQ restore
+PASS -O2 production=0 timeout_ms=100
+PASS 100ms running gaps 100/200/299/300/301; Comm and Motion-only watchdogs
+PASS i-BUS ownership, timeout, publication preemption and IRQ restore
+PASS -O2 production=1 timeout_ms=100
+PASS 300ms running gaps 100/200/299/300/301; Comm and Motion-only watchdogs
+PASS i-BUS ownership, timeout, publication preemption and IRQ restore
+PASS -O0 production=0 timeout_ms=300
+PASS 300ms running gaps 100/200/299/300/301; Comm and Motion-only watchdogs
+PASS i-BUS ownership, timeout, publication preemption and IRQ restore
+PASS -O0 production=1 timeout_ms=300
+PASS 300ms running gaps 100/200/299/300/301; Comm and Motion-only watchdogs
+PASS i-BUS ownership, timeout, publication preemption and IRQ restore
+PASS -O2 production=0 timeout_ms=300
+PASS 300ms running gaps 100/200/299/300/301; Comm and Motion-only watchdogs
+PASS i-BUS ownership, timeout, publication preemption and IRQ restore
+PASS -O2 production=1 timeout_ms=300

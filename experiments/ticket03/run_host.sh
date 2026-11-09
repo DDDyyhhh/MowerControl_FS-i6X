@@ -21,13 +21,16 @@ ASAN_OPTIONS=detect_leaks=0 "$work/fast-result"
   "$root/test_auto_session.c" "$root/exp3.c" "$root/exp3_link.c" "$root/exp3_hil.c" \
   "$root/exp3_auto_session.c" -o "$work/auto-session"
 ASAN_OPTIONS=detect_leaks=0 "$work/auto-session"
+for blade_driver in 1U 2U; do
 "$cc" -std=c99 -Wall -Wextra -Werror -fsanitize=undefined,address -DEXP3_ENABLED=1 \
+  -DBLADE_MOTOR_DRIVER_USED="$blade_driver" \
   -DREMOTE_BACKEND_A28_E34=0 -DREMOTE_BACKEND_FLYSKY_IBUS=1 \
   -I"$root" -I"$root/../../control_chassis/Core/Inc" \
   "$root/test_blade_adapter.c" "$root/exp3.c" "$root/exp3_probe.c" \
   "$root/exp3_blade_adapter.c" \
   "$root/../../control_chassis/Core/UserApp/blade_manual_control.c" -o "$work/blade"
 ASAN_OPTIONS=detect_leaks=0 "$work/blade"
+done
 "$cc" -std=c99 -Wall -Wextra -Werror -fsanitize=undefined,address \
   -DEXP3_ENABLED=1 -DREMOTE_BACKEND_A28_E34=0 -DREMOTE_BACKEND_FLYSKY_IBUS=1 \
   -I"$root" -I"$root/../../control_chassis/Core/Inc" \

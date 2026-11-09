@@ -1,0 +1,29 @@
+[1m=== Running Battery Protection Harnesses ===[0m
+  [[0;32mPASS[0m] Battery Protection (BMS publication, Motion recovery, full-speed wheel adapters and LOW latch)
+[1m=== [1/9] Running Blade Driver Selection Harness ===[0m
+  [[0;32mPASS[0m] Blade Driver Selection (default FTESC CAN, explicit PWM/FTESC CAN, negative compile guards)
+[1m=== [2/9] Running Blade Manual Control Harness ===[0m
+  [[0;32mPASS[0m] Blade Manual Control (PWM & FTESC CAN confirmation state machine)
+[1m=== [3/9] Running Blade Confirm CH6 Adapter Harness ===[0m
+  [[0;32mPASS[0m] Blade Confirm CH6 Adapter (Baseline, edge debounce, duplicate rejection & BMC integration)
+[1m=== Running CAN TX scheduler failure/interleaving harness (-O0/-O2) ===[0m
+  [[0;32mPASS[0m] CAN TX scheduler (stop retention, completion and mailbox ordering)
+[1m=== [4/9] Running FTESC Realtime Feedback Harness ===[0m
+  [[0;32mPASS[0m] FTESC Realtime Feedback (CAN packet parsing & CRC validation)
+[1m=== [5/9] Running SENS i-BUS Responder Harness ===[0m
+  [[0;32mPASS[0m] SENS i-BUS Responder (Discovery, measurement request & packet packing)
+[1m=== [6/9] Running Telemetry Snapshot Harness ===[0m
+  [[0;32mPASS[0m] Telemetry Snapshot (BMS, odometry, fault bitfield & atomic exchange)
+[1m=== [7/9] Running Remote Authorization Harness ===[0m
+  [[0;32mPASS[0m] Remote Authorization (CH8 dual-edge unlock state machine)
+[1m=== Running i-BUS Snapshot Concurrency Harness ===[0m
+  [[0;32mPASS[0m] Remote receive timestamps, stale queue rejection and stream continuity
+  [[0;31mFAIL[0m] i-BUS Snapshot Concurrency Harness
+ld: unknown options: --wrap=RemoteAuthorization_Advance --wrap=FlySkyIbusServo_FeedReceived --wrap=FlySkyIbusServo_Advance 
+clang: error: linker command failed with exit code 1 (use -v to see invocation)
+Traceback (most recent call last):
+  File "/Users/dyh/phld/MowerControl_FS-i6X/tools/test_ibus_snapshot.py", line 23, in <module>
+    subprocess.run([
+  File "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/subprocess.py", line 528, in run
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command '['/Users/dyh/phld/MowerControl_FS-i6X/releases/20261106-lifter-15khz/validation/macos-host-cc.py', '-std=c99', '-Wall', '-Wextra', '-Werror', '-O0', '-DREMOTE_BACKEND_HOST', '-DREMOTE_IBUS_TIMEOUT_MS=100U', '-DREMOTE_BACKEND_IRQ_TEST', '-DSENS_IBUS_HIL_DIAG_USART1_TX_ENABLED=1', '-include', '/Users/dyh/phld/MowerControl_FS-i6X/control_chassis/host/fakes/ibus_snapshot_irq.h', '-DREMOTE_BACKEND_A28_E34=0', '-DREMOTE_BACKEND_FLYSKY_IBUS=1', '-DMOWER_BLADE_OK_ENABLED=0', '-DMOWER_GRASS_BAG_CH6_ENABLED=0', '-I/Users/dyh/phld/MowerControl_FS-i6X/control_chassis/Core/Inc', '/Users/dyh/phld/MowerControl_FS-i6X/control_chassis/host/ibus_snapshot_harness.c', '/Users/dyh/phld/MowerControl_FS-i6X/control_chassis/Core/UserDev/remote_backend.c', '/Users/dyh/phld/MowerControl_FS-i6X/control_chassis/Core/UserDev/remote_authorization.c', '/Users/dyh/phld/MowerControl_FS-i6X/control_chassis/Core/UserDev/flysky_ibus_servo.c', '/Users/dyh/phld/MowerControl_FS-i6X/control_chassis/Core/UserDev/blade_confirm_ch6_adapter.c', '/Users/dyh/phld/MowerControl_FS-i6X/control_chassis/Core/UserDev/grass_bag_control.c', '-lm', '-Wl,--wrap=RemoteAuthorization_Advance', '-Wl,--wrap=FlySkyIbusServo_FeedReceived', '-Wl,--wrap=FlySkyIbusServo_Advance', '-o', '/var/folders/_c/62b23my53ds0lct_bdnhfhg00000gn/T/ibus-snapshot-fwxnv2h0/harness']' returned non-zero exit status 1.

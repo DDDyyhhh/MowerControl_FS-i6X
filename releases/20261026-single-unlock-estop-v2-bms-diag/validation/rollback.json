@@ -1,0 +1,34 @@
+{
+  "baseline": "20261026-single-unlock-estop-v2",
+  "verified_source_files": 5220,
+  "restored": [
+    "OpenI6X/FS-I6X/opentx/radio/src/gui/128x64/view_main.cpp",
+    "control_chassis/CONTEXT.md",
+    "control_chassis/Core/Inc/remote_authorization.h",
+    "control_chassis/Core/Inc/remote_backend.h",
+    "control_chassis/Core/UserApp/app_Motion.c",
+    "control_chassis/Core/UserDev/remote_authorization.c",
+    "control_chassis/Core/UserDev/remote_backend.c",
+    "control_chassis/Core/UserDev/sens_ibus_responder.c",
+    "docs/protocols/ch4-fast-wheel-feedback.md",
+    "docs/protocols/sens-fast-completion.md",
+    "experiments/ticket03/exp3.h",
+    "experiments/ticket03/exp3_board.h",
+    "experiments/ticket03/exp3_probe.c",
+    "experiments/ticket03/exp3_probe.h",
+    "experiments/ticket03/openi6x_adapter.c",
+    "experiments/ticket03/stm32_adapter.c",
+    "experiments/ticket03/test_completion.c",
+    "experiments/ticket03/test_fast_result.c",
+    "experiments/ticket03/test_release_sens.c",
+    "tools/test_blade_ok_ui.py",
+    "tools/test_fast_completion.py",
+    "tools/test_locked_unlock_feedback.py",
+    "tools/test_single_unlock_recovery.py",
+    "tools/verify_blade_ok_host.sh"
+  ],
+  "archived_v34_tests": [
+    "tools/test_startup_unlock.py",
+    "tools/test_intent_transport.py"
+  ]
+}

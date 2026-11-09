@@ -1,0 +1,75 @@
+[1m=== Running Battery Protection Harnesses ===[0m
+  [[0;32mPASS[0m] Battery Protection (BMS publication, Motion recovery, full-speed wheel adapters and LOW latch)
+[1m=== [1/9] Running Blade Driver Selection Harness ===[0m
+  [[0;32mPASS[0m] Blade Driver Selection (default FTESC CAN, explicit PWM/FTESC CAN, negative compile guards)
+[1m=== [2/9] Running Blade Manual Control Harness ===[0m
+  [[0;32mPASS[0m] Blade Manual Control (PWM & FTESC CAN confirmation state machine)
+[1m=== [3/9] Running Blade Confirm CH6 Adapter Harness ===[0m
+  [[0;32mPASS[0m] Blade Confirm CH6 Adapter (Baseline, edge debounce, duplicate rejection & BMC integration)
+[1m=== Running CAN TX scheduler failure/interleaving harness (-O0/-O2) ===[0m
+  [[0;32mPASS[0m] CAN TX scheduler (stop retention, completion and mailbox ordering)
+[1m=== [4/9] Running FTESC Realtime Feedback Harness ===[0m
+  [[0;32mPASS[0m] FTESC Realtime Feedback (CAN packet parsing & CRC validation)
+[1m=== [5/9] Running SENS i-BUS Responder Harness ===[0m
+  [[0;32mPASS[0m] SENS i-BUS Responder (Discovery, measurement request & packet packing)
+[1m=== [6/9] Running Telemetry Snapshot Harness ===[0m
+  [[0;32mPASS[0m] Telemetry Snapshot (BMS, odometry, fault bitfield & atomic exchange)
+[1m=== [7/9] Running Remote Authorization Harness ===[0m
+  [[0;32mPASS[0m] Remote Authorization (CH8 dual-edge unlock state machine)
+[1m=== Running i-BUS Snapshot Concurrency Harness ===[0m
+  [[0;32mPASS[0m] Remote receive timestamps, stale queue rejection and stream continuity
+  [[0;32mPASS[0m] i-BUS Snapshot (single writer, preemption, independent timeout, IRQ restore; O0/O2)
+[1m=== [8/9] Running Remote Backend Harness ===[0m
+  [[0;32mPASS[0m] Remote Backend (A28/E34 & FlySky i-BUS stream/framing isolation)
+  [[0;32mPASS[0m] Actuator PWM (actual RCC/TIM/EG2104, bag 10kHz / height 15kHz, +/-60%, startup and stop zero)
+[1m=== Running Lifter Height Homing Harness (both remote backends) ===[0m
+  [[0;32mPASS[0m] Lifter Height (interruptible 10s homing, reversed PWM, latest target wins)
+  [[0;32mPASS[0m] i6X stick calibration validation and neutral fallback
+  [[0;32mPASS[0m] i6X mower direct startup, native throttle/switch warnings and calibration isolation
+[1m=== Running IMU Fault / Runtime / SPI Deadline Harnesses ===[0m
+  [[0;32mPASS[0m] IMU fault propagation, runtime diagnostics and bounded HAL deadlines
+[1m=== Running IMU Numeric Harness (optimized strict aliasing) ===[0m
+  [[0;32mPASS[0m] IMU Numeric (accuracy, pose and strict-aliasing optimization)
+[1m=== [9/9] Running Safety Ownership Gate Harness ===[0m
+  [[0;32mPASS[0m] Safety Ownership Gate (Arbitration, latching, zero-intent enforcement)
+
+  [[0;32mPASS[0m] Ticket03 Experiment3 protocol and transport
+PASS controller decision required before reply; rejected Confirm is not Accepted
+PASS full controller Confirm/Result, fresh-frame low/medium/high, safety zero, duplicate no reauthorization (driver=1)
+MEASURE unlock controller acceptance=160ms (120ms downlink sampling model)
+PASS unlock Confirm/real authorization/compact Result, separate blade generation, cached duplicate cannot unlock again
+PASS actual token authority: 9999/10000ms, single consumption, held-left expiry, clock wrap, 4095 exhaustion revokes and queues fresh session
+PASS controller decision required before reply; rejected Confirm is not Accepted
+PASS full controller Confirm/Result, fresh-frame low/medium/high, safety zero, duplicate no reauthorization (driver=2)
+MEASURE unlock controller acceptance=160ms (120ms downlink sampling model)
+PASS unlock Confirm/real authorization/compact Result, separate blade generation, cached duplicate cannot unlock again
+PASS actual token authority: 9999/10000ms, single consumption, held-left expiry, clock wrap, 4095 exhaustion revokes and queues fresh session
+PASS grass bag AA/AC feedback, unplug/reconnect, frozen replay, timeout, heartbeat/time wrap
+PASS bag full four-byte AC, legacy unknown, full-wins, disconnect, replay/timeout/recovery, wraps
+PASS controller height AA/AC, no replay refresh, invalid range, time/heartbeat wrap
+PASS idle E1 battery AA/AC diagnostics: coherent pair, forward heartbeat, stale/replay/truncation, time/wrap; no result parser mutation
+PASS new binding clears fresh grass bag cache and waits for new heartbeat
+PASS actual RF completion: busy frame, wrong session/action/generation/context/command, truncated/lost part, duplicate and non-Cancelled rejection
+PASS OpenI6X RF adapter auto binds and replaces rebooted controller session
+PASS production backend CH6 cannot create confirmation; CH7 mapping preserved
+PASS release SENS addr13-15 four-byte completion, addr12 height, addr11 connection, addr10 output and unchanged addr1-8
+PASS release SENS addr13-15 four-byte completion, addr12 height, addr11 connection, addr10 output and unchanged addr1-8
+PASS profile-3 actual GUI: arbitrary controller token, early OK, explicit rejection, ACK+runtime success, independent blade, no 2s hide; home/debug/router/glyph/pixel checks
+PASS Chinese production UI, live provider, actual main-view route, CH9/CH6 boundaries, scrolling and pixel bounds: UNKNOWN inhibits OK; explicit completion, context/token isolation, late matching receipt, runtime home
+PASS non-mower/BOOT: original trim key events, edits, long/repeat and navigation retained
+/var/folders/_c/62b23my53ds0lct_bdnhfhg00000gn/T/mower-trim-lock-8es3i9_v/keys.cpp:306:19: error: use of logical '||' with constant operand [-Werror,-Wconstant-logical-operand]
+  306 |   if ((keys_input || trims_input) && (g_eeGeneral.backlightMode & e_backlight_mode_keys))
+      |                   ^  ~~~~~~~~~~~
+/var/folders/_c/62b23my53ds0lct_bdnhfhg00000gn/T/mower-trim-lock-8es3i9_v/keys.cpp:306:19: note: use '|' for a bitwise operation
+  306 |   if ((keys_input || trims_input) && (g_eeGeneral.backlightMode & e_backlight_mode_keys))
+      |                   ^~
+      |                   |
+1 error generated.
+Traceback (most recent call last):
+  File "/Users/dyh/phld/MowerControl_FS-i6X/tools/test_trim_key_lock.py", line 197, in <module>
+    main()
+  File "/Users/dyh/phld/MowerControl_FS-i6X/tools/test_trim_key_lock.py", line 190, in main
+    subprocess.run(['c++', '-std=c++11', '-Wall', '-Wextra', '-Werror', '-Wno-implicit-fallthrough',
+  File "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/subprocess.py", line 528, in run
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command '['c++', '-std=c++11', '-Wall', '-Wextra', '-Werror', '-Wno-implicit-fallthrough', '-fsanitize=address,undefined', '-DEXP3_ENABLED=1', '-DPCBI6X_MOWER_BLADE_OK=1', '/var/folders/_c/62b23my53ds0lct_bdnhfhg00000gn/T/mower-trim-lock-8es3i9_v/keys.cpp', '-o', '/var/folders/_c/62b23my53ds0lct_bdnhfhg00000gn/T/mower-trim-lock-8es3i9_v/test']' returned non-zero exit status 1.

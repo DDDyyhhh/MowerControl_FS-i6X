@@ -1,6 +1,0 @@
-PASS: exactly one numeric replacement in tim.c and one in concrol.ioc; all other bytes and line endings preserved.
-PASS: entire TIM2 initialization unchanged; PSC=0 ARR=8399 => 10000 Hz.
-PASS: TIM3 PSC=0 ARR=5599; 84000000 / (0+1) / (5599+1) = 15000 Hz.
-PASS: TIM3_CH3/PB0 and TIM3_CH4/PB1 remain PWM1 active-high with initial CCR=0.
-PASS: existing EG2104 duty calculation uses timer.Init.Period+1; 20% of 5600 => CCR=1120; no driver/FSM changes.
-Hardware measurements have not been performed. These are configuration checks, not measured waveforms.

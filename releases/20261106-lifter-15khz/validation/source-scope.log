@@ -1,0 +1,8 @@
+M       control_chassis/CONTEXT.md
+M       control_chassis/Core/Src/tim.c
+M       control_chassis/concrol.ioc
+M       experiments/ticket03/run_host.sh
+M       tools/test_actuator_pwm.py
+M       tools/verify.sh
+
+PASS: no radio production source, H-bridge, lifter duty, protocol or safety implementation changed.

@@ -1,0 +1,13 @@
+{
+  "frozen_source_files": 7030,
+  "source_bytes_unchanged": true,
+  "clean_source_copy_build": "PASS",
+  "full_host_and_chassis_build": "PASS",
+  "actual_thumb": "PASS 0/1234/65535",
+  "new_radio_warning_types": 0,
+  "production_bin_only_build_timestamp_differs": true,
+  "actual_ui_frames_byte_identical": 84,
+  "original_english_firmware_unchanged": true,
+  "main_r108_files_unchanged": 338,
+  "no_hardware_flashed": true
+}

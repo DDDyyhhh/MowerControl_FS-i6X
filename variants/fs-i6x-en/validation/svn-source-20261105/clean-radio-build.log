@@ -1,0 +1,274 @@
+PASS profile-3 actual GUI: arbitrary controller token, early OK, explicit rejection, ACK+runtime success, independent blade, no 2s hide; home/debug/router/glyph/pixel checks
+PASS English production UI, live provider, actual main-view route, CH9/CH6 boundaries, scrolling and pixel bounds: UNKNOWN inhibits OK; explicit completion, context/token isolation, late matching receipt, runtime home
+-- The C compiler identification is GNU 15.3.1
+-- The CXX compiler identification is GNU 15.3.1
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: /home/dyh/.local/opt/arm-gnu-toolchain-15.3.rel1-x86_64-arm-none-eabi/bin/arm-none-eabi-gcc - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /home/dyh/.local/opt/arm-gnu-toolchain-15.3.rel1-x86_64-arm-none-eabi/bin/arm-none-eabi-g++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+CMake Deprecation Warning at CMakeLists.txt:19 (cmake_policy):
+  The OLD behavior for policy CMP0023 will be removed from a future version
+  of CMake.
+
+  The cmake-policies(7) manual explains that the OLD behaviors of all
+  policies are deprecated and that a policy should be set to OLD only under
+  specific short-term circumstances.  Projects should be ported to the NEW
+  behavior and not rely on setting a policy to OLD.
+
+
+-- Found Git: /usr/bin/git (found version "2.34.1") 
+-- Git repository not found, revision number not available.
+-- OpenI6X 2.3.0 @0
+-- Found Python3: /usr/bin/python3 (found version "3.10.12") found components: Interpreter 
+-- Python executable: /usr/bin/python3
+-- Python bin directory: /usr/bin
+TARGET simu/libsimulator: cpp compiler /home/dyh/.local/opt/arm-gnu-toolchain-15.3.rel1-x86_64-arm-none-eabi/bin/arm-none-eabi-g++ v15.3.1
+CMake Warning at radio/src/tests/CMakeLists.txt:45 (message):
+  WARNING: gtests target will not be available (check that GTEST_INCDIR,
+  GTEST_SRCDIR, and Qt5Widgets are configured).
+
+
+-- The ASM compiler identification is GNU
+-- Found assembler: /home/dyh/.local/opt/arm-gnu-toolchain-15.3.rel1-x86_64-arm-none-eabi/bin/arm-none-eabi-gcc
+TARGET firmware: cpp compiler arm-none-eabi-g++ v15.3.1
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /tmp/mower-fs-i6x-en-svn-20261105/build/en
+[  3%] Generating font_04x06_extra.lbm
+[  3%] Generating sticks.lbm
+[  3%] Generating de.h
+[  3%] Generating font_05x07.lbm
+[  3%] Generating cz.h
+[  3%] Generating font_03x05.lbm
+[  3%] Generating font_04x06.lbm
+[  3%] Generating en.h
+[  3%] Generating fi.h
+[  3%] Generating es.h
+[  4%] Generating fr.h
+[  6%] Generating font_05x07_B_compressed.lbm
+[  6%] Generating font_05x07_extra.lbm
+[  6%] Generating font_10x14.lbm
+[  6%] Generating font_08x10.lbm
+[  8%] Generating font_10x14_compressed.lbm
+[  8%] Generating it.h
+[  8%] Generating nl.h
+[  8%] Built target 9x_xbm_1bit
+[  9%] Generating pl.h
+[  9%] Generating pt.h
+[  9%] Generating se.h
+[  9%] Generating font_10x14_extra.lbm
+[  9%] Generating font_22x38_num.lbm
+[ 11%] Generating font_cz_04x06.lbm
+[ 11%] Generating font_cz_05x07.lbm
+[ 11%] Generating font_cz_08x10.lbm
+[ 11%] Generating font_cz_10x14.lbm
+[ 12%] Generating font_de_04x06.lbm
+[ 12%] Built target firmware_translations
+[ 12%] Generating font_de_05x07.lbm
+[ 12%] Generating font_de_08x10.lbm
+[ 14%] Generating font_de_10x14.lbm
+[ 14%] Generating font_es_04x06.lbm
+[ 14%] Generating font_es_05x07.lbm
+[ 16%] Generating font_es_10x14.lbm
+[ 16%] Generating font_es_08x10.lbm
+[ 16%] Generating font_fi_04x06.lbm
+[ 16%] Generating font_fi_05x07.lbm
+[ 17%] Generating font_fi_08x10.lbm
+[ 17%] Generating font_fi_10x14.lbm
+[ 17%] Generating font_fr_04x06.lbm
+[ 19%] Generating font_fr_08x10.lbm
+[ 19%] Generating font_fr_05x07.lbm
+[ 19%] Generating font_fr_10x14.lbm
+[ 19%] Generating font_it_04x06.lbm
+[ 20%] Generating font_it_05x07.lbm
+[ 20%] Generating font_it_08x10.lbm
+[ 20%] Generating font_it_10x14.lbm
+[ 20%] Generating font_pl_04x06.lbm
+[ 22%] Generating font_pl_05x07.lbm
+[ 22%] Generating font_pl_08x10.lbm
+[ 22%] Generating font_pl_10x14.lbm
+[ 24%] Generating font_pt_04x06.lbm
+[ 24%] Generating font_pt_05x07.lbm
+[ 24%] Generating font_pt_08x10.lbm
+[ 24%] Generating font_pt_10x14.lbm
+[ 25%] Generating font_se_04x06.lbm
+[ 25%] Generating font_se_05x07.lbm
+[ 25%] Generating font_se_08x10.lbm
+[ 27%] Generating font_se_10x14.lbm
+[ 27%] Built target 9x_fonts_1bit
+[ 29%] Generating asterisk.lbm
+[ 29%] Generating splash_i6x_neg_trim.lbm
+[ 29%] Generating about.lbm
+[ 29%] Generating splash.lbm
+[ 29%] Generating sleep.lbm
+[ 29%] Generating splash_i6x_trim.lbm
+[ 29%] Built target 9x_bitmaps
+Scanning dependencies of target firmware
+[ 30%] Building CXX object radio/src/CMakeFiles/firmware.dir/targets/flysky/keys_driver.cpp.obj
+[ 30%] Building CXX object radio/src/CMakeFiles/firmware.dir/targets/common/arm/stm32/rtc_driver.cpp.obj
+[ 30%] Building CXX object radio/src/CMakeFiles/firmware.dir/targets/flysky/telemetry_driver.cpp.obj
+[ 30%] Building CXX object radio/src/CMakeFiles/firmware.dir/targets/common/arm/stm32/aux_serial_driver.cpp.obj
+[ 30%] Building CXX object radio/src/CMakeFiles/firmware.dir/targets/common/arm/stm32/cpu_id.cpp.obj
+[ 30%] Building C object radio/src/CMakeFiles/firmware.dir/tmp/mower-fs-i6x-en-svn-20261105/source/experiments/ticket03/exp3_probe.c.obj
+[ 32%] Building C object radio/src/CMakeFiles/firmware.dir/tmp/mower-fs-i6x-en-svn-20261105/source/experiments/ticket03/openi6x_adapter.c.obj
+[ 32%] Building C object radio/src/CMakeFiles/firmware.dir/tmp/mower-fs-i6x-en-svn-20261105/source/experiments/ticket03/exp3_auto_session.c.obj
+[ 32%] Building C object radio/src/CMakeFiles/firmware.dir/tmp/mower-fs-i6x-en-svn-20261105/source/experiments/ticket03/exp3_hil.c.obj
+[ 33%] Building C object radio/src/CMakeFiles/firmware.dir/tmp/mower-fs-i6x-en-svn-20261105/source/experiments/ticket03/exp3_link.c.obj
+[ 33%] Building C object radio/src/CMakeFiles/firmware.dir/tmp/mower-fs-i6x-en-svn-20261105/source/experiments/ticket03/exp3.c.obj
+[ 33%] Building CXX object radio/src/CMakeFiles/firmware.dir/targets/common/arm/stm32/mixer_scheduler_driver.cpp.obj
+[ 35%] Building CXX object radio/src/CMakeFiles/firmware.dir/targets/flysky/crc_driver.cpp.obj
+[ 35%] Building CXX object radio/src/CMakeFiles/firmware.dir/targets/flysky/i2c_driver.cpp.obj
+[ 35%] Building CXX object radio/src/CMakeFiles/firmware.dir/targets/flysky/adc_driver.cpp.obj
+[ 35%] Building CXX object radio/src/CMakeFiles/firmware.dir/targets/flysky/extmodule_driver.cpp.obj
+[ 37%] Building CXX object radio/src/CMakeFiles/firmware.dir/targets/flysky/backlight_driver.cpp.obj
+[ 37%] Building CXX object radio/src/CMakeFiles/firmware.dir/targets/flysky/buzzer_driver.cpp.obj
+[ 37%] Building CXX object radio/src/CMakeFiles/firmware.dir/targets/flysky/board.cpp.obj
+[ 38%] Building CXX object radio/src/CMakeFiles/firmware.dir/targets/common/arm/stm32/timers_driver.cpp.obj
+[ 38%] Building CXX object radio/src/CMakeFiles/firmware.dir/targets/flysky/trainer_driver.cpp.obj
+[ 38%] Building CXX object radio/src/CMakeFiles/firmware.dir/targets/flysky/intmodule_pulses_driver.cpp.obj
+[ 38%] Building CXX object radio/src/CMakeFiles/firmware.dir/targets/flysky/AFHDS2A_a7105.cpp.obj
+[ 40%] Building CXX object radio/src/CMakeFiles/firmware.dir/targets/flysky/A7105_SPI.cpp.obj
+[ 40%] Building C object radio/src/CMakeFiles/firmware.dir/thirdparty/mini_print/mini_vsnprintf.c.obj
+[ 40%] Building CXX object radio/src/CMakeFiles/firmware.dir/buzzer.cpp.obj
+[ 41%] Building CXX object radio/src/CMakeFiles/firmware.dir/telemetry/crossfire.cpp.obj
+[ 41%] Building CXX object radio/src/CMakeFiles/firmware.dir/telemetry/flysky_ibus.cpp.obj
+[ 41%] Building CXX object radio/src/CMakeFiles/firmware.dir/translations/tts_en.cpp.obj
+[ 41%] Building CXX object radio/src/CMakeFiles/firmware.dir/main.cpp.obj
+[ 43%] Building CXX object radio/src/CMakeFiles/firmware.dir/tasks.cpp.obj
+[ 43%] Building CXX object radio/src/CMakeFiles/firmware.dir/telemetry/telemetry.cpp.obj
+[ 45%] Building CXX object radio/src/CMakeFiles/firmware.dir/telemetry/telemetry_sensors.cpp.obj
+[ 45%] Building CXX object radio/src/CMakeFiles/firmware.dir/telemetry/telemetry_holders.cpp.obj
+[ 45%] Building CXX object radio/src/CMakeFiles/firmware.dir/vario.cpp.obj
+[ 45%] Building CXX object radio/src/CMakeFiles/firmware.dir/debug.cpp.obj
+[ 45%] Building CXX object radio/src/CMakeFiles/firmware.dir/storage/storage_common.cpp.obj
+[ 46%] Building CXX object radio/src/CMakeFiles/firmware.dir/storage/eeprom_common.cpp.obj
+[ 46%] Building CXX object radio/src/CMakeFiles/firmware.dir/storage/eeprom_rlc.cpp.obj
+[ 46%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/common/widgets.cpp.obj
+[ 48%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/navigation/navigation_9x.cpp.obj
+[ 48%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/navigation/common.cpp.obj
+[ 48%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/common/arm/widgets.cpp.obj
+[ 50%] Building CXX object radio/src/CMakeFiles/firmware.dir/curves.cpp.obj
+[ 50%] Building CXX object radio/src/CMakeFiles/firmware.dir/gvars.cpp.obj
+[ 50%] Building CXX object radio/src/CMakeFiles/firmware.dir/rtc.cpp.obj
+[ 50%] Building CXX object radio/src/CMakeFiles/firmware.dir/opentx.cpp.obj
+[ 51%] Building CXX object radio/src/CMakeFiles/firmware.dir/functions.cpp.obj
+[ 51%] Building CXX object radio/src/CMakeFiles/firmware.dir/strhelpers.cpp.obj
+[ 51%] Building CXX object radio/src/CMakeFiles/firmware.dir/switches.cpp.obj
+[ 51%] Building CXX object radio/src/CMakeFiles/firmware.dir/mixer.cpp.obj
+[ 53%] Building CXX object radio/src/CMakeFiles/firmware.dir/mixer_scheduler.cpp.obj
+[ 53%] Building CXX object radio/src/CMakeFiles/firmware.dir/stamp.cpp.obj
+[ 53%] Building CXX object radio/src/CMakeFiles/firmware.dir/timers.cpp.obj
+[ 54%] Building CXX object radio/src/CMakeFiles/firmware.dir/trainer.cpp.obj
+[ 54%] Building CXX object radio/src/CMakeFiles/firmware.dir/model_init.cpp.obj
+[ 54%] Building CXX object radio/src/CMakeFiles/firmware.dir/keys.cpp.obj
+[ 54%] Building CXX object radio/src/CMakeFiles/firmware.dir/maths.cpp.obj
+[ 56%] Building CXX object radio/src/CMakeFiles/firmware.dir/translations.cpp.obj
+[ 56%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/gui_common.cpp.obj
+[ 56%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/128x64/model_input_edit.cpp.obj
+[ 58%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/128x64/model_mix_edit.cpp.obj
+[ 58%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/128x64/model_display.cpp.obj
+[ 58%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/128x64/radio_diagkeys.cpp.obj
+[ 58%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/128x64/radio_diaganas.cpp.obj
+[ 59%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/128x64/radio_hardware.cpp.obj
+[ 59%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/128x64/view_channels.cpp.obj
+[ 61%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/128x64/view_about.cpp.obj
+[ 61%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/128x64/view_telemetry.cpp.obj
+[ 61%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/128x64/model_gvars.cpp.obj
+[ 61%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/128x64/lcd.cpp.obj
+[ 61%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/128x64/splash.cpp.obj
+[ 62%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/128x64/fonts.cpp.obj
+[ 62%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/128x64/popups.cpp.obj
+[ 62%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/128x64/widgets.cpp.obj
+[ 64%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/128x64/menus.cpp.obj
+[ 64%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/128x64/menu_model.cpp.obj
+[ 64%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/128x64/model_select.cpp.obj
+[ 64%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/128x64/model_setup.cpp.obj
+[ 66%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/128x64/model_outputs.cpp.obj
+[ 66%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/128x64/model_logical_switches.cpp.obj
+[ 66%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/128x64/model_special_functions.cpp.obj
+[ 67%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/128x64/model_telemetry.cpp.obj
+[ 67%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/128x64/menu_radio.cpp.obj
+[ 67%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/128x64/radio_setup.cpp.obj
+[ 67%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/128x64/radio_version.cpp.obj
+[ 69%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/128x64/radio_calibration.cpp.obj
+[ 69%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/128x64/view_main.cpp.obj
+[ 69%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/128x64/view_statistics.cpp.obj
+[ 70%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/common/stdlcd/widgets.cpp.obj
+[ 70%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/common/stdlcd/popups.cpp.obj
+[ 70%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/common/stdlcd/radio_tools.cpp.obj
+[ 70%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/common/stdlcd/model_heli.cpp.obj
+[ 72%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/common/stdlcd/model_inputs_mixes_common.cpp.obj
+[ 72%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/common/stdlcd/model_inputs.cpp.obj
+[ 72%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/common/stdlcd/model_mixes.cpp.obj
+[ 74%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/common/stdlcd/view_text.cpp.obj
+[ 74%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/common/stdlcd/radio_trainer.cpp.obj
+[ 74%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/common/stdlcd/model_curves.cpp.obj
+[ 74%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/128x64/model_curve_edit.cpp.obj
+[ 75%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/128x64/model_flightmodes.cpp.obj
+[ 75%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/gui_common_arm.cpp.obj
+[ 75%] Building CXX object radio/src/CMakeFiles/firmware.dir/pulses/crossfire.cpp.obj
+[ 77%] Building CXX object radio/src/CMakeFiles/firmware.dir/pulses/pulses.cpp.obj
+[ 77%] Building CXX object radio/src/CMakeFiles/firmware.dir/pulses/ppm.cpp.obj
+[ 77%] Building CXX object radio/src/CMakeFiles/firmware.dir/serial.cpp.obj
+[ 77%] Building C object radio/src/CMakeFiles/firmware.dir/syscalls.c.obj
+[ 79%] Building C object radio/src/CMakeFiles/firmware.dir/thirdparty/STM32F0xx_StdPeriph_Lib_V1.5.0/Libraries/STM32F0xx_StdPeriph_Driver/src/stm32f0xx_crs.c.obj
+[ 79%] Building C object radio/src/CMakeFiles/firmware.dir/thirdparty/STM32F0xx_StdPeriph_Lib_V1.5.0/Libraries/STM32F0xx_StdPeriph_Driver/src/stm32f0xx_misc.c.obj
+[ 79%] Building C object radio/src/CMakeFiles/firmware.dir/thirdparty/STM32F0xx_StdPeriph_Lib_V1.5.0/Libraries/STM32F0xx_StdPeriph_Driver/src/stm32f0xx_gpio.c.obj
+[ 80%] Building C object radio/src/CMakeFiles/firmware.dir/thirdparty/STM32F0xx_StdPeriph_Lib_V1.5.0/Libraries/STM32F0xx_StdPeriph_Driver/src/stm32f0xx_dbgmcu.c.obj
+[ 80%] Building C object radio/src/CMakeFiles/firmware.dir/thirdparty/STM32F0xx_StdPeriph_Lib_V1.5.0/Libraries/STM32F0xx_StdPeriph_Driver/src/stm32f0xx_rcc.c.obj
+[ 80%] Building C object radio/src/CMakeFiles/firmware.dir/thirdparty/STM32F0xx_StdPeriph_Lib_V1.5.0/Libraries/STM32F0xx_StdPeriph_Driver/src/stm32f0xx_spi.c.obj
+[ 80%] Building C object radio/src/CMakeFiles/firmware.dir/thirdparty/STM32F0xx_StdPeriph_Lib_V1.5.0/Libraries/STM32F0xx_StdPeriph_Driver/src/stm32f0xx_i2c.c.obj
+[ 82%] Building C object radio/src/CMakeFiles/firmware.dir/thirdparty/STM32F0xx_StdPeriph_Lib_V1.5.0/Libraries/STM32F0xx_StdPeriph_Driver/src/stm32f0xx_dma.c.obj
+[ 82%] Building C object radio/src/CMakeFiles/firmware.dir/thirdparty/STM32F0xx_StdPeriph_Lib_V1.5.0/Libraries/STM32F0xx_StdPeriph_Driver/src/stm32f0xx_rtc.c.obj
+[ 82%] Building C object radio/src/CMakeFiles/firmware.dir/thirdparty/STM32F0xx_StdPeriph_Lib_V1.5.0/Libraries/STM32F0xx_StdPeriph_Driver/src/stm32f0xx_pwr.c.obj
+[ 82%] Building C object radio/src/CMakeFiles/firmware.dir/thirdparty/STM32F0xx_StdPeriph_Lib_V1.5.0/Libraries/STM32F0xx_StdPeriph_Driver/src/stm32f0xx_adc.c.obj
+[ 83%] Building C object radio/src/CMakeFiles/firmware.dir/thirdparty/STM32F0xx_StdPeriph_Lib_V1.5.0/Libraries/STM32F0xx_StdPeriph_Driver/src/stm32f0xx_usart.c.obj
+[ 83%] Building C object radio/src/CMakeFiles/firmware.dir/thirdparty/STM32F0xx_StdPeriph_Lib_V1.5.0/Libraries/STM32F0xx_StdPeriph_Driver/src/stm32f0xx_crc.c.obj
+[ 83%] Building C object radio/src/CMakeFiles/firmware.dir/thirdparty/STM32F0x2_USB-FS-Device_Lib_V1.0.0/Libraries/STM32_USB_Device_Driver/src/usb_core.c.obj
+[ 85%] Building C object radio/src/CMakeFiles/firmware.dir/thirdparty/STM32F0x2_USB-FS-Device_Lib_V1.0.0/Libraries/STM32_USB_Device_Driver/src/usb_dcd.c.obj
+[ 85%] Building C object radio/src/CMakeFiles/firmware.dir/thirdparty/STM32F0x2_USB-FS-Device_Lib_V1.0.0/Libraries/STM32_USB_Device_Driver/src/usb_dcd_int.c.obj
+[ 85%] Building C object radio/src/CMakeFiles/firmware.dir/thirdparty/STM32F0x2_USB-FS-Device_Lib_V1.0.0/Libraries/STM32_USB_Device_Library/Core/src/usbd_core.c.obj
+[ 85%] Building C object radio/src/CMakeFiles/firmware.dir/thirdparty/STM32F0x2_USB-FS-Device_Lib_V1.0.0/Libraries/STM32_USB_Device_Library/Core/src/usbd_ioreq.c.obj
+[ 87%] Building C object radio/src/CMakeFiles/firmware.dir/thirdparty/STM32F0x2_USB-FS-Device_Lib_V1.0.0/Libraries/STM32_USB_Device_Library/Core/src/usbd_req.c.obj
+[ 87%] Building C object radio/src/CMakeFiles/firmware.dir/thirdparty/STM32F0x2_USB-FS-Device_Lib_V1.0.0/Libraries/STM32_USB_Device_Library/Class/msc/src/usbd_msc_data.c.obj
+[ 87%] Building C object radio/src/CMakeFiles/firmware.dir/thirdparty/STM32F0x2_USB-FS-Device_Lib_V1.0.0/Libraries/STM32_USB_Device_Library/Class/msc/src/usbd_msc_scsi.c.obj
+[ 88%] Building C object radio/src/CMakeFiles/firmware.dir/thirdparty/STM32F0x2_USB-FS-Device_Lib_V1.0.0/Libraries/STM32_USB_Device_Library/Class/msc/src/usbd_msc_bot.c.obj
+[ 88%] Building C object radio/src/CMakeFiles/firmware.dir/thirdparty/CoOS/kernel/core.c.obj
+[ 88%] Building C object radio/src/CMakeFiles/firmware.dir/thirdparty/STM32F0x2_USB-FS-Device_Lib_V1.0.0/Libraries/STM32_USB_Device_Library/Class/msc/src/usbd_msc_core.c.obj
+[ 88%] Building C object radio/src/CMakeFiles/firmware.dir/thirdparty/CoOS/kernel/hook.c.obj
+[ 90%] Building C object radio/src/CMakeFiles/firmware.dir/thirdparty/CoOS/kernel/task.c.obj
+[ 90%] Building C object radio/src/CMakeFiles/firmware.dir/thirdparty/CoOS/kernel/event.c.obj
+[ 90%] Building C object radio/src/CMakeFiles/firmware.dir/thirdparty/CoOS/kernel/time.c.obj
+[ 91%] Building C object radio/src/CMakeFiles/firmware.dir/thirdparty/CoOS/kernel/timer.c.obj
+[ 91%] Building C object radio/src/CMakeFiles/firmware.dir/thirdparty/CoOS/kernel/flag.c.obj
+[ 91%] Building C object radio/src/CMakeFiles/firmware.dir/thirdparty/CoOS/kernel/mutex.c.obj
+[ 91%] Building C object radio/src/CMakeFiles/firmware.dir/thirdparty/CoOS/kernel/serviceReq.c.obj
+[ 93%] Building C object radio/src/CMakeFiles/firmware.dir/thirdparty/CoOS/portable/GCC/port.c.obj
+[ 93%] Building C object radio/src/CMakeFiles/firmware.dir/thirdparty/CoOS/portable/arch.c.obj
+[ 93%] Building CXX object radio/src/CMakeFiles/firmware.dir/targets/flysky/lcd_driver.cpp.obj
+[ 95%] Building CXX object radio/src/CMakeFiles/firmware.dir/targets/flysky/pwr_driver.cpp.obj
+[ 95%] Building ASM object radio/src/CMakeFiles/firmware.dir/targets/flysky/startup_stm32f072.s.obj
+[ 95%] Building C object radio/src/CMakeFiles/firmware.dir/targets/common/arm/stm32/f0/system_stm32f0xx.c.obj
+[ 95%] Building CXX object radio/src/CMakeFiles/firmware.dir/targets/common/arm/stm32/delays.cpp.obj
+[ 96%] Building C object radio/src/CMakeFiles/firmware.dir/targets/common/arm/stm32/usb_bsp.c.obj
+[ 96%] Building C object radio/src/CMakeFiles/firmware.dir/targets/common/arm/stm32/usbd_pwr.c.obj
+[ 96%] Building C object radio/src/CMakeFiles/firmware.dir/targets/common/arm/stm32/usbd_desc.c.obj
+[ 98%] Building CXX object radio/src/CMakeFiles/firmware.dir/targets/common/arm/stm32/usbd_usr.cpp.obj
+[ 98%] Building CXX object radio/src/CMakeFiles/firmware.dir/targets/common/arm/stm32/usb_driver.cpp.obj
+[ 98%] Building CXX object radio/src/CMakeFiles/firmware.dir/targets/common/arm/stm32/flash_driver.cpp.obj
+[ 98%] Building CXX object radio/src/CMakeFiles/firmware.dir/targets/common/arm/stm32/usbd_storage_msd.cpp.obj
+[100%] Building C object radio/src/CMakeFiles/firmware.dir/targets/common/arm/stm32/usbd_hid_joystick.c.obj
+[100%] Linking CXX executable ../../firmware.elf
+/home/dyh/.local/opt/arm-gnu-toolchain-15.3.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/bin/ld: warning: ../../firmware.elf has a LOAD segment with RWX permissions
+Flash used: 128564 / 131072 (98%), left: 2508
+RAM used: 15856 / 16384 (96%), left: 528
+[100%] Built target firmware
+   text	   data	    bss	    dec	    hex	filename
+ 128492	     72	  15784	 144348	  233dc	/tmp/mower-fs-i6x-en-svn-20261105/build/en/firmware.elf
+eca74d47cafd3071f1ada92773f0132fe5b4720a6d301e82c2e30718ed0c25cf  /tmp/mower-fs-i6x-en-svn-20261105/build/en/firmware.bin

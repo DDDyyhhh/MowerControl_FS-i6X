@@ -1,0 +1,4 @@
+[PASS] FTESC V1.4 frozen CRC vector accepted by production parser
+[PASS] Real CRC rejection/recovery, ID/DLC guards and per-ERPM freshness
+[PASS] Shared transmit CRC corrected; existing command byte placement retained
+[PASS] Production CAN parser to fault snapshot: correct/corrupt/recovered frames

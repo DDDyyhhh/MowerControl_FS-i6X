@@ -1,0 +1,1144 @@
+--- a/OpenI6X/FS-I6X/opentx/radio/src/gui/128x64/mower_user_ui.h
++++ b/OpenI6X/FS-I6X/opentx/radio/src/gui/128x64/mower_user_ui.h
+@@ -1,6 +1,6 @@
+ #pragma once
+ 
+-// Production FS-i6X presentation only. No channel writes or wire changes.
++// English FS-i6X presentation only. No channel writes or wire changes.
+ #include "mower_zh_font.h"
+ #include "../../thirdparty/mini_print/mini_vsnprintf.h"
+ 
+@@ -71,24 +71,24 @@
+ 
+ static const char *mowerConnection(const MowerUiSnapshot &data)
+ {
+-  if (!data.telemetry_online) return "未连接";
++  if (!data.telemetry_online) return "Offline";
+   uint16_t causes = data.fault_bits;
+   if (data.fast_status_known) {
+     causes = ((data.fast_status & MOWER_FAST_COLLISION) >> 5) |
+         ((data.fast_status & MOWER_FAST_EMERGENCY) >> 15) |
+         ((data.fast_status & MOWER_FAST_LOCKED) << 6);
+   }
+-  else if (!(data.valid & MOWER_UI_FAULT)) return "状态未知";
+-  if (causes & 0x0002U) return "碰撞";
+-  if (causes & 0x0001U) return "急停";
+-  if (causes & 0x0400U) return "锁定";
++  else if (!(data.valid & MOWER_UI_FAULT)) return "Unknown";
++  if (causes & 0x0002U) return "Collision";
++  if (causes & 0x0001U) return "E-STOP";
++  if (causes & 0x0400U) return "Locked";
+   if ((data.valid & MOWER_UI_FAULT) && !(data.fault_bits & 0x0007U)) {
+-    if (data.fault_bits & (MOWER_BATTERY_WARNING | MOWER_BATTERY_BLADE_INHIBIT)) return "请充电";
++    if (data.fault_bits & (MOWER_BATTERY_WARNING | MOWER_BATTERY_BLADE_INHIBIT)) return "Charge";
+   }
+   if (data.fast_status_known) {
+-    return (data.fast_status & MOWER_FAST_FAULT) ? "报错" : "已连接";
+-  }
+-  return (data.fault_bits & MOWER_STATUS_ALARM_MASK) ? "报错" : "已连接";
++    return (data.fast_status & MOWER_FAST_FAULT) ? "Fault" : "Online";
++  }
++  return (data.fault_bits & MOWER_STATUS_ALARM_MASK) ? "Fault" : "Online";
+ }
+ 
+ static void mowerUserValue(coord_t x, coord_t y, unsigned value, bool valid,
+@@ -109,21 +109,21 @@
+ static const char *mowerBladeGear(bool known, uint16_t runtime)
+ {
+   if (!known) return "--";
+-  if (!(runtime & 1U)) return "关";
++  if (!(runtime & 1U)) return "OFF";
+   const uint8_t gear=(runtime>>1)&3U;
+-  return gear == 1 ? "低" : gear == 2 ? "中" : gear == 3 ? "高" : "--";
++  return gear == 1 ? "LOW" : gear == 2 ? "MID" : gear == 3 ? "HIGH" : "--";
+ }
+ 
+ static const char *mowerBagCommandName(uint8_t command)
+ {
+-  return command == 1 ? "开" : command == 2 ? "关" : "--";
++  return command == 1 ? "OPEN" : command == 2 ? "CLOSE" : "--";
+ }
+ 
+ static const char *mowerBagDisplay(const MowerUiSnapshot &data)
+ {
+-  if (!data.telemetry_online || !(data.valid & MOWER_UI_BAG_CONNECTION)) return "草袋未知";
+-  if (!data.bag_connected) return "草袋未连接";
+-  return data.bag_command == 1 ? "草袋开" : data.bag_command == 2 ? "草袋关" : "草袋--";
++  if (!data.telemetry_online || !(data.valid & MOWER_UI_BAG_CONNECTION)) return "Bag ?";
++  if (!data.bag_connected) return "No bag";
++  return data.bag_command == 1 ? "Bag opn" : data.bag_command == 2 ? "Bag cls" : "Bag --";
+ }
+ 
+ static bool mowerBagFullKnown(const MowerUiSnapshot &data)
+@@ -135,14 +135,14 @@
+ static const char *mowerTransactionName(Exp3UiState state)
+ {
+   switch (state) {
+-    case EXP3_UI_IDLE: return "空闲";
+-    case EXP3_UI_PROMPT: return "待确认";
+-    case EXP3_UI_WAIT: return "等待回执";
+-    case EXP3_UI_CANCEL_WAIT: return "等待取消";
+-    case EXP3_UI_ACCEPTED: return "已接受";
+-    case EXP3_UI_TIMEOUT: return "无回执";
+-    case EXP3_UI_UNBOUND: return "未就绪";
+-    default: return "已拒绝";
++    case EXP3_UI_IDLE: return "Idle";
++    case EXP3_UI_PROMPT: return "Pending";
++    case EXP3_UI_WAIT: return "Wait ACK";
++    case EXP3_UI_CANCEL_WAIT: return "Wait stop";
++    case EXP3_UI_ACCEPTED: return "Accepted";
++    case EXP3_UI_TIMEOUT: return "No reply";
++    case EXP3_UI_UNBOUND: return "Not ready";
++    default: return "Rejected";
+   }
+ }
+ 
+@@ -150,19 +150,19 @@
+ {
+   mowerZhText(0, 0, mowerConnection(data), data.telemetry_online &&
+       (data.valid & MOWER_UI_FAULT) && (data.fault_bits & MOWER_STATUS_ALARM_MASK));
+-  mowerZhText(66, 0, "信");
+-  mowerUserValue(78, 0, data.radio_quality, data.telemetry_online);
++  mowerZhText(66, 0, "RF");
++  mowerUserValue(84, 0, data.radio_quality, data.telemetry_online);
+   const unsigned quality = data.radio_quality > 100 ? 100 : data.radio_quality;
+   for (uint8_t bar=0; bar<4; ++bar) {
+     const uint8_t height=3+bar*2;
+     if (data.telemetry_online && quality >= (bar+1)*25U)
+       lcdDrawSolidFilledRect(111+bar*4, 11-height, 3, height, FORCE);
+   }
+-  mowerZhText(0, 12, "车");
+-  mowerUserValue(12, 12, data.soc_percent,
++  mowerZhText(0, 12, "CAR");
++  mowerUserValue(24, 12, data.soc_percent,
+       data.telemetry_online && (data.valid & MOWER_UI_SOC), "%");
+-  mowerZhText(48, 12, "遥");
+-  mowerUserValue(60, 12, data.radio_battery_100mv, true, "V", 1);
++  mowerZhText(54, 12, "TX");
++  mowerUserValue(72, 12, data.radio_battery_100mv, true, "V", 1);
+   lcdDrawRect(104, 14, 18, 8);
+   lcdDrawSolidFilledRect(122, 16, 2, 4, FORCE);
+   const int low=g_eeGeneral.vBatMin+90;
+@@ -170,30 +170,30 @@
+   const int voltage=data.radio_battery_100mv;
+   const int fill=high > low ? limit<int>(0, (voltage-low)*14/(high-low), 14) : 0;
+   if (fill) lcdDrawSolidFilledRect(106, 16, fill, 4, FORCE);
+-  mowerZhText(0, 24, "车速度");
++  mowerZhText(0, 24, "Speed");
+   mowerUserValue(42, 24, mowerTravelSpeedCms(), true, "m/s", 2);
+-  mowerZhText(0, 36, "刀速度");
++  mowerZhText(0, 36, "Blade");
+   mowerZhText(42, 36, mowerBladeGear(known, runtime));
+   const bool fullKnown=mowerBagFullKnown(data);
+-  mowerZhText(66, 36, !fullKnown ? "满载未知" :
+-      data.bag_full ? "草袋已满" : "草袋未满", fullKnown && data.bag_full);
+-  mowerZhText(0, 48, "高度");
+-  mowerUserValue(24, 48, data.height_deci_cm,
++  mowerZhText(72, 36, !fullKnown ? "Full ?" :
++      data.bag_full ? "Bag full" : "Bag OK", fullKnown && data.bag_full);
++  mowerZhText(0, 48, "Height");
++  mowerUserValue(42, 48, data.height_deci_cm,
+       data.telemetry_online && (data.valid & MOWER_UI_HEIGHT_FEEDBACK), "cm", 1);
+-  mowerZhText(66, 48, mowerBagDisplay(data));
++  mowerZhText(84, 48, mowerBagDisplay(data));
+ }
+ 
+ static void mowerUserDebugRow(uint8_t row, coord_t y, const MowerUiSnapshot &data,
+                               bool known, uint16_t runtime)
+ {
+   static const char *const labels[] = {
+-    "BMS原始SOC", "整车电压", "行走设定", "实际速度", "割刀转速",
+-    "割刀档位", "割刀输出", "高度", "草袋指令", "运行许可",
+-    "链路状态", "确认事务", "故障字", "停刀回执", "草袋连接"
++    "BMS SOC", "Voltage", "Speed set", "Speed act", "Blade RPM",
++    "Blade gear", "Blade out", "Height", "Bag cmd", "Run allow",
++    "Link", "Txn", "Fault hex", "Stop ACK", "Bag link"
+   };
+   static const char *const faults[] = {
+-    "急停", "碰撞", "倾斜", "遥控超时", "遥控停机锁存",
+-    "控制权锁存", "电池反馈异常", "割刀反馈过期", "割刀校验异常", "系统锁定"
++    "E-STOP", "Collision", "Tilt", "Remote timeout", "Remote stop latch",
++    "Ownership latch", "Battery feedback", "Blade stale", "Blade CRC", "System locked"
+   };
+   if (row >= 15 && row < 25) {
+     const uint8_t index=row-15;
+@@ -204,7 +204,7 @@
+     return;
+   }
+   if (row < 15) mowerZhText(0, y, labels[row]);
+-  const coord_t x=54;
++  const coord_t x=66;
+   switch (row) {
+     case 0: mowerUserValue(66, y, data.soc_percent, data.valid & MOWER_UI_SOC, "%"); break;
+     case 1: mowerUserValue(x, y, data.voltage_centivolts, data.valid & MOWER_UI_VOLTAGE, "V", 2); break;
+@@ -212,11 +212,11 @@
+     case 3: mowerUserValue(x, y, data.walk_actual_cms, data.valid & MOWER_UI_WALK_ACTUAL, "m/s", 2); break;
+     case 4: mowerUserValue(x, y, data.blade_actual_rpm, data.valid & MOWER_UI_BLADE_RPM); break;
+     case 5: mowerZhText(x, y, mowerBladeGear(known, runtime)); break;
+-    case 6: mowerZhText(x, y, !known ? "--" : (runtime&1U) ? "使能" : "关闭"); break;
++    case 6: mowerZhText(x, y, !known ? "--" : (runtime&1U) ? "Enabled" : "Off"); break;
+     case 7: mowerUserValue(x, y, data.height_deci_cm,
+         data.telemetry_online && (data.valid & MOWER_UI_HEIGHT_FEEDBACK), "cm", 1); break;
+     case 8: mowerZhText(x, y, mowerBagCommandName(data.bag_command)); break;
+-    case 9: mowerZhText(x, y, !(data.valid & MOWER_UI_RUN_PERMISSION) ? "--" : data.run_permission ? "允许" : "禁止"); break;
++    case 9: mowerZhText(x, y, !(data.valid & MOWER_UI_RUN_PERMISSION) ? "--" : data.run_permission ? "Allowed" : "Denied"); break;
+     case 10: mowerZhText(x, y, mowerConnection(data)); break;
+     case 11: mowerZhText(x, y, mowerTransactionName(mowerExp3Probe.state)); break;
+     case 12: {
+@@ -227,27 +227,27 @@
+       mowerZhText(x, y, bits);
+       break;
+     }
+-    case 13: mowerZhText(x, y, mowerExp3CancelFailed ? "失败" :
+-        mowerExp3Probe.cancel_pending || mowerExp3Probe.state == EXP3_UI_CANCEL_WAIT ? "等待" : "空闲"); break;
++    case 13: mowerZhText(x, y, mowerExp3CancelFailed ? "Failed" :
++        mowerExp3Probe.cancel_pending || mowerExp3Probe.state == EXP3_UI_CANCEL_WAIT ? "Wait" : "Idle"); break;
+     case 25:
+-      mowerZhText(0, y, "最低单体");
++      mowerZhText(0, y, "Min cell");
+       mowerUserValue(x, y, data.battery_min_mv, data.valid & MOWER_UI_BATTERY_MIN, "V", 3);
+       break;
+     case 26: {
+-      mowerZhText(0, y, "保护原因");
++      mowerZhText(0, y, "Batt cause");
+       const uint16_t reason=data.battery_reasons;
+-      const char *label=!(data.valid & MOWER_UI_BATTERY_REASON) ? "未知" :
+-          (reason & 1U) ? "数据失效" : (reason & 0x20U) ? "电量过低" :
+-          (reason & 4U) ? "电压过低" : "无";
++      const char *label=!(data.valid & MOWER_UI_BATTERY_REASON) ? "Unknown" :
++          (reason & 1U) ? "Data stale" : (reason & 0x20U) ? "Low SOC" :
++          (reason & 4U) ? "Low volt" : "None";
+       mowerZhText(x, y, label);
+       break;
+     }
+     case 27:
+-      mowerZhText(0, y, "草袋满载");
+-      mowerZhText(x, y, !mowerBagFullKnown(data) ? "未知" : data.bag_full ? "已满" : "未满");
++      mowerZhText(0, y, "Bag full");
++      mowerZhText(x, y, !mowerBagFullKnown(data) ? "Unknown" : data.bag_full ? "Full" : "Not full");
+       break;
+     case 14: mowerZhText(x, y, !data.telemetry_online || !(data.valid & MOWER_UI_BAG_CONNECTION) ?
+-        "未知" : data.bag_connected ? "已连接" : "未连接"); break;
++        "Unknown" : data.bag_connected ? "Online" : "Offline"); break;
+   }
+ }
+ 
+@@ -260,14 +260,14 @@
+       exp3_board_runtime(static_cast<uint32_t>(get_tmr10ms())*10U, &runtime);
+   if (mowerUserPage == MOWER_USER_HOME) mowerUserHome(data, known, runtime);
+   else if (mowerUserPage == MOWER_USER_MAINTENANCE) {
+-    mowerZhText(0, 0, "维护入口");
+-    static const char *const entries[] = {"调试信息", "系统设置", "模型设置"};
++    mowerZhText(0, 0, "Maintenance");
++    static const char *const entries[] = {"Debug info", "Radio setup", "Model setup"};
+     for (uint8_t i=0; i<3; ++i)
+       mowerZhText(6, 12+i*12, entries[i], i == mowerMaintenanceSelection);
+-    mowerZhText(0, 48, "退出返回");
++    mowerZhText(0, 48, "EXIT: back");
+   }
+   else {
+-    mowerZhText(0, 0, "调试信息");
++    mowerZhText(0, 0, "Debug info");
+     char position[12];
+     mini_snprintf(position, sizeof(position), "%d/%d", int(mowerDebugFirstRow+1), int(MOWER_DEBUG_ROWS));
+     mowerZhText(90, 0, position);
+--- a/OpenI6X/FS-I6X/opentx/radio/src/gui/128x64/mower_zh_font.h
++++ b/OpenI6X/FS-I6X/opentx/radio/src/gui/128x64/mower_zh_font.h
+@@ -8,7 +8,7 @@
+ static const uint8_t MOWER_ZH_ASCII_WIDTH = 6;
+ static const uint8_t MOWER_ZH_CJK_WIDTH = 11;
+ static const uint8_t MOWER_ZH_CJK_BITMAP_HEIGHT = 11;
+-static const uint8_t MOWER_ZH_ASCII_COUNT = 34;
++static const uint8_t MOWER_ZH_ASCII_COUNT = 65;
+ static const uint8_t MOWER_ZH_ASCII_BYTES = 9;
+ static const uint8_t MOWER_ZH_CJK_BYTES = 16;
+ struct MowerZhGlyph { uint16_t code; };
+@@ -30,159 +30,54 @@
+   {0x0037}, // U+0037
+   {0x0038}, // U+0038
+   {0x0039}, // U+0039
++  {0x003A}, // U+003A
++  {0x003F}, // U+003F
+   {0x0041}, // U+0041
+   {0x0042}, // U+0042
+   {0x0043}, // U+0043
+   {0x0044}, // U+0044
+   {0x0045}, // U+0045
+   {0x0046}, // U+0046
++  {0x0047}, // U+0047
++  {0x0048}, // U+0048
++  {0x0049}, // U+0049
+   {0x004B}, // U+004B
++  {0x004C}, // U+004C
+   {0x004D}, // U+004D
++  {0x004E}, // U+004E
+   {0x004F}, // U+004F
++  {0x0050}, // U+0050
++  {0x0052}, // U+0052
+   {0x0053}, // U+0053
++  {0x0054}, // U+0054
++  {0x0055}, // U+0055
+   {0x0056}, // U+0056
++  {0x0057}, // U+0057
+   {0x0058}, // U+0058
++  {0x0061}, // U+0061
++  {0x0062}, // U+0062
+   {0x0063}, // U+0063
+   {0x0064}, // U+0064
++  {0x0065}, // U+0065
++  {0x0066}, // U+0066
++  {0x0067}, // U+0067
++  {0x0068}, // U+0068
++  {0x0069}, // U+0069
++  {0x006A}, // U+006A
++  {0x006B}, // U+006B
++  {0x006C}, // U+006C
+   {0x006D}, // U+006D
++  {0x006E}, // U+006E
++  {0x006F}, // U+006F
++  {0x0070}, // U+0070
++  {0x0072}, // U+0072
+   {0x0073}, // U+0073
++  {0x0074}, // U+0074
++  {0x0075}, // U+0075
++  {0x0076}, // U+0076
++  {0x0077}, // U+0077
+   {0x0078}, // U+0078
+-  {0x4E2D}, // U+4E2D
+-  {0x4E8B}, // U+4E8B
+-  {0x4EE4}, // U+4EE4
+-  {0x4F4D}, // U+4F4D
+-  {0x4F4E}, // U+4F4E
+-  {0x4F53}, // U+4F53
+-  {0x4F7F}, // U+4F7F
+-  {0x4FDD}, // U+4FDD
+-  {0x4FE1}, // U+4FE1
+-  {0x503E}, // U+503E
+-  {0x505C}, // U+505C
+-  {0x5141}, // U+5141
+-  {0x5145}, // U+5145
+-  {0x5165}, // U+5165
+-  {0x5168}, // U+5168
+-  {0x5173}, // U+5173
+-  {0x51FA}, // U+51FA
+-  {0x5200}, // U+5200
+-  {0x5236}, // U+5236
+-  {0x5272}, // U+5272
+-  {0x52A1}, // U+52A1
+-  {0x52A8}, // U+52A8
+-  {0x5355}, // U+5355
+-  {0x538B}, // U+538B
+-  {0x539F}, // U+539F
+-  {0x53CD}, // U+53CD
+-  {0x53D6}, // U+53D6
+-  {0x53D7}, // U+53D7
+-  {0x53E3}, // U+53E3
+-  {0x53EF}, // U+53EF
+-  {0x5426}, // U+5426
+-  {0x542F}, // U+542F
+-  {0x56DE}, // U+56DE
+-  {0x56E0}, // U+56E0
+-  {0x578B}, // U+578B
+-  {0x5931}, // U+5931
+-  {0x59CB}, // U+59CB
+-  {0x5B57}, // U+5B57
+-  {0x5B58}, // U+5B58
+-  {0x5B89}, // U+5B89
+-  {0x5B9A}, // U+5B9A
+-  {0x5B9E}, // U+5B9E
+-  {0x5C31}, // U+5C31
+-  {0x5DF2}, // U+5DF2
+-  {0x5E38}, // U+5E38
+-  {0x5EA6}, // U+5EA6
+-  {0x5F00}, // U+5F00
+-  {0x5F02}, // U+5F02
+-  {0x5F85}, // U+5F85
+-  {0x6001}, // U+6001
+-  {0x6025}, // U+6025
+-  {0x606F}, // U+606F
+-  {0x6267}, // U+6267
+-  {0x62A4}, // U+62A4
+-  {0x62A5}, // U+62A5
+-  {0x62D2}, // U+62D2
+-  {0x6307}, // U+6307
+-  {0x6309}, // U+6309
+-  {0x636E}, // U+636E
+-  {0x63A5}, // U+63A5
+-  {0x63A7}, // U+63A7
+-  {0x649E}, // U+649E
+-  {0x653E}, // U+653E
+-  {0x6545}, // U+6545
+-  {0x6548}, // U+6548
+-  {0x6570}, // U+6570
+-  {0x6574}, // U+6574
+-  {0x659C}, // U+659C
+-  {0x65E0}, // U+65E0
+-  {0x65F6}, // U+65F6
+-  {0x662F}, // U+662F
+-  {0x6700}, // U+6700
+-  {0x671F}, // U+671F
+-  {0x672A}, // U+672A
+-  {0x673A}, // U+673A
+-  {0x6743}, // U+6743
+-  {0x6821}, // U+6821
+-  {0x6863}, // U+6863
+-  {0x6A21}, // U+6A21
+-  {0x6B62}, // U+6B62
+-  {0x6C60}, // U+6C60
+-  {0x6D88}, // U+6D88
+-  {0x6EE1}, // U+6EE1
+-  {0x72B6}, // U+72B6
+-  {0x7535}, // U+7535
+-  {0x77E5}, // U+77E5
+-  {0x786E}, // U+786E
+-  {0x78B0}, // U+78B0
+-  {0x7981}, // U+7981
+-  {0x7A7A}, // U+7A7A
+-  {0x7B49}, // U+7B49
+-  {0x7CFB}, // U+7CFB
+-  {0x7EDD}, // U+7EDD
+-  {0x7EDF}, // U+7EDF
+-  {0x7EEA}, // U+7EEA
+-  {0x7EF4}, // U+7EF4
+-  {0x7F6E}, // U+7F6E
+-  {0x80FD}, // U+80FD
+-  {0x8349}, // U+8349
+-  {0x884C}, // U+884C
+-  {0x888B}, // U+888B
+-  {0x88AB}, // U+88AB
+-  {0x89E3}, // U+89E3
+-  {0x8BA4}, // U+8BA4
+-  {0x8BB8}, // U+8BB8
+-  {0x8BBE}, // U+8BBE
+-  {0x8BD5}, // U+8BD5
+-  {0x8BF7}, // U+8BF7
+-  {0x8C03}, // U+8C03
+-  {0x8D25}, // U+8D25
+-  {0x8D70}, // U+8D70
+-  {0x8D85}, // U+8D85
+-  {0x8DEF}, // U+8DEF
+-  {0x8F66}, // U+8F66
+-  {0x8F6C}, // U+8F6C
+-  {0x8F7D}, // U+8F7D
+-  {0x8F93}, // U+8F93
+-  {0x8FC7}, // U+8FC7
+-  {0x8FD0}, // U+8FD0
+-  {0x8FD4}, // U+8FD4
+-  {0x8FDE}, // U+8FDE
+-  {0x9000}, // U+9000
+-  {0x901F}, // U+901F
+-  {0x9065}, // U+9065
+-  {0x91CA}, // U+91CA
+-  {0x91CF}, // U+91CF
+-  {0x94FE}, // U+94FE
+-  {0x9501}, // U+9501
+-  {0x9519}, // U+9519
+-  {0x95ED}, // U+95ED
+-  {0x95F2}, // U+95F2
+-  {0x9645}, // U+9645
+-  {0x969C}, // U+969C
+-  {0x9988}, // U+9988
+-  {0x9A8C}, // U+9A8C
+-  {0x9AD8}, // U+9AD8
++  {0x0079}, // U+0079
+ };
+ static const uint8_t mowerZhBits[] = {
+   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x41, 0x10, 0x04, 0x01, 0x00, 0x04,
+@@ -194,151 +89,32 @@
+   0x0E, 0x00, 0x00, 0x00, 0xC2, 0x38, 0xCA, 0xF2, 0x21, 0x08, 0x00, 0x00, 0x80, 0x27, 0x08, 0x0E,
+   0x06, 0x61, 0x0E, 0x00, 0x00, 0x00, 0x27, 0x08, 0xCF, 0x26, 0x49, 0x0C, 0x00, 0x00, 0xC0, 0x87,
+   0x21, 0x08, 0x43, 0x10, 0x04, 0x00, 0x00, 0x80, 0xA3, 0x49, 0x8E, 0x33, 0x4D, 0x0E, 0x00, 0x00,
+-  0x80, 0xA3, 0x4D, 0x9A, 0x07, 0x61, 0x0E, 0x00, 0x00, 0x0C, 0xE3, 0x28, 0x9A, 0x27, 0x4D, 0x11,
+-  0x00, 0x00, 0x8E, 0xA6, 0x69, 0x8E, 0x24, 0x69, 0x0E, 0x00, 0x00, 0x9C, 0x25, 0x0C, 0xC3, 0x20,
+-  0x58, 0x1C, 0x00, 0x00, 0xCF, 0x36, 0x4D, 0xD3, 0x34, 0x6D, 0x0F, 0x00, 0x00, 0x9E, 0x20, 0x08,
+-  0x8E, 0x20, 0x08, 0x1E, 0x00, 0x00, 0x9E, 0x20, 0x08, 0x9E, 0x20, 0x08, 0x02, 0x00, 0x00, 0x92,
+-  0xA6, 0x38, 0x8E, 0xA2, 0x49, 0x12, 0x00, 0x00, 0xD3, 0xB6, 0x7D, 0xDF, 0x35, 0x4D, 0x13, 0x00,
+-  0x00, 0x8E, 0x36, 0x4D, 0xD3, 0x34, 0x69, 0x0E, 0x00, 0x00, 0x8E, 0x24, 0x18, 0x0C, 0x06, 0x69,
+-  0x0E, 0x00, 0x00, 0xD3, 0x24, 0x69, 0x8A, 0xE2, 0x30, 0x0C, 0x00, 0x00, 0x93, 0xE6, 0x30, 0x8C,
+-  0xA3, 0x68, 0x13, 0x00, 0x00, 0x00, 0x00, 0x70, 0x82, 0x20, 0x08, 0x1C, 0x00, 0x00, 0x00, 0x04,
+-  0x79, 0xDA, 0x34, 0x69, 0x1E, 0x00, 0x00, 0x00, 0x00, 0x7C, 0x57, 0x55, 0x55, 0x15, 0x00, 0x00,
+-  0x00, 0x00, 0x38, 0x82, 0x81, 0x41, 0x0E, 0x00, 0x00, 0x00, 0x00, 0x68, 0x0E, 0xC3, 0x28, 0x12,
+-  0x00, 0x00, 0x20, 0x00, 0x81, 0xFF, 0x44, 0x24, 0x22, 0x11, 0xF9, 0x4F, 0x44, 0x20, 0x00, 0x01,
+-  0x08, 0x00, 0x20, 0xF0, 0x1F, 0x7F, 0x48, 0xC2, 0x1F, 0xFE, 0x80, 0xEC, 0xFF, 0xFE, 0x03, 0x01,
+-  0x0E, 0x00, 0x20, 0x80, 0x03, 0x63, 0x4C, 0x26, 0x04, 0xFE, 0x00, 0x06, 0x18, 0x70, 0x00, 0x03,
+-  0x10, 0x00, 0x48, 0x60, 0x06, 0xFD, 0x0C, 0x60, 0x12, 0x92, 0x90, 0x84, 0x24, 0x24, 0x21, 0x0C,
+-  0xFF, 0x01, 0x88, 0xA3, 0x0F, 0x25, 0x2C, 0x61, 0x89, 0xFB, 0x53, 0x86, 0x32, 0x14, 0xA1, 0x3E,
+-  0xAD, 0x00, 0x4C, 0x20, 0x82, 0xFF, 0xCD, 0x71, 0x1E, 0xB2, 0x50, 0x85, 0x4B, 0xFC, 0x27, 0x02,
+-  0x11, 0x00, 0xC8, 0xE0, 0x3F, 0x31, 0xEC, 0x77, 0x2D, 0x6A, 0xD1, 0x8F, 0x0A, 0x64, 0x20, 0x07,
+-  0xC7, 0x01, 0xF8, 0xA3, 0x10, 0x85, 0xEC, 0x77, 0x0C, 0x62, 0xF0, 0x9F, 0x3C, 0xF4, 0xE1, 0x36,
+-  0x31, 0x00, 0x4C, 0x20, 0x02, 0xFF, 0x0C, 0x60, 0x3F, 0xFA, 0x11, 0x80, 0x7E, 0x14, 0xA2, 0x10,
+-  0xFD, 0x00, 0x04, 0x20, 0xBF, 0x23, 0xFC, 0xF7, 0x2C, 0x67, 0x39, 0xCB, 0x5F, 0x8E, 0x30, 0x9E,
+-  0x99, 0x01, 0x48, 0xE0, 0x3F, 0xFD, 0x2C, 0x74, 0x3F, 0xFF, 0x31, 0x90, 0x7E, 0xC4, 0x20, 0x06,
+-  0x19, 0x00, 0x10, 0x80, 0x00, 0x22, 0x18, 0xE3, 0x3F, 0x2E, 0x61, 0x01, 0x09, 0x48, 0x24, 0xF2,
+-  0xF0, 0x00, 0x20, 0x00, 0x81, 0xFF, 0x30, 0xC1, 0x18, 0xFF, 0x61, 0x09, 0x0B, 0x48, 0x64, 0xB2,
+-  0xE1, 0x00, 0x00, 0xC0, 0x00, 0x04, 0x40, 0x00, 0x06, 0x38, 0x40, 0x03, 0x13, 0x0C, 0x31, 0x98,
+-  0x00, 0x00, 0x20, 0x80, 0x03, 0x22, 0x0C, 0xF6, 0x7F, 0x10, 0x80, 0x80, 0x3F, 0x20, 0x00, 0x81,
+-  0xFF, 0x00, 0x88, 0x41, 0x84, 0xFF, 0x40, 0x00, 0x02, 0x10, 0xF8, 0x0F, 0x0E, 0xD0, 0x60, 0x9C,
+-  0x81, 0x00, 0x20, 0x30, 0x99, 0xC9, 0x4C, 0xE6, 0x3F, 0x10, 0x88, 0x48, 0x44, 0x22, 0xF2, 0x1F,
+-  0x80, 0x00, 0x00, 0xF0, 0x1F, 0x84, 0x20, 0x04, 0x21, 0x08, 0x61, 0x08, 0x41, 0x0C, 0x32, 0x98,
+-  0x70, 0x00, 0x08, 0x52, 0x94, 0xAF, 0x16, 0xF5, 0x2F, 0x44, 0xF9, 0x4A, 0x55, 0x2A, 0xD2, 0x11,
+-  0xC2, 0x00, 0x08, 0xF2, 0x93, 0xB2, 0x7C, 0xC5, 0x2B, 0x44, 0xF9, 0xCB, 0x57, 0x22, 0x12, 0x91,
+-  0xCF, 0x00, 0x10, 0xC0, 0x0F, 0x63, 0xA4, 0x81, 0x0F, 0xC7, 0x81, 0xC0, 0x7F, 0x10, 0x63, 0x88,
+-  0x71, 0x00, 0x80, 0xF0, 0x04, 0x20, 0x80, 0xEF, 0x6B, 0x42, 0x59, 0x4A, 0x5A, 0x7E, 0x12, 0x13,
+-  0xE8, 0x00, 0x88, 0x41, 0x84, 0xFF, 0x4C, 0xE6, 0x3F, 0x93, 0xF1, 0x0F, 0x04, 0xFF, 0x07, 0x01,
+-  0x08, 0x00, 0xFE, 0x17, 0x80, 0x10, 0x84, 0x20, 0x04, 0xFD, 0x09, 0x41, 0x28, 0x42, 0x1B, 0x42,
+-  0xFF, 0x01, 0x00, 0xF0, 0x9F, 0x18, 0xF4, 0xA7, 0x3F, 0x85, 0xE9, 0x4F, 0x08, 0x5A, 0x71, 0x52,
+-  0x1C, 0x00, 0xC0, 0xE1, 0x03, 0x01, 0x08, 0xC0, 0x1F, 0x8A, 0x50, 0xC6, 0x1C, 0x62, 0x90, 0x8F,
+-  0xC3, 0x00, 0x3F, 0x90, 0x9F, 0x94, 0xBC, 0x24, 0x2D, 0xCF, 0x48, 0x46, 0x32, 0x9F, 0x81, 0x1A,
+-  0x9C, 0x01, 0xE0, 0xF1, 0x03, 0x49, 0xFC, 0x27, 0x20, 0x01, 0xF1, 0x07, 0x11, 0x70, 0xC0, 0x87,
+-  0xE3, 0x00, 0x00, 0xF0, 0x9F, 0x80, 0x04, 0x24, 0x20, 0x01, 0x09, 0x48, 0x40, 0x02, 0xF2, 0x9F,
+-  0x80, 0x00, 0x00, 0xF8, 0x3F, 0x40, 0x78, 0x42, 0x12, 0x92, 0x90, 0x84, 0x27, 0x04, 0x01, 0x08,
+-  0x70, 0x00, 0x00, 0xF0, 0x1F, 0x0C, 0x70, 0xE3, 0x32, 0x10, 0xF0, 0x87, 0x20, 0x04, 0x21, 0x08,
+-  0x7F, 0x00, 0x20, 0x00, 0x01, 0xFF, 0x08, 0xE4, 0x3F, 0x03, 0xF8, 0x4F, 0x41, 0x0A, 0xD2, 0x5F,
+-  0x82, 0x00, 0xFE, 0x13, 0x90, 0x80, 0xF4, 0xA5, 0x28, 0x45, 0x29, 0x4A, 0x5F, 0x02, 0xF2, 0x9F,
+-  0x80, 0x00, 0xFE, 0x13, 0x90, 0x88, 0x44, 0xE4, 0x3F, 0x11, 0xC9, 0x49, 0x5A, 0x8A, 0x13, 0x90,
+-  0xFF, 0x00, 0xBE, 0xA2, 0x14, 0xA5, 0x7C, 0x45, 0x29, 0x89, 0x81, 0x80, 0x3F, 0x20, 0x00, 0xC1,
+-  0xFF, 0x01, 0x24, 0x20, 0x01, 0xFF, 0x44, 0x20, 0x82, 0xFF, 0xC3, 0x01, 0x0A, 0xD8, 0x70, 0x9C,
+-  0x80, 0x01, 0xC4, 0x20, 0xC2, 0xDB, 0x54, 0xA4, 0x7F, 0x05, 0xA8, 0xCF, 0x45, 0x2C, 0xF2, 0x91,
+-  0xF8, 0x00, 0x20, 0xF0, 0x9F, 0x80, 0xF8, 0x01, 0x0C, 0x30, 0xF8, 0x0F, 0x04, 0x20, 0x00, 0x01,
+-  0x0E, 0x00, 0x10, 0xF0, 0x1F, 0x02, 0x10, 0xC0, 0x3E, 0xC3, 0x1C, 0x82, 0xFE, 0x84, 0x20, 0x04,
+-  0x39, 0x00, 0x20, 0xF0, 0x9F, 0x80, 0x24, 0x04, 0x01, 0xFF, 0x21, 0x82, 0x0B, 0x70, 0xC0, 0x8F,
+-  0xC3, 0x00, 0x20, 0xF0, 0x9F, 0x80, 0x04, 0xC4, 0x1F, 0x10, 0x90, 0x87, 0x05, 0x2C, 0xD0, 0xC1,
+-  0xF8, 0x01, 0x20, 0xF0, 0x9F, 0x80, 0xD4, 0x04, 0x03, 0x12, 0x80, 0xC0, 0x7F, 0xD0, 0xE0, 0x8C,
+-  0x81, 0x00, 0x8C, 0xF0, 0x15, 0xA0, 0xBC, 0x2F, 0x09, 0xCF, 0x20, 0x47, 0x3B, 0x5A, 0x45, 0x2B,
+-  0xCB, 0x00, 0x00, 0xF0, 0x0F, 0x40, 0x0C, 0x62, 0x10, 0xFF, 0x18, 0xC4, 0x00, 0x06, 0x36, 0x10,
+-  0xFF, 0x00, 0x24, 0x21, 0x89, 0xFF, 0xF4, 0xE5, 0x38, 0xFE, 0x80, 0xC0, 0x7F, 0x26, 0x33, 0x19,
+-  0x69, 0x00, 0x20, 0xF0, 0xBF, 0x44, 0xFC, 0x27, 0x11, 0xF9, 0x08, 0x40, 0x3F, 0xB2, 0x11, 0xC7,
+-  0xE7, 0x00, 0x00, 0xF0, 0x1F, 0x22, 0x10, 0x81, 0x88, 0xFF, 0x23, 0x02, 0x11, 0x8C, 0x30, 0x84,
+-  0x20, 0x00, 0xFE, 0x31, 0x88, 0x41, 0xFC, 0x63, 0x20, 0xFE, 0x01, 0xE0, 0xFF, 0x8C, 0x20, 0x84,
+-  0x20, 0x00, 0xC4, 0xB0, 0xDF, 0x30, 0x98, 0xC1, 0x7F, 0x83, 0xD0, 0x9F, 0x24, 0x24, 0x21, 0x08,
+-  0x61, 0x00, 0x20, 0x00, 0x81, 0xFF, 0xE1, 0x80, 0x0D, 0xDE, 0x99, 0x09, 0x25, 0x4A, 0x52, 0x1C,
+-  0x3E, 0x00, 0x08, 0xE0, 0x87, 0x11, 0xFC, 0xC3, 0x1F, 0x80, 0xF0, 0x07, 0x04, 0x6A, 0x52, 0x1C,
+-  0x3E, 0x00, 0x20, 0xE0, 0x0F, 0x41, 0xF8, 0xC3, 0x1F, 0x82, 0xF0, 0x07, 0x05, 0x4A, 0x52, 0x1C,
+-  0x3E, 0x00, 0x44, 0x20, 0xC2, 0x7F, 0x88, 0x42, 0x16, 0xBE, 0x9C, 0x85, 0x34, 0x34, 0xA1, 0xB8,
+-  0x83, 0x00, 0x84, 0x20, 0xC4, 0xFB, 0x48, 0x44, 0x22, 0xF6, 0x9D, 0x88, 0x04, 0x34, 0xA0, 0x80,
+-  0x05, 0x00, 0xE4, 0xA3, 0xD1, 0x8F, 0x68, 0x43, 0x3F, 0x3E, 0xDD, 0x8D, 0x36, 0xB4, 0xA1, 0x9F,
+-  0x9D, 0x01, 0x04, 0xA0, 0x9F, 0x0F, 0xE8, 0x47, 0x23, 0x1E, 0xF9, 0x88, 0x7E, 0x34, 0xA0, 0x81,
+-  0xFD, 0x01, 0x24, 0x20, 0xCF, 0x0B, 0x48, 0x4C, 0x3E, 0x06, 0xBC, 0x8F, 0x44, 0xE4, 0x23, 0x91,
+-  0xF9, 0x00, 0xC4, 0xA0, 0xDF, 0x87, 0xA9, 0x4C, 0x04, 0xFA, 0xBB, 0xE4, 0x24, 0xC4, 0x21, 0x8E,
+-  0x8D, 0x00, 0xF4, 0xA3, 0xD0, 0x87, 0xE8, 0x47, 0x09, 0xFE, 0x5F, 0x82, 0x7E, 0x34, 0xE2, 0x91,
+-  0xFB, 0x00, 0x44, 0xA0, 0x9F, 0x4B, 0x4C, 0x42, 0x7F, 0x26, 0xFC, 0x9F, 0x24, 0xE4, 0x21, 0x8E,
+-  0xCD, 0x00, 0xC4, 0xA0, 0xFF, 0x07, 0xC9, 0x42, 0x23, 0x0E, 0xDC, 0x8F, 0x10, 0x84, 0x20, 0x84,
+-  0xFC, 0x01, 0xC4, 0xA0, 0xDF, 0x4B, 0xF8, 0x4F, 0x3F, 0xFF, 0x5D, 0x8B, 0x7E, 0xF4, 0x23, 0x86,
+-  0xFF, 0x01, 0xC4, 0x40, 0xC2, 0xF7, 0x89, 0xC4, 0x37, 0xDA, 0x58, 0xC6, 0x32, 0x92, 0x91, 0x5B,
+-  0x8F, 0x01, 0x44, 0x20, 0xC2, 0xFF, 0xC9, 0x44, 0x36, 0xBF, 0x48, 0x47, 0x32, 0x92, 0xF1, 0x9B,
+-  0x8C, 0x01, 0x84, 0x40, 0x84, 0xFF, 0xAD, 0x24, 0xA7, 0xFD, 0x31, 0x86, 0x31, 0x9C, 0xB1, 0x1E,
+-  0x88, 0x01, 0x8A, 0xD0, 0x86, 0xFF, 0xB9, 0xE4, 0x3F, 0xD0, 0x78, 0xC6, 0x32, 0x9E, 0xE1, 0xDA,
+-  0x88, 0x01, 0xBE, 0x40, 0xBE, 0xBF, 0x7C, 0xC3, 0x19, 0x75, 0xF9, 0x0F, 0x04, 0xE4, 0x21, 0xC1,
+-  0xFF, 0x01, 0x08, 0xE2, 0x96, 0xED, 0x3E, 0x84, 0xA4, 0x5F, 0x21, 0x5C, 0x7B, 0x2A, 0x5A, 0x11,
+-  0x83, 0x00, 0x00, 0xF0, 0x1F, 0x08, 0x40, 0xF0, 0x7F, 0x38, 0xC0, 0x01, 0x0F, 0x68, 0x24, 0xB3,
+-  0xF0, 0x00, 0x00, 0xF1, 0x88, 0xFE, 0x35, 0xE6, 0x13, 0xAD, 0x68, 0x45, 0x23, 0x0E, 0x11, 0x08,
+-  0x70, 0x00, 0xFC, 0x21, 0x08, 0x7F, 0x08, 0xC2, 0x1F, 0xFF, 0x91, 0x80, 0x7C, 0x2C, 0xD0, 0xC1,
+-  0xFC, 0x01, 0xFC, 0x21, 0x08, 0x7F, 0xF8, 0xE3, 0x3F, 0xFF, 0xF9, 0xCF, 0x6A, 0x9E, 0xF1, 0x0D,
+-  0x9C, 0x01, 0xD2, 0xFB, 0x93, 0x94, 0xBC, 0x27, 0x25, 0x2F, 0x49, 0xEF, 0x4F, 0x44, 0x92, 0x92,
+-  0xC8, 0x00, 0x20, 0x00, 0x81, 0xFF, 0x40, 0x00, 0x02, 0xFF, 0xC1, 0x01, 0x15, 0xAC, 0x19, 0x31,
+-  0x08, 0x00, 0xE4, 0x21, 0xC9, 0x4F, 0x48, 0xC2, 0x12, 0x97, 0xD8, 0xE4, 0x24, 0x24, 0xA5, 0x29,
+-  0xC5, 0x01, 0x04, 0x20, 0x1F, 0x89, 0x7E, 0xC4, 0x22, 0xA7, 0x58, 0xE5, 0x38, 0xC5, 0x21, 0x1B,
+-  0x8D, 0x01, 0x44, 0x20, 0x84, 0xFF, 0xC9, 0xE2, 0x22, 0x9F, 0x19, 0xA5, 0x18, 0xC4, 0x20, 0x1B,
+-  0x8D, 0x01, 0x84, 0xA0, 0xD5, 0xEB, 0x08, 0xE1, 0x3F, 0x07, 0x19, 0xE8, 0x7E, 0x04, 0xA2, 0x1F,
+-  0x81, 0x00, 0x64, 0xA1, 0xDF, 0x4B, 0xE8, 0x67, 0x3F, 0x0F, 0xD9, 0xAF, 0x7E, 0xC4, 0x20, 0x19,
+-  0x87, 0x01, 0x60, 0x00, 0x03, 0x18, 0xC8, 0x40, 0x3E, 0x32, 0x90, 0x81, 0x0C, 0x64, 0xF8, 0x3F,
+-  0x00, 0x00, 0x86, 0xA0, 0x04, 0xE4, 0xA0, 0x67, 0x2F, 0x4C, 0x41, 0x8A, 0x72, 0x14, 0x94, 0xB0,
+-  0xF8, 0x00, 0xD2, 0xA2, 0x16, 0x78, 0xE4, 0x67, 0x21, 0xF8, 0x51, 0x88, 0x42, 0xF4, 0x93, 0x90,
+-  0xE4, 0x00, 0x22, 0xE1, 0x1F, 0x08, 0xF0, 0x6F, 0x0A, 0xFC, 0xA1, 0x8A, 0x7F, 0xFE, 0xD3, 0x92,
+-  0xC2, 0x00, 0x48, 0x41, 0x92, 0x93, 0xF8, 0x8F, 0x0C, 0x66, 0x38, 0x63, 0x2D, 0x28, 0xC1, 0x19,
+-  0x86, 0x01, 0x20, 0x00, 0x81, 0xFF, 0x44, 0xE6, 0x3F, 0x91, 0x89, 0xCC, 0x7F, 0x22, 0x04, 0x31,
+-  0xF8, 0x00, 0x06, 0x10, 0x9E, 0x97, 0x96, 0x84, 0xA4, 0x3F, 0x31, 0x89, 0x49, 0x54, 0x12, 0xDF,
+-  0x90, 0x00, 0x40, 0x70, 0x0F, 0x69, 0xE4, 0xE7, 0xAA, 0xF5, 0xAD, 0x4A, 0x7D, 0xBA, 0xF2, 0x94,
+-  0xE4, 0x00, 0x20, 0x79, 0x89, 0xFD, 0x84, 0xE3, 0x3D, 0xED, 0xED, 0x4F, 0x7D, 0xEA, 0x71, 0x8E,
+-  0xFC, 0x01, 0x8C, 0xF0, 0x1F, 0x63, 0xBC, 0xF7, 0x2A, 0x00, 0xF0, 0xC7, 0x7F, 0x20, 0x30, 0x89,
+-  0x8E, 0x00, 0x20, 0xF0, 0x9F, 0x80, 0xB4, 0xC5, 0x38, 0x01, 0xF1, 0x07, 0x04, 0x20, 0x00, 0x81,
+-  0xFF, 0x00, 0x44, 0xF0, 0xDF, 0x6A, 0xF8, 0x07, 0x82, 0xFF, 0x03, 0xC2, 0x7F, 0x88, 0xC0, 0x04,
+-  0x30, 0x00, 0xE0, 0xF1, 0x01, 0x26, 0xF8, 0x00, 0x1B, 0xFE, 0xF8, 0x09, 0x15, 0x24, 0x31, 0x11,
+-  0x0C, 0x00, 0x44, 0x20, 0x8F, 0x49, 0xF4, 0x77, 0x2A, 0x52, 0xF9, 0x6F, 0x04, 0x38, 0x78, 0x31,
+-  0xF8, 0x00, 0x84, 0x20, 0x84, 0xFD, 0x95, 0xF2, 0x32, 0xFA, 0xB9, 0xE7, 0x34, 0xA8, 0xF1, 0x2D,
+-  0xC4, 0x00, 0x44, 0x20, 0x9F, 0xD1, 0x94, 0xF3, 0x7F, 0x32, 0xF8, 0xEF, 0x47, 0xE0, 0x73, 0x11,
+-  0xF8, 0x00, 0xC4, 0x20, 0x8B, 0xF8, 0x74, 0x73, 0x3F, 0xD2, 0xB8, 0xE6, 0x7C, 0xA8, 0x79, 0x3F,
+-  0x08, 0x00, 0xFE, 0x93, 0x92, 0xFF, 0xFC, 0x07, 0x02, 0xFE, 0xF0, 0x87, 0x3F, 0xFC, 0x21, 0x88,
+-  0xFF, 0x00, 0x44, 0xB0, 0x9A, 0x37, 0x84, 0xE8, 0x3D, 0x29, 0x78, 0x49, 0x7A, 0x5E, 0x90, 0xA2,
+-  0xF6, 0x00, 0x88, 0xF0, 0x1F, 0x22, 0xF8, 0xC3, 0x1F, 0x82, 0xF0, 0x07, 0x04, 0xFE, 0x03, 0x01,
+-  0x08, 0x00, 0x0C, 0x20, 0x9F, 0x00, 0x10, 0x40, 0x7F, 0x83, 0x14, 0x84, 0x20, 0x04, 0x21, 0x08,
+-  0x71, 0x00, 0x68, 0x21, 0x9A, 0x7F, 0x88, 0x41, 0x3A, 0x10, 0xF8, 0x0F, 0x6B, 0xCE, 0xC1, 0x1D,
+-  0x86, 0x00, 0x84, 0x20, 0xC4, 0xFF, 0x71, 0x45, 0x2B, 0xFE, 0xF9, 0xAD, 0x2B, 0x94, 0xA1, 0x1E,
+-  0x9B, 0x01, 0xC4, 0xF3, 0x94, 0xB2, 0xFE, 0xA6, 0x15, 0xAF, 0x68, 0xCF, 0x27, 0xFA, 0xDF, 0x48,
+-  0x46, 0x00, 0x84, 0x20, 0x04, 0x22, 0x00, 0x71, 0x0C, 0x62, 0x10, 0x83, 0x28, 0x7C, 0x61, 0x19,
+-  0x84, 0x01, 0x20, 0x20, 0x01, 0xF8, 0x20, 0x71, 0x09, 0x42, 0xD0, 0x9F, 0x10, 0x84, 0x60, 0x04,
+-  0x21, 0x00, 0xE6, 0x21, 0x09, 0x48, 0x6E, 0x42, 0x31, 0xFA, 0x91, 0x8C, 0x24, 0xCC, 0x60, 0x0F,
+-  0xCC, 0x01, 0x82, 0x23, 0x14, 0xFC, 0x01, 0x61, 0x18, 0xFA, 0x90, 0x84, 0x24, 0x6C, 0xE5, 0x3B,
+-  0x80, 0x00, 0x82, 0xA0, 0x1F, 0xFC, 0x00, 0x71, 0x7F, 0xF2, 0xD1, 0x88, 0x7E, 0xFC, 0xE3, 0x11,
+-  0xCC, 0x00, 0xF2, 0xA3, 0x10, 0xA5, 0xA0, 0x77, 0x3F, 0x0A, 0x51, 0x8F, 0x66, 0xFC, 0xE3, 0x10,
+-  0xC2, 0x00, 0xDE, 0x90, 0x82, 0xF4, 0xAC, 0x64, 0x37, 0xBB, 0x58, 0xC7, 0x32, 0x8C, 0xB1, 0xDE,
+-  0x9C, 0x01, 0x20, 0xE0, 0x1F, 0x08, 0x40, 0xE0, 0x3F, 0x10, 0x90, 0x80, 0x7C, 0x2C, 0xD0, 0xC1,
+-  0xF8, 0x01, 0xE4, 0x23, 0x94, 0xB7, 0x88, 0xF4, 0x37, 0xE5, 0xE9, 0x49, 0x49, 0xCE, 0x7B, 0x40,
+-  0xFE, 0x01, 0x5E, 0x90, 0x9E, 0xDC, 0xFC, 0x43, 0x18, 0xE3, 0xF8, 0xD9, 0x7C, 0x2E, 0xF2, 0x11,
+-  0xF8, 0x00, 0x10, 0x80, 0x80, 0xFF, 0x10, 0x40, 0x06, 0xFF, 0x81, 0x01, 0x0C, 0xFE, 0x03, 0x03,
+-  0x18, 0x00, 0x84, 0xF8, 0x9F, 0x21, 0xDC, 0xEF, 0x04, 0x2F, 0x30, 0x8F, 0x23, 0xCF, 0x61, 0x0C,
+-  0x43, 0x00, 0x88, 0xF1, 0x15, 0x22, 0xFC, 0xE7, 0x2F, 0x42, 0x69, 0xC6, 0x37, 0xB8, 0xF1, 0x2F,
+-  0xD4, 0x00, 0x84, 0x78, 0x8E, 0xCC, 0xEC, 0x67, 0xA6, 0xCF, 0xD1, 0x8F, 0x73, 0xF7, 0xA3, 0x14,
+-  0xD5, 0x00, 0x02, 0x31, 0x08, 0xFD, 0x00, 0x72, 0x13, 0x92, 0x10, 0x84, 0x20, 0xC4, 0xF1, 0x40,
+-  0xFC, 0x00, 0x00, 0x90, 0x1F, 0x01, 0xF0, 0x7F, 0x06, 0x92, 0xD0, 0x84, 0x7E, 0x14, 0x72, 0xC0,
+-  0xFC, 0x01, 0x82, 0xB3, 0x0F, 0x05, 0xE0, 0x07, 0xB1, 0xBB, 0x50, 0x87, 0x3B, 0x6C, 0x73, 0x40,
+-  0xFC, 0x00, 0x62, 0xF0, 0x1F, 0x09, 0x60, 0x71, 0x3F, 0x42, 0x10, 0x82, 0x7F, 0x84, 0x70, 0x44,
+-  0xFC, 0x01, 0xF2, 0xB1, 0x18, 0xFD, 0x20, 0x76, 0x3F, 0x2A, 0x51, 0x86, 0x2A, 0x74, 0x72, 0x80,
+-  0xFC, 0x00, 0x40, 0xD0, 0x1F, 0x11, 0xE0, 0x77, 0x25, 0xFA, 0x91, 0x83, 0x7C, 0x5C, 0x72, 0x80,
+-  0xFC, 0x00, 0x80, 0x93, 0x03, 0x55, 0x60, 0x62, 0x3F, 0x26, 0xF0, 0x8F, 0x4A, 0xF4, 0x73, 0xC0,
+-  0xFC, 0x00, 0x1C, 0x70, 0x9F, 0xD5, 0x1C, 0xF3, 0x3F, 0x56, 0xF8, 0xCF, 0x10, 0xE5, 0x27, 0x04,
+-  0x21, 0x00, 0xFC, 0xE1, 0x0F, 0x7F, 0x00, 0xE0, 0x3F, 0xFE, 0xF1, 0x8F, 0x7F, 0x20, 0x00, 0x81,
+-  0xFF, 0x01, 0x92, 0xF0, 0xFF, 0x34, 0x9E, 0xC2, 0x3C, 0x9E, 0xFC, 0x9F, 0x26, 0x34, 0xF1, 0x83,
+-  0xF2, 0x01, 0xA4, 0xF2, 0xD5, 0x60, 0xDE, 0x47, 0x22, 0x52, 0xF9, 0x8A, 0x54, 0xE4, 0x62, 0x1F,
+-  0x8D, 0x01, 0x44, 0xF1, 0xDF, 0x50, 0x9E, 0x42, 0x7E, 0x02, 0xF8, 0x8F, 0x44, 0xE4, 0x63, 0x11,
+-  0xF9, 0x00, 0x02, 0xB0, 0x1F, 0x91, 0x84, 0xA4, 0x3F, 0x31, 0xC9, 0x49, 0x4B, 0x4E, 0x12, 0x93,
+-  0xC0, 0x00, 0xF6, 0x23, 0x10, 0x88, 0x44, 0xA4, 0x3F, 0x39, 0xC9, 0x4B, 0x55, 0x22, 0x12, 0x91,
+-  0xE0, 0x00, 0x0E, 0x50, 0x9F, 0x02, 0x1C, 0xE0, 0x7E, 0x45, 0xA8, 0xCA, 0x57, 0x92, 0x92, 0x94,
+-  0x30, 0x00, 0xCE, 0xD0, 0x9F, 0x4B, 0xEC, 0x6F, 0x3E, 0xFD, 0xE9, 0xC8, 0x7D, 0xF2, 0x17, 0x84,
+-  0x20, 0x00, 0x82, 0x90, 0x9F, 0xFF, 0x14, 0x71, 0x7F, 0xF2, 0xD1, 0x88, 0x56, 0xFC, 0x22, 0x8F,
+-  0x8C, 0x00, 0x8E, 0x40, 0x8E, 0xDA, 0x74, 0xAC, 0x1C, 0x5F, 0xC1, 0x8A, 0x5F, 0x1F, 0x41, 0x08,
+-  0xFB, 0x00, 0x20, 0xF0, 0x1F, 0x00, 0xF8, 0xC3, 0x1F, 0x00, 0xF8, 0x4F, 0x5F, 0x8A, 0xD2, 0x97,
+-  0xC0, 0x00,
++  0x80, 0xA3, 0x4D, 0x9A, 0x07, 0x61, 0x0E, 0x00, 0x00, 0x00, 0x00, 0x30, 0x04, 0x00, 0x10, 0x0C,
++  0x00, 0x00, 0x8E, 0x86, 0x21, 0x0C, 0x41, 0x10, 0x04, 0x00, 0x00, 0x0C, 0xE3, 0x28, 0x9A, 0x27,
++  0x4D, 0x11, 0x00, 0x00, 0x8E, 0xA6, 0x69, 0x8E, 0x24, 0x69, 0x0E, 0x00, 0x00, 0x9C, 0x25, 0x0C,
++  0xC3, 0x20, 0x58, 0x1C, 0x00, 0x00, 0xCF, 0x36, 0x4D, 0xD3, 0x34, 0x6D, 0x0F, 0x00, 0x00, 0x9E,
++  0x20, 0x08, 0x8E, 0x20, 0x08, 0x1E, 0x00, 0x00, 0x9E, 0x20, 0x08, 0x9E, 0x20, 0x08, 0x02, 0x00,
++  0x00, 0x9C, 0x34, 0x0C, 0xDB, 0x24, 0x49, 0x1C, 0x00, 0x00, 0xD3, 0x34, 0x4D, 0xDF, 0x34, 0x4D,
++  0x13, 0x00, 0x00, 0x1E, 0x41, 0x10, 0x04, 0x41, 0x10, 0x1E, 0x00, 0x00, 0x92, 0xA6, 0x38, 0x8E,
++  0xA2, 0x49, 0x12, 0x00, 0x00, 0x82, 0x20, 0x08, 0x82, 0x20, 0x08, 0x1E, 0x00, 0x00, 0xD3, 0xB6,
++  0x7D, 0xDF, 0x35, 0x4D, 0x13, 0x00, 0x00, 0xD3, 0x74, 0x5D, 0xD7, 0xB7, 0x6D, 0x1B, 0x00, 0x00,
++  0x8E, 0x36, 0x4D, 0xD3, 0x34, 0x69, 0x0E, 0x00, 0x00, 0x8E, 0x24, 0x69, 0x8E, 0x20, 0x08, 0x02,
++  0x00, 0x00, 0x8E, 0x26, 0x69, 0x8E, 0xA2, 0x68, 0x12, 0x00, 0x00, 0x8E, 0x24, 0x18, 0x0C, 0x06,
++  0x69, 0x0E, 0x00, 0x00, 0x1F, 0x41, 0x10, 0x04, 0x41, 0x10, 0x04, 0x00, 0x00, 0xD3, 0x34, 0x4D,
++  0xD3, 0x24, 0x69, 0x0E, 0x00, 0x00, 0xD3, 0x24, 0x69, 0x8A, 0xE2, 0x30, 0x0C, 0x00, 0x00, 0x71,
++  0x14, 0x55, 0xDD, 0xF7, 0x69, 0x1A, 0x00, 0x00, 0x93, 0xE6, 0x30, 0x8C, 0xA3, 0x68, 0x13, 0x00,
++  0x00, 0x00, 0x00, 0x38, 0x18, 0x27, 0x69, 0x1E, 0x00, 0x00, 0x80, 0x20, 0x38, 0x9A, 0x24, 0x69,
++  0x0E, 0x00, 0x00, 0x00, 0x00, 0x70, 0x82, 0x20, 0x08, 0x1C, 0x00, 0x00, 0x00, 0x04, 0x79, 0xDA,
++  0x34, 0x69, 0x1E, 0x00, 0x00, 0x00, 0x00, 0x38, 0xD2, 0x37, 0x08, 0x1E, 0x00, 0x00, 0x18, 0x43,
++  0x78, 0x04, 0x41, 0x10, 0x04, 0x00, 0x00, 0x00, 0x00, 0x78, 0x8A, 0xE6, 0x08, 0x9E, 0x34, 0x39,
++  0x80, 0x20, 0x78, 0x92, 0x24, 0x49, 0x12, 0x00, 0x00, 0x00, 0x01, 0x10, 0x04, 0x41, 0x10, 0x04,
++  0x00, 0x00, 0x00, 0x03, 0x30, 0x0C, 0xC3, 0x30, 0x0C, 0xC3, 0x1C, 0x82, 0x20, 0x68, 0x8A, 0xE3,
++  0x68, 0x12, 0x00, 0x00, 0x04, 0x41, 0x10, 0x04, 0x41, 0x10, 0x1C, 0x00, 0x00, 0x00, 0x00, 0x7C,
++  0x57, 0x55, 0x55, 0x15, 0x00, 0x00, 0x00, 0x00, 0x78, 0x92, 0x24, 0x49, 0x12, 0x00, 0x00, 0x00,
++  0x00, 0x38, 0xDA, 0x34, 0x69, 0x0E, 0x00, 0x00, 0x00, 0x00, 0x38, 0x9A, 0x24, 0x69, 0x8E, 0x20,
++  0x08, 0x00, 0x00, 0x68, 0x86, 0x20, 0x08, 0x02, 0x00, 0x00, 0x00, 0x00, 0x38, 0x82, 0x81, 0x41,
++  0x0E, 0x00, 0x00, 0x00, 0x41, 0x7C, 0x04, 0x41, 0x10, 0x1C, 0x00, 0x00, 0x00, 0x00, 0x4C, 0xD3,
++  0x34, 0x6D, 0x1E, 0x00, 0x00, 0x00, 0x00, 0x4C, 0x92, 0xE6, 0x30, 0x0C, 0x00, 0x00, 0x00, 0x00,
++  0xC4, 0x55, 0xF7, 0x69, 0x1A, 0x00, 0x00, 0x00, 0x00, 0x68, 0x0E, 0xC3, 0x28, 0x12, 0x00, 0x00,
++  0x00, 0x00, 0x4C, 0x92, 0xE6, 0x30, 0x0C, 0x43, 0x18,
+ };
+--- a/OpenI6X/FS-I6X/opentx/radio/src/gui/128x64/mower_zh_font.md
++++ b/OpenI6X/FS-I6X/opentx/radio/src/gui/128x64/mower_zh_font.md
+@@ -1,28 +1,25 @@
+-# Mower UI Subset 11
++# Mower English UI Subset 11
+ 
+-固定字符子集，用于 FS-i6X 的中文主界面、维护入口、调试信息和割刀确认弹窗。
+-字体数据存放在 Flash；正常构建无需下载或生成字库。
++This independent English snapshot retains the existing internal mowerZh helper
++and file names to avoid changing rendering interfaces. The generated bitmap
++contains only the ASCII used by the English home, maintenance, DEBUG and
++confirmation views: 65 glyphs, 585 bytes. The original 11px type, 6px cell width
++and 12px row height are retained. The Chinese original is unchanged.
+ 
+-- 原字体：Noto Sans Mono CJK SC Regular，来源为 [Noto CJK 官方仓库](https://github.com/notofonts/noto-cjk/tree/main/Sans/Mono)。
+-- 当前源文件：`/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc`，face index 7（Noto Sans Mono CJK SC Regular）。
+-- 当前源文件 SHA256：`b76b0433203017ca80401b2ee0dd69350349871c4b19d504c34dbdd80541690a`。
+-- 旧版 12px 字库来源为 `NotoSansMonoCJKsc-Regular.otf`，SHA256 为 `ec04cc376b34887cedbdf84074e2e226ed2761eeabdcb9173fc1dd7bfd153ef7`。当前 TTC 的 SC Mono 字面在旧参数下与旧版全部 214 个字符逐像素相同。
+-- 许可证：SIL Open Font License 1.1，完整文本见同目录 `mower_zh_font.LICENSE`。
+-- 派生名称：Mower UI Subset 11；中文宽 11、ASCII 宽 6，字形字号 11px、字模行高 12px，1-bit 行优先位图。
+-- 生成参数：Pillow FreeType 11px、中文基线 y=10、ASCII 基线 y=9、灰度阈值 80。中文保留顶端笔画，ASCII 为 `g/j/p/q/y/|` 等保留下部空间。
+-- 当前含164个字符（34个界面所需ASCII、130个中文），位图共2386字节；单字ASCII 9字节、中文16字节。中文末行原为空白，仅省略存储，绘制行高仍为12px；原有可见字形和排版不变。
+-- “急停”所需两字已在子集中；快速急停首页复用现有字形，重新生成与完整字形校验通过，无需扩大字库。
+-- ASCII取自中文界面的生产字面量，另保留十进制/十六进制数字及数字标点；原生英文实验页使用系统字库。子集缩减与中文空白行省略共节省801字节Flash，33张实际界面回放逐像素一致。
+-- 生成时在更大的画布上再次栅格化，检查阈值后的完整边界与像素数，任何裁切或缺字都会失败；绘制器与宽度计算共用生成的字模尺寸常量。
++The font lives in Flash; ordinary builds need neither Pillow nor a system font.
+ 
+-界面增加中文字符后，使用带 Pillow 的 Python 运行：
++- Source: Noto Sans Mono CJK SC Regular, face 7 of NotoSansCJK-Regular.ttc.
++- SHA256: b76b0433203017ca80401b2ee0dd69350349871c4b19d504c34dbdd80541690a.
++- License: SIL Open Font License 1.1; see mower_zh_font.LICENSE.
++- Generation uses the original ASCII baseline 9 and threshold 80, checking
++  glyph bounds and pixel counts against an uncropped reference before packing.
+ 
+-```bash
+-python3 tools/generate_mower_zh_font.py \
+-  /usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc --font-index 7
+-# 验证生成结果和完整字形，不改写文件：
+-python3 tools/generate_mower_zh_font.py \
+-  /usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc --font-index 7 --check
++From this independent source root, verify the font with:
++
++```sh
++python3 tools/generate_mower_zh_font.py /usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc --font-index 7 --check
+ ```
+ 
+-生成器只更新 `mower_zh_font.h`；正常固件编译不依赖系统字体或 Pillow。使用单独 OTF 时可省略 `--font-index`，须记录对应源文件哈希。发布包记录源文件及 face；完整上游字体无需随固件分发。
++After changing English text, run without --check, then run the actual UI harness.
++It checks every drawn glyph, text bounds, visible text overlap and the complete
++inverted grass-bag cell, including descenders.
+--- a/OpenI6X/FS-I6X/opentx/radio/src/gui/128x64/view_main.cpp
++++ b/OpenI6X/FS-I6X/opentx/radio/src/gui/128x64/view_main.cpp
+@@ -823,19 +823,23 @@
+ #if defined(PCBI6X_MOWER_BLADE_OK)
+   if (state == EXP3_UI_IDLE || state == EXP3_UI_ACCEPTED) return;
+   if (state != EXP3_UI_PROMPT) {
+-    const char *notice = state == EXP3_UI_BATTERY_LOW ? "电量过低" :
+-        state == EXP3_UI_SAFETY ? "安全输入未释放" :
+-        state == EXP3_UI_OWNER ? "控制权未就绪" :
+-        state == EXP3_UI_TIMEOUT ? "无回执" :
+-        state == EXP3_UI_REJECTED ? (mowerUnlockDisplay ? "解锁被拒绝" : "启动被拒绝") : 0;
+-    if (notice) mowerZhCenteredText(52, notice);
++    const char *notice = state == EXP3_UI_BATTERY_LOW ? "Low SOC" :
++        state == EXP3_UI_SAFETY ? "Safety active" :
++        state == EXP3_UI_OWNER ? "Owner not ready" :
++        state == EXP3_UI_TIMEOUT ? "No reply" :
++        state == EXP3_UI_REJECTED ? (mowerUnlockDisplay ? "Unlock denied" : "Start denied") : 0;
++    if (notice) {
++      // Replace the complete bottom row so the notice never overprints values.
++      lcdDrawSolidFilledRect(0, 48, 128, 16, ERASE);
++      mowerZhCenteredText(52, notice);
++    }
+     return;
+   }
+   // Keep the whole status row; clear whole body rows instead of half glyphs.
+   lcdDrawSolidFilledRect(0, 12, 128, 52, ERASE);
+   lcdDrawRect(5, 18, 118, 31);
+-  mowerZhCenteredText(20, mowerUnlockDisplay ? "是否解锁" : "确认启动割刀");
+-  mowerZhCenteredText(34, "按OK确认");
++  mowerZhCenteredText(20, mowerUnlockDisplay ? "Unlock?" : "Start blade?");
++  mowerZhCenteredText(34, "Press OK");
+ 
+ #else
+ 
+--- a/tools/test_blade_ok_ui.py
++++ b/tools/test_blade_ok_ui.py
+@@ -18,6 +18,7 @@
+ header = root / 'OpenI6X/FS-I6X/opentx/radio/src/gui/128x64/mower_ui.h'
+ probe = root / 'experiments/ticket03/exp3_probe.h'
+ prefix = r'''
++#include <algorithm>
+ #include <cassert>
+ #include <cstdint>
+ #include <cstring>
+@@ -45,6 +46,12 @@
+ }
+ static void lcdDrawSolidFilledRect(int x,int y,int w,int h,int flags) {
+     assert(x>=0 && y>=0 && x+w<=128 && y+h<=64);
++    if(flags & ERASE) {
++        textPositions.erase(std::remove_if(textPositions.begin(),textPositions.end(),
++            [=](const TextPosition &p) {
++                return p.x<x+w && x<p.x+int(p.value.size())*6 && p.y<y+h && y<p.y+12;
++            }),textPositions.end());
++    }
+     for(int dy=0;dy<h;++dy) for(int dx=0;dx<w;++dx) lcdDrawPoint(x+dx,y+dy,flags);
+ }
+ static void lcdDrawRect(int x,int y,int w,int h) {
+@@ -127,6 +134,14 @@
+         if(x<5 || x>122 || y<18 || y>48) assert(!pixels[y][x]);
+ }
+ static void saveScreen(const char *name) {
++    // Check every visible text cell before exporting the actual framebuffer.
++    for(size_t i=0;i<textPositions.size();++i) for(size_t j=i+1;j<textPositions.size();++j) {
++        const auto &a=textPositions[i]; const auto &b=textPositions[j];
++        const bool overlap=a.x<b.x+int(b.value.size())*6 && b.x<a.x+int(a.value.size())*6 &&
++            a.y<b.y+12 && b.y<a.y+12;
++        if(overlap) fprintf(stderr,"Overlapping text in %s: %s / %s\n",name,a.value.c_str(),b.value.c_str());
++        assert(!overlap);
++    }
+     const char *dir=std::getenv("MOWER_UI_PREVIEW_DIR");
+     if(!dir) return;
+     std::ofstream file(std::string(dir)+"/"+name+".pbm");
+@@ -187,13 +202,13 @@
+     fixture.soc_percent=82; fixture.radio_battery_100mv=78;
+     fixture.radio_quality=100; fixture.height_deci_cm=70; fixture.bag_command=2;
+     labels.clear(); mowerUserRender();
+-    assert(has("已连接") && hasAt("高",42,36) && has("1.10m/s"));
+-    assert(hasAt("车速度",0,24) && hasAt("刀速度",0,36));
+-    assert(!has("行走设") && !has("割刀") && !has("输出") && !has("开"));
+-    assert(mowerZhTextWidth("车速度")==33 && mowerZhTextWidth("1.80m/s")==42);
+-    assert(mowerZhTextWidth("按OK确认")==45);
++    assert(has("Online") && hasAt("HIGH",42,36) && has("1.10m/s"));
++    assert(hasAt("Speed",0,24) && hasAt("Blade",0,36));
++    assert(!has("Travel set") && !has("Cutter") && !has("Output") && !has("OPEN"));
++    assert(mowerZhTextWidth("Speed")==30 && mowerZhTextWidth("1.80m/s")==42);
++    assert(mowerZhTextWidth("Press OK")==48);
+     const uint16_t gradeWords[]={0,3,5,7};
+-    const char *gradeLabels[]={"关","低","中","高"};
++    const char *gradeLabels[]={"OFF","LOW","MID","HIGH"};
+     const char *gradeScreens[]={"blade-off","blade-low","blade-middle","blade-high"};
+     for(unsigned i=0;i<4;++i) {
+       runtime=gradeWords[i];
+@@ -201,42 +216,47 @@
+       assert(hasAt(gradeLabels[i],42,36)); saveScreen(gradeScreens[i]);
+     }
+     known=false; resetDraw(); mowerUserRender();
+-    assert(hasAt("--",42,36) && !has("高") && !has("开")); saveScreen("blade-unknown");
++    assert(hasAt("--",42,36) && !has("HIGH") && !has("OPEN")); saveScreen("blade-unknown");
+     known=true; runtime=15; resetDraw(); mowerUserRender();
+-    assert(has("高度") && has("7.0cm") && !has("高度设") && !has("3/5"));
++    assert(has("Height") && has("7.0cm") && !has("Height set") && !has("3/5"));
+     fixture.valid |= MOWER_UI_BAG_CONNECTION;
+     for(unsigned command=0; command<=2; ++command) {
+       fixture.bag_command=command; fixture.bag_connected=false;
+-      resetDraw(); mowerUserRender(); assert(has("草袋未连接"));
+-      assert(!has("袋指令") && !has("草袋开") && !has("草袋关"));
++      resetDraw(); mowerUserRender(); assert(has("No bag"));
++      assert(!has("Bag target") && !has("Bag opn") && !has("Bag cls"));
+     }
+     fixture.bag_connected=true;
+-    const char *bagLabels[]={"草袋--","草袋开","草袋关"};
++    const char *bagLabels[]={"Bag --","Bag opn","Bag cls"};
+     for(unsigned command=0; command<=2; ++command) {
+       fixture.bag_command=command;
+       resetDraw(); mowerUserRender(); assert(has(bagLabels[command]));
+     }
+     fixture.valid &= ~MOWER_UI_BAG_CONNECTION;
+-    resetDraw(); mowerUserRender(); assert(has("草袋未知"));
++    resetDraw(); mowerUserRender(); assert(has("Bag ?"));
+     fixture.telemetry_online=false; fixture.valid |= MOWER_UI_BAG_CONNECTION;
+-    resetDraw(); mowerUserRender(); assert(has("草袋未知"));
++    resetDraw(); mowerUserRender(); assert(has("Bag ?"));
+     fixture.telemetry_online=true; fixture.valid &= ~MOWER_UI_BAG_CONNECTION;
+     fixture.bag_command=2;
+     fixture.valid |= MOWER_UI_BAG_CONNECTION | MOWER_UI_BAG_FULL;
+     fixture.bag_connected=true; fixture.bag_full=false;
+     resetDraw(); mowerUserHome(fixture,true,15U);
+-    assert(hasAt("草袋未满",66,36) && hasAt("草袋关",66,48));
++    assert(hasAt("Bag OK",72,36) && hasAt("Bag cls",84,48));
+     saveScreen("bag-not-full");
+     uint8_t notFullPixels[64][128]; memcpy(notFullPixels,pixels,sizeof(pixels));
+     fixture.bag_full=true;
+     resetDraw(); mowerUserHome(fixture,true,15U);
+-    assert(hasAt("草袋已满",66,36) && hasAt("草袋关",66,48));
+-    for(int x=66;x<110;++x) assert(pixels[47][x]); // Entire 44px cell inverted.
++    assert(hasAt("Bag full",72,36) && hasAt("Bag cls",84,48));
++    // ASCII descenders occupy the last bitmap row: compare every inverted bit.
++    uint8_t fullPixels[64][128]; memcpy(fullPixels,pixels,sizeof(pixels));
++    memset(pixels,0,sizeof(pixels)); mowerZhDraw(72,36,"Bag full",false);
++    for(int y=36;y<48;++y) for(int x=72;x<120;++x)
++      assert(pixels[y][x]!=fullPixels[y][x]);
++    memcpy(pixels,fullPixels,sizeof(pixels));
+     for(int y=0;y<64;++y) for(int x=0;x<128;++x)
+-      if(x<66 || x>=110 || y<36 || y>=48) assert(pixels[y][x]==notFullPixels[y][x]);
++      if(x<72 || x>=120 || y<36 || y>=48) assert(pixels[y][x]==notFullPixels[y][x]);
+     saveScreen("bag-full");
+     resetDraw(); mowerUserDebugRow(27,12,fixture,true,15U);
+-    assert(has("草袋满载") && has("已满"));
++    assert(has("Bag full") && has("Full"));
+     for(int condition=0;condition<4;++condition) {
+       MowerUiSnapshot unknown=fixture;
+       if(condition==0) unknown.telemetry_online=false;
+@@ -244,10 +264,10 @@
+       if(condition==2) unknown.valid &= ~MOWER_UI_BAG_CONNECTION;
+       if(condition==3) unknown.bag_connected=false;
+       resetDraw(); mowerUserHome(unknown,true,15U);
+-      assert(hasAt("满载未知",66,36) && !has("草袋未满") && !has("草袋已满"));
+-      for(int x=66;x<110;++x) assert(!pixels[47][x]);
++      assert(hasAt("Full ?",72,36) && !has("Bag OK") && !has("Bag full"));
++      for(int x=72;x<120;++x) assert(!pixels[47][x]);
+       saveScreen(condition==3 ? "bag-full-disconnected" : "bag-full-unknown");
+-      resetDraw(); mowerUserDebugRow(27,12,unknown,true,15U); assert(has("未知"));
++      resetDraw(); mowerUserDebugRow(27,12,unknown,true,15U); assert(has("Unknown"));
+     }
+     fixture.valid &= ~(MOWER_UI_BAG_FULL | MOWER_UI_BAG_CONNECTION);
+     fixture.bag_full=false;
+@@ -257,13 +277,13 @@
+     channelOutputs[9]=500; mowerUserRender(); assert(has("1.45m/s"));
+     channelOutputs[9]=0;
+     labels.clear(); runtime=8; mowerUserRender();
+-    assert(has("关") && !has("开"));
++    assert(has("OFF") && !has("OPEN"));
+     labels.clear(); known=false; mowerUserRender();
+-    assert(has("--") && !has("开") && !has("高"));
++    assert(has("--") && !has("OPEN") && !has("HIGH"));
+     labels.clear(); mowerExp3Overlay(EXP3_UI_PROMPT);
+-    assert(has("确认启动割刀") && has("按OK确认"));
++    assert(has("Start blade?") && has("Press OK"));
+     labels.clear(); mowerExp3Overlay(EXP3_UI_REJECTED);
+-    assert(has("启动被拒绝") && !has("开"));
++    assert(has("Start denied") && !has("OPEN"));
+ 
+     // Compare all CH9 boundary/prior-state combinations against the unchanged
+     // real chassis decoder, rather than duplicating expected mapping logic.
+@@ -296,17 +316,17 @@
+       mowerUiReadLive(live);
+       assert((live.valid & MOWER_UI_BAG_CONNECTION) && !live.bag_connected);
+       renderFixture=true; fixture=live;
+-      resetDraw(); mowerUserRender(); assert(has("草袋未连接"));
++      resetDraw(); mowerUserRender(); assert(has("No bag"));
+     }
+     bagConnected=true;
+     for(auto output:bagOutputs) {
+       channelOutputs[5]=output; mowerUiReadLive(live); fixture=live;
+       assert((live.valid & MOWER_UI_BAG_CONNECTION) && live.bag_connected);
+       resetDraw(); mowerUserRender();
+-      assert(has(output < 0 ? "草袋开" : output > 0 ? "草袋关" : "草袋--"));
++      assert(has(output < 0 ? "Bag opn" : output > 0 ? "Bag cls" : "Bag --"));
+     }
+     bagKnown=false; mowerUiReadLive(live); fixture=live;
+-    resetDraw(); mowerUserRender(); assert(has("草袋未知"));
++    resetDraw(); mowerUserRender(); assert(has("Bag ?"));
+     bagKnown=true; bagConnected=true; bagFullKnown=true; bagFull=true;
+     mowerUiReadLive(live);
+     assert((live.valid & MOWER_UI_BAG_FULL) && live.bag_full);
+@@ -336,11 +356,11 @@
+       channelOutputs[8]=output; mowerUiReadLive(live);
+       assert((live.valid & MOWER_UI_HEIGHT_FEEDBACK) && live.height_deci_cm==70);
+       renderFixture=true; fixture=live; resetDraw(); mowerUserRender();
+-      assert(has("7.0cm") && !has("高度设") && !has("3/5"));
++      assert(has("7.0cm") && !has("Height set") && !has("3/5"));
+     }
+     heightMm=110; mowerUiReadLive(live); fixture=live;
+     fixture.valid |= MOWER_UI_BAG_CONNECTION; fixture.bag_connected=false;
+-    resetDraw(); mowerUserRender(); assert(has("11.0cm") && has("草袋未连接"));
++    resetDraw(); mowerUserRender(); assert(has("11.0cm") && has("No bag"));
+     saveScreen("height-11cm-bag-disconnected");
+     heightKnown=false; mowerUiReadLive(live); fixture=live;
+     resetDraw(); mowerUserRender(); assert(!has("11.0cm") && !has("7.0cm") && has("--cm"));
+@@ -352,7 +372,7 @@
+     mowerUiReadLive(live); assert(!live.telemetry_online);
+     telemetryItems[4].old=false;
+     mowerUiReadLive(live); assert(live.telemetry_online && !(live.valid & MOWER_UI_FAULT));
+-    assert(std::string(mowerConnection(live))=="状态未知");
++    assert(std::string(mowerConnection(live))=="Unknown");
+     assert(!(live.valid & (MOWER_UI_SOC|MOWER_UI_VOLTAGE|MOWER_UI_WALK_ACTUAL|MOWER_UI_BLADE_RPM)));
+     telemetryItems[6].old=false; telemetryItems[6].value=0x1C0;
+     mowerUiReadLive(live);
+@@ -361,7 +381,7 @@
+     assert((live.valid & (MOWER_UI_SOC|MOWER_UI_VOLTAGE|MOWER_UI_WALK_ACTUAL|MOWER_UI_BLADE_RPM)) ==
+         (MOWER_UI_SOC|MOWER_UI_VOLTAGE|MOWER_UI_WALK_ACTUAL|MOWER_UI_BLADE_RPM));
+     telemetryItems[6].value=0x30F;
+-    mowerUiReadLive(live); assert(std::string(mowerConnection(live))=="碰撞");
++    mowerUiReadLive(live); assert(std::string(mowerConnection(live))=="Collision");
+     g_model.telemetrySensors[7].id=0xE0; telemetryItems[7].available=true;
+     mowerUiReadLive(live); assert(!(live.valid & MOWER_UI_FAULT));
+     telemetryItems[7].available=false;
+@@ -426,20 +446,20 @@
+     fixture.valid |= MOWER_UI_HEIGHT_FEEDBACK;
+     resetDraw(); mowerUserRender(); saveScreen("home-online");
+     fixture.valid |= MOWER_UI_BAG_CONNECTION; fixture.bag_connected=false;
+-    resetDraw(); mowerUserRender(); saveScreen("bag-disconnected"); assert(has("草袋未连接"));
++    resetDraw(); mowerUserRender(); saveScreen("bag-disconnected"); assert(has("No bag"));
+     fixture.bag_connected=true; fixture.bag_command=1;
+-    resetDraw(); mowerUserRender(); saveScreen("bag-open"); assert(has("草袋开"));
++    resetDraw(); mowerUserRender(); saveScreen("bag-open"); assert(has("Bag opn"));
+     fixture.bag_command=2;
+-    resetDraw(); mowerUserRender(); saveScreen("bag-closed"); assert(has("草袋关"));
++    resetDraw(); mowerUserRender(); saveScreen("bag-closed"); assert(has("Bag cls"));
+     fixture.bag_command=0;
+-    resetDraw(); mowerUserRender(); saveScreen("bag-command-unknown"); assert(has("草袋--"));
++    resetDraw(); mowerUserRender(); saveScreen("bag-command-unknown"); assert(has("Bag --"));
+     fixture.bag_command=2; fixture.valid &= ~MOWER_UI_BAG_CONNECTION;
+-    resetDraw(); mowerUserRender(); saveScreen("bag-unknown"); assert(has("草袋未知"));
++    resetDraw(); mowerUserRender(); saveScreen("bag-unknown"); assert(has("Bag ?"));
+     fixture.telemetry_online=false; fixture.valid=0;
+     resetDraw(); mowerUserRender(); saveScreen("home-offline");
+-    assert(has("未连接") && has("--") && !has("100") && !has("高") && !has("开"));
++    assert(has("Offline") && has("--") && !has("100") && !has("HIGH") && !has("OPEN"));
+     fixture.telemetry_online=true; fixture.fast_status_known=false; fixture.valid=MOWER_UI_FAULT|MOWER_UI_SOC; fixture.fault_bits=0x30F;
+-    resetDraw(); mowerUserRender(); saveScreen("home-fault"); assert(has("碰撞"));
++    resetDraw(); mowerUserRender(); saveScreen("home-fault"); assert(has("Collision"));
+     mowerUserPage=MOWER_USER_MAINTENANCE;
+     resetDraw(); mowerUserRender(); saveScreen("maintenance");
+     mowerUserPage=MOWER_USER_DEBUG;
+@@ -447,7 +467,7 @@
+     for(unsigned first=0;first<MOWER_DEBUG_ROWS;first+=4) {
+       mowerDebugFirstRow=first > MOWER_DEBUG_ROWS-4 ? MOWER_DEBUG_ROWS-4 : first;
+       resetDraw(); mowerUserRender();
+-      sawBladeExpiry |= has("割刀反馈过期"); sawBladeCrc |= has("割刀校验异常"); sawFault |= has("!");
++      sawBladeExpiry |= has("Blade stale"); sawBladeCrc |= has("Blade CRC"); sawFault |= has("!");
+       std::string name="debug-"+std::to_string(first); saveScreen(name.c_str());
+     }
+     assert(sawBladeExpiry && sawBladeCrc && sawFault);
+@@ -469,34 +489,34 @@
+     // Startup lock precedes a pending BMS sample; no connection still stays offline.
+     const MowerUiSnapshot previousFixture=fixture;
+     fixture={}; fixture.telemetry_online=false;
+-    assert(std::string(mowerConnection(fixture))=="未连接");
++    assert(std::string(mowerConnection(fixture))=="Offline");
+     fixture.telemetry_online=true;
+-    assert(std::string(mowerConnection(fixture))=="状态未知");
++    assert(std::string(mowerConnection(fixture))=="Unknown");
+     fixture.valid=MOWER_UI_FAULT; fixture.fault_bits=0x440U;
+     fixture.fast_status_known=true;
+     fixture.fast_status=MOWER_FAST_VALID|MOWER_FAST_LOCKED|MOWER_FAST_FAULT;
+-    assert(std::string(mowerConnection(fixture))=="锁定");
++    assert(std::string(mowerConnection(fixture))=="Locked");
+     resetDraw(); mowerUserHome(fixture,true,fixture.fast_status); saveScreen("startup-locked-bms-pending");
+     fixture=previousFixture;
+     // Fast homepage state wins over conflicting slow diagnostic E0 values.
+     fixture.telemetry_online=true; fixture.fast_status_known=true;
+     fixture.fast_status=MOWER_FAST_VALID|MOWER_FAST_RUN; fixture.fault_bits=0x400U;
+-    assert(std::string(mowerConnection(fixture))=="已连接");
++    assert(std::string(mowerConnection(fixture))=="Online");
+     fixture.fast_status=MOWER_FAST_VALID|MOWER_FAST_LOCKED; fixture.fault_bits=0U;
+-    assert(std::string(mowerConnection(fixture))=="锁定");
++    assert(std::string(mowerConnection(fixture))=="Locked");
+     fixture.fast_status=MOWER_FAST_VALID|MOWER_FAST_COLLISION;
+-    assert(std::string(mowerConnection(fixture))=="碰撞");
++    assert(std::string(mowerConnection(fixture))=="Collision");
+     fixture.fast_status=MOWER_FAST_VALID|MOWER_FAST_LOCKED|0x8000U;
+     fixture.fault_bits=0U; // E0 may not have reached the transmitter yet.
+-    assert(std::string(mowerConnection(fixture))=="急停");
++    assert(std::string(mowerConnection(fixture))=="E-STOP");
+     resetDraw(); mowerUserHome(fixture,true,fixture.fast_status); saveScreen("status-estop-fast");
+     fixture.fast_status|=MOWER_FAST_COLLISION;
+-    assert(std::string(mowerConnection(fixture))=="碰撞");
++    assert(std::string(mowerConnection(fixture))=="Collision");
+     fixture.fast_status=MOWER_FAST_VALID|MOWER_FAST_RUN;
+     fixture.fault_bits=0x403U; // Old E0 cannot resurrect either released cause.
+-    assert(std::string(mowerConnection(fixture))=="已连接");
++    assert(std::string(mowerConnection(fixture))=="Online");
+     fixture.fast_status=MOWER_FAST_VALID|MOWER_FAST_LOCKED;
+-    assert(std::string(mowerConnection(fixture))=="锁定");
++    assert(std::string(mowerConnection(fixture))=="Locked");
+     fixture.fast_status_known=false;
+     // Wheel expiry is data validity, not a user alarm. Other faults still alarm.
+     fixture={}; fixture.telemetry_online=true; fixture.valid=MOWER_UI_FAULT;
+@@ -504,20 +524,20 @@
+     resetDraw(); mowerUserHome(fixture,false,0);
+     uint8_t healthyPixels[64][128]; memcpy(healthyPixels,pixels,sizeof(pixels));
+     fixture.fault_bits=0x80U;
+-    assert(std::string(mowerConnection(fixture))=="已连接");
++    assert(std::string(mowerConnection(fixture))=="Online");
+     resetDraw(); mowerUserHome(fixture,false,0);
+-    assert(has("已连接") && !has("报错") && !memcmp(healthyPixels,pixels,sizeof(pixels)));
++    assert(has("Online") && !has("Fault") && !memcmp(healthyPixels,pixels,sizeof(pixels)));
+     for(unsigned bit=0;bit<10;++bit) {
+       const unsigned mask=1U<<bit;
+       if(mask==0x80U) continue;
+       fixture.fault_bits=0x80U|mask;
+-      assert(std::string(mowerConnection(fixture))==(mask==1U ? "急停" : mask==2U ? "碰撞" : mask==0x40U ? "已连接" : "报错"));
++      assert(std::string(mowerConnection(fixture))==(mask==1U ? "E-STOP" : mask==2U ? "Collision" : mask==0x40U ? "Online" : "Fault"));
+     }
+     fixture.fault_bits=0x80U;
+     resetDraw();
+     for(unsigned row=0;row<MOWER_DEBUG_ROWS;++row)
+       mowerUserDebugRow(row,12,fixture,false,0);
+-    assert(!has("轮速反馈过期") && has("割刀反馈过期") && has("系统锁定"));
++    assert(!has("Wheel stale") && has("Blade stale") && has("System locked"));
+     assert(has("0x0080")); // raw diagnostic retained
+ 
+     // Restored home battery row; pack voltage remains on the debug page.
+@@ -527,31 +547,31 @@
+     fixture.battery_min_mv=2930; fixture.battery_reasons=4;
+     fixture.radio_battery_100mv=78;
+     resetDraw(); mowerUserHome(fixture,false,0);
+-    assert(hasAt("车",0,12) && hasAt("100%",12,12) && hasAt("遥",48,12) && hasAt("7.8V",60,12));
+-    assert(!has("BMS估算") && !has("保护已标定") && !has("保护待标定") && !has("保护未知") && !has("52.00V"));
++    assert(hasAt("CAR",0,12) && hasAt("100%",24,12) && hasAt("TX",54,12) && hasAt("7.8V",72,12));
++    assert(!has("BMS estimate") && !has("Protection calibrated") && !has("Protection uncalibrated") && !has("Protection unknown") && !has("52.00V"));
+     saveScreen("battery-home-restored");
+     resetDraw(); mowerUserDebugRow(1,12,fixture,false,0); assert(has("52.00V"));
+     fixture.soc_percent=29; fixture.voltage_centivolts=4700;
+     fixture.fault_bits=MOWER_BATTERY_WARNING|MOWER_BATTERY_BLADE_INHIBIT;
+     resetDraw(); mowerUserHome(fixture,false,0);
+-    assert(has("请充电") && has("29%") && !has("47.00V")); saveScreen("battery-low");
++    assert(has("Charge") && has("29%") && !has("47.00V")); saveScreen("battery-low");
+     resetDraw(); mowerUserDebugRow(25,12,fixture,false,0);
+     mowerUserDebugRow(26,24,fixture,false,0);
+-    assert(has("2.930V") && has("电压过低"));
++    assert(has("2.930V") && has("Low volt"));
+     fixture.battery_reasons=0x20;
+-    resetDraw(); mowerUserDebugRow(26,24,fixture,false,0); assert(has("电量过低"));
++    resetDraw(); mowerUserDebugRow(26,24,fixture,false,0); assert(has("Low SOC"));
+     fixture.valid &= ~(MOWER_UI_SOC|MOWER_UI_VOLTAGE|MOWER_UI_BATTERY_MIN);
+     fixture.fault_bits=0x40U;
+     resetDraw(); mowerUserHome(fixture,false,0);
+-    assert(has("已连接") && has("--%") && !has("电池异常") && !has("请充电") && !has("29%")); saveScreen("battery-invalid");
++    assert(has("Online") && has("--%") && !has("Battery fault") && !has("Charge") && !has("29%")); saveScreen("battery-invalid");
+     fixture.battery_reasons=1;
+     resetDraw(); mowerUserDebugRow(21,12,fixture,false,0);
+     mowerUserDebugRow(26,24,fixture,false,0);
+-    assert(has("电池反馈异常") && has("!") && has("数据失效"));
++    assert(has("Battery feedback") && has("!") && has("Data stale"));
+     saveScreen("battery-invalid-debug");
+     fixture.fault_bits=MOWER_BATTERY_WARNING|MOWER_BATTERY_BLADE_INHIBIT|0x40U;
+     resetDraw(); mowerUserHome(fixture,false,0);
+-    assert(has("请充电") && has("--%")); // Confirmed LOW survives lost BMS feedback.
++    assert(has("Charge") && has("--%")); // Confirmed LOW survives lost BMS feedback.
+ 
+     authority=mower_auth_pack(MOWER_AUTH_LOW,false,60U);
+     runtime=MOWER_FAST_VALID|MOWER_FAST_RUN;known=true;mowerExp3Initialized=false;
+@@ -561,7 +581,7 @@
+     assert(mowerExp3Step(EVT_KEY_BREAK(KEY_ENTER))==EXP3_UI_BATTERY_LOW && submissions==count);
+     mowerExp3DisplayState=EXP3_UI_BATTERY_LOW;resetDraw();mowerUserRender();saveScreen("battery-start-denied");
+     // Every modal keeps the complete header and clears whole background rows.
+-    // Centering expectations use the approved 11px CJK / 6px ASCII dimensions.
++    // Centering expectations use the approved 6px ASCII dimensions.
+     mowerExp3Probe.cancel_pending=false; mowerExp3Probe.state=EXP3_UI_IDLE;
+     mowerExp3CancelFailed=false;
+     for(bool unlock:{false,true}) {
+@@ -574,11 +594,11 @@
+         assert(!memcmp(headerPixels,pixels,sizeof(headerPixels)));
+         if(state==EXP3_UI_PROMPT) assertModalBodyClean();
+         if(state==EXP3_UI_PROMPT) {
+-          assert(hasAt(unlock ? "是否解锁" : "确认启动割刀",unlock ? 42 : 31,20));
+-          assert(hasAt("按OK确认",41,34));
++          assert(hasAt(unlock ? "Unlock?" : "Start blade?",unlock ? 43 : 28,20));
++          assert(hasAt("Press OK",40,34));
+         }
+-        if(state==EXP3_UI_TIMEOUT) assert(hasAt("无回执",47,52));
+-        if(state==EXP3_UI_UNBOUND) assert(!has("链路未就绪"));
++        if(state==EXP3_UI_TIMEOUT) assert(hasAt("No reply",40,52));
++        if(state==EXP3_UI_UNBOUND) assert(!has("Link not ready"));
+       }
+     }
+ 
+@@ -603,7 +623,7 @@
+     for(unsigned i=0;i<6U;++i){
+       resetDraw();mowerExp3Overlay(phaseStates[i]);
+       if(phaseStates[i]==EXP3_UI_STICKS_REQUIRED || phaseStates[i]==EXP3_UI_CENTER_REQUIRED) {
+-        assert(!has("行走摇杆请回中") && !has("CH4请回中"));
++        assert(!has("Center sticks") && !has("Center CH4"));
+       }
+       saveScreen(phaseNames[i]);
+     }
+@@ -623,6 +643,29 @@
+     mowerUserPage=MOWER_USER_MAINTENANCE;
+     menuMainView(0);
+     assert(mowerUserPage==MOWER_USER_MAINTENANCE);
++    // Every DEBUG row, all fault indicators and the wire-format maxima fit.
++    fixture={};fixture.telemetry_online=true;fixture.valid=0xffffU;
++    fixture.soc_percent=100;fixture.voltage_centivolts=65535;
++    fixture.walk_actual_cms=65535;fixture.blade_actual_rpm=65535;
++    fixture.height_deci_cm=127;fixture.battery_min_mv=65535;
++    fixture.radio_battery_100mv=255;fixture.radio_quality=255;
++    fixture.fault_bits=0xffffU;fixture.battery_reasons=1;
++    fixture.bag_connected=true;fixture.bag_full=true;fixture.bag_command=1;
++    mowerUserPage=MOWER_USER_HOME;mowerExp3DisplayState=EXP3_UI_IDLE;
++    resetDraw();mowerUserHome(fixture,true,15);saveScreen("home-max-values");
++    for(unsigned row=0;row<MOWER_DEBUG_ROWS;++row) {
++      resetDraw();mowerUserDebugRow(row,12,fixture,true,15);
++      const std::string name="debug-row-"+std::to_string(row);saveScreen(name.c_str());
++    }
++    for(auto state:{EXP3_UI_BATTERY_LOW,EXP3_UI_SAFETY,EXP3_UI_OWNER,
++                    EXP3_UI_TIMEOUT,EXP3_UI_REJECTED}) {
++      for(bool unlock:{false,true}) {
++        mowerUnlockDisplay=unlock;resetDraw();mowerUserHome(fixture,true,15);
++        mowerExp3Overlay(state);
++        const std::string name="notice-"+std::to_string(state)+(unlock ? "-unlock" : "-blade");
++        saveScreen(name.c_str());
++      }
++    }
+     puts("PASS profile-3 actual GUI: arbitrary controller token, early OK, explicit rejection, ACK+runtime success, independent blade, no 2s hide; home/debug/router/glyph/pixel checks");
+ }
+ '''
+@@ -643,6 +686,13 @@
+         if(*p < 128) width+=6;
+         else if((*p & 0xC0) != 0x80) width+=11;
+     assert(x>=0 && x+width<=128 && y>=0 && y+12<=64);
++    // Missing glyphs must fail even though the firmware renderer skips them.
++    for(const unsigned char *p=reinterpret_cast<const unsigned char *>(value);*p;++p) {
++        assert(*p>=32 && *p<127);
++        bool found=false;
++        for(const auto &glyph:mowerZhGlyphs) if(glyph.code==*p) found=true;
++        assert(found);
++    }
+     return mowerZhDraw(x,y,value,inverse);
+ }
+ '''
+@@ -676,4 +726,4 @@
+         '-DPCBI6X=1','-DPCBI6X_MOWER_UI_SHELL=1','-DPCBI6X_MOWER_BLADE_OK=1',
+         '-DEXP3_ENABLED=1','-DMOWER_BLADE_OK_ENABLED=1',str(cpp),*objects,'-o',str(work/'ui')],check=True)
+     subprocess.run([str(work/'ui')],check=True)
+-print('PASS Chinese production UI, live provider, actual main-view route, CH9/CH6 boundaries, scrolling and pixel bounds: UNKNOWN inhibits OK; explicit completion, context/token isolation, late matching receipt, runtime home')
++print('PASS English production UI, live provider, actual main-view route, CH9/CH6 boundaries, scrolling and pixel bounds: UNKNOWN inhibits OK; explicit completion, context/token isolation, late matching receipt, runtime home')

@@ -160,13 +160,8 @@ static bool FlySkyIbusServo_MappedChannelsValid(
 static void FlySkyIbusServo_Publish(FlySkyIbusServo_t *ibus,
                                     const FlySkyIbusSnapshot_t *snapshot)
 {
-    uint8_t next = (uint8_t)(ibus->active_snapshot ^ 1U);
-
-    ibus->snapshots[next] = *snapshot;
-    ibus->publication_sequence++;
-    ibus->active_snapshot = next;
+    ibus->snapshot = *snapshot;
     ibus->snapshot_available = 1U;
-    ibus->publication_sequence++;
 }
 
 static void FlySkyIbusServo_UpdateStableState(FlySkyIbusServo_t *ibus,
@@ -186,20 +181,52 @@ static void FlySkyIbusServo_BreakStabilityStreak(FlySkyIbusServo_t *ibus)
 {
     FlySkyIbusSnapshot_t snapshot;
 
+    /* The streak admits a new link. Once admitted, rejected bytes do not
+     * renew freshness; the valid-frame watchdog decides when it goes offline. */
+    if ((ibus->snapshot_available != 0U) &&
+        ibus->snapshot.stable_online && (ibus->timed_out == 0U))
+    {
+        return;
+    }
     ibus->consecutive_valid_frames = 0U;
     ibus->stability_started_ms = 0U;
     if ((ibus->snapshot_available != 0U) &&
-        !ibus->snapshots[ibus->active_snapshot].stable_online)
+        !ibus->snapshot.stable_online)
     {
-        snapshot = ibus->snapshots[ibus->active_snapshot];
+        snapshot = ibus->snapshot;
         snapshot.stable_online = false;
         FlySkyIbusServo_Publish(ibus, &snapshot);
     }
 }
 
+#if MOWER_BLADE_OK_ENABLED
+static void FlySkyIbusServo_TrackCh5(FlySkyIbusServo_t *ibus,
+                                    FlySkyIbusSnapshot_t *snapshot)
+{
+    const uint16_t raw = snapshot->run_enable_raw;
+    const uint16_t low = ibus->config.run_enable_off_us;
+    const uint16_t high = ibus->config.run_enable_on_us;
+    const uint16_t low_diff = raw > low ? raw - low : low - raw;
+    const uint16_t high_diff = raw > high ? raw - high : high - raw;
+    uint8_t position = 0U; /* Unknown, low, high. Unknown also fails closed. */
+
+    if (ibus->config.run_enable_semantics_configured)
+    {
+        if (low_diff <= ibus->config.switch_position_tolerance_us)
+            position = 1U;
+        else if (high_diff <= ibus->config.switch_position_tolerance_us)
+            position = 2U;
+    }
+    if (ibus->ch5_baseline_valid && position != ibus->ch5_position)
+        ++snapshot->ch5_stop_sequence;
+    ibus->ch5_position = position;
+    ibus->ch5_baseline_valid = true;
+}
+#endif
+
 static bool FlySkyIbusServo_HandleFrame(FlySkyIbusServo_t *ibus,
                                         const uint8_t *frame,
-                                        uint32_t now_ms)
+                                        uint32_t received_at_ms, uint32_t now_ms)
 {
     FlySkyIbusSnapshot_t snapshot;
     uint16_t channels[REMOTE_IBUS_CHANNEL_COUNT];
@@ -208,21 +235,26 @@ static bool FlySkyIbusServo_HandleFrame(FlySkyIbusServo_t *ibus,
         (frame[1] != IBUS_COMMAND_BYTE) ||
         !FlySkyIbusServo_ChecksumValid(frame))
     {
+        if (ibus->crc_errors != UINT32_MAX) ++ibus->crc_errors;
         return false;
     }
 
     FlySkyIbusServo_Decode(frame, channels);
     if (!FlySkyIbusServo_MappedChannelsValid(ibus, channels))
     {
+        if (ibus->invalid_channel_frames != UINT32_MAX) ++ibus->invalid_channel_frames;
         return false;
     }
 #if EXP3_ENABLED
+    /* Authorization/session deadlines stay on the current processing clock. */
     exp3_board_channels(now_ms, channels[3], channels[10], channels[11]);
+#else
+    (void)now_ms;
 #endif
 
     if (ibus->snapshot_available != 0U)
     {
-        snapshot = ibus->snapshots[ibus->active_snapshot];
+        snapshot = ibus->snapshot;
     }
     else
     {
@@ -246,6 +278,9 @@ static bool FlySkyIbusServo_HandleFrame(FlySkyIbusServo_t *ibus,
     snapshot.grass_bag_raw = channels[ibus->config.grass_bag_index];
     snapshot.grass_bag_configured = ibus->config.grass_bag_semantics_configured;
     snapshot.run_enable_raw = channels[ibus->config.run_enable_index];
+#if MOWER_BLADE_OK_ENABLED
+    FlySkyIbusServo_TrackCh5(ibus, &snapshot);
+#endif
     snapshot.blade_gear_raw = channels[ibus->config.blade_gear_index];
     snapshot.unlock_raw = channels[ibus->config.unlock_index];
     snapshot.blade_height_raw = channels[ibus->config.blade_height_index];
@@ -262,12 +297,12 @@ static bool FlySkyIbusServo_HandleFrame(FlySkyIbusServo_t *ibus,
         ibus->config.travel_speed_semantics_configured;
     snapshot.link_fresh = true;
     snapshot.timeout_latched = snapshot.timeout_latched || (ibus->timed_out != 0U);
-    snapshot.last_valid_ms = now_ms;
+    snapshot.last_valid_ms = received_at_ms;
     snapshot.frame_sequence++;
 
     if ((ibus->consecutive_valid_frames == 0U) || (ibus->timed_out != 0U))
     {
-        ibus->stability_started_ms = now_ms;
+        ibus->stability_started_ms = received_at_ms;
         ibus->consecutive_valid_frames = 1U;
         snapshot.stable_online = false;
     }
@@ -276,7 +311,7 @@ static bool FlySkyIbusServo_HandleFrame(FlySkyIbusServo_t *ibus,
         ibus->consecutive_valid_frames++;
     }
     ibus->timed_out = 0U;
-    FlySkyIbusServo_UpdateStableState(ibus, &snapshot, now_ms);
+    FlySkyIbusServo_UpdateStableState(ibus, &snapshot, received_at_ms);
     FlySkyIbusServo_Publish(ibus, &snapshot);
     return true;
 }
@@ -286,6 +321,8 @@ static void FlySkyIbusServo_DiscardFirstByte(FlySkyIbusServo_t *ibus)
     if (ibus->stream_count > 1U)
     {
         memmove(ibus->stream, &ibus->stream[1], (size_t)(ibus->stream_count - 1U));
+        memmove(ibus->stream_received_ms, &ibus->stream_received_ms[1],
+                (size_t)(ibus->stream_count - 1U) * sizeof(ibus->stream_received_ms[0]));
     }
     if (ibus->stream_count != 0U)
     {
@@ -293,8 +330,7 @@ static void FlySkyIbusServo_DiscardFirstByte(FlySkyIbusServo_t *ibus)
     }
 }
 
-static void FlySkyIbusServo_ProcessStream(FlySkyIbusServo_t *ibus,
-                                          uint32_t now_ms)
+static void FlySkyIbusServo_ProcessStream(FlySkyIbusServo_t *ibus, uint32_t now_ms)
 {
     for (;;)
     {
@@ -318,7 +354,8 @@ static void FlySkyIbusServo_ProcessStream(FlySkyIbusServo_t *ibus,
         {
             return;
         }
-        if (FlySkyIbusServo_HandleFrame(ibus, ibus->stream, now_ms))
+        if (FlySkyIbusServo_HandleFrame(ibus, ibus->stream,
+                ibus->stream_received_ms[REMOTE_IBUS_FRAME_SIZE - 1U], now_ms))
         {
             ibus->stream_count = 0U;
             return;
@@ -415,31 +452,41 @@ void FlySkyIbusServo_Init(FlySkyIbusServo_t *ibus, const FlySkyIbusConfig_t *con
     ibus->config = selected;
 }
 
-void FlySkyIbusServo_Feed(FlySkyIbusServo_t *ibus,
-                          const uint8_t *data,
-                          uint16_t length,
-                          uint32_t now_ms)
+bool FlySkyIbusServo_ExpireStream(FlySkyIbusServo_t *ibus, uint32_t now_ms)
 {
-    uint16_t i;
-
-    if ((ibus == NULL) || (data == NULL))
+    if (ibus != NULL && ibus->stream_count != 0U &&
+        (uint32_t)(now_ms - ibus->stream_received_ms[0]) >= ibus->config.timeout_ms)
     {
-        return;
+        FlySkyIbusServo_ResetStream(ibus);
+        return true;
     }
+    return false;
+}
 
-    for (i = 0U; i < length; i++)
+void FlySkyIbusServo_FeedReceived(FlySkyIbusServo_t *ibus, const uint8_t *data,
+                                 uint16_t length, uint32_t received_at_ms, uint32_t now_ms)
+{
+    if (ibus == NULL || data == NULL) return;
+    (void)FlySkyIbusServo_ExpireStream(ibus, now_ms);
+    if ((uint32_t)(now_ms - received_at_ms) >= ibus->config.timeout_ms) return;
+    for (uint16_t i = 0U; i < length; ++i)
     {
         if (ibus->stream_count == REMOTE_IBUS_FRAME_SIZE)
         {
             FlySkyIbusServo_ProcessStream(ibus, now_ms);
             if (ibus->stream_count == REMOTE_IBUS_FRAME_SIZE)
-            {
                 FlySkyIbusServo_DiscardFirstByte(ibus);
-            }
         }
+        ibus->stream_received_ms[ibus->stream_count] = received_at_ms;
         ibus->stream[ibus->stream_count++] = data[i];
         FlySkyIbusServo_ProcessStream(ibus, now_ms);
     }
+}
+
+void FlySkyIbusServo_Feed(FlySkyIbusServo_t *ibus, const uint8_t *data,
+                          uint16_t length, uint32_t now_ms)
+{
+    FlySkyIbusServo_FeedReceived(ibus, data, length, now_ms, now_ms);
 }
 
 void FlySkyIbusServo_Advance(FlySkyIbusServo_t *ibus, uint32_t now_ms)
@@ -451,7 +498,7 @@ void FlySkyIbusServo_Advance(FlySkyIbusServo_t *ibus, uint32_t now_ms)
         return;
     }
 
-    snapshot = ibus->snapshots[ibus->active_snapshot];
+    snapshot = ibus->snapshot;
     if (snapshot.link_fresh &&
         ((uint32_t)(now_ms - snapshot.last_valid_ms) >= ibus->config.timeout_ms))
     {
@@ -464,13 +511,14 @@ void FlySkyIbusServo_Advance(FlySkyIbusServo_t *ibus, uint32_t now_ms)
         snapshot.travel_speed_raw = 0U;
         ibus->consecutive_valid_frames = 0U;
         ibus->timed_out = 1U;
+        ibus->ch5_baseline_valid = false;
         FlySkyIbusServo_Publish(ibus, &snapshot);
         return;
     }
 
-    FlySkyIbusServo_UpdateStableState(ibus, &snapshot, now_ms);
+    FlySkyIbusServo_UpdateStableState(ibus, &snapshot, snapshot.last_valid_ms);
     if (snapshot.stable_online !=
-        ibus->snapshots[ibus->active_snapshot].stable_online)
+        ibus->snapshot.stable_online)
     {
         FlySkyIbusServo_Publish(ibus, &snapshot);
     }
@@ -481,33 +529,19 @@ void FlySkyIbusServo_ResetStream(FlySkyIbusServo_t *ibus)
     if (ibus != NULL)
     {
         ibus->stream_count = 0U;
+        FlySkyIbusServo_BreakStabilityStreak(ibus);
     }
 }
 
 bool FlySkyIbusServo_ReadSnapshot(const FlySkyIbusServo_t *ibus,
                                   FlySkyIbusSnapshot_t *snapshot)
 {
-    uint32_t sequence_before;
-    uint32_t sequence_after;
-    uint8_t active;
-
     if ((ibus == NULL) || (snapshot == NULL) || (ibus->snapshot_available == 0U))
     {
         return false;
     }
 
-    do
-    {
-        sequence_before = ibus->publication_sequence;
-        if ((sequence_before & 1U) != 0U)
-        {
-            continue;
-        }
-        active = ibus->active_snapshot;
-        *snapshot = ibus->snapshots[active];
-        sequence_after = ibus->publication_sequence;
-    } while ((sequence_before != sequence_after) ||
-             ((sequence_after & 1U) != 0U));
+    *snapshot = ibus->snapshot;
     return true;
 }
 

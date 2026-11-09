@@ -1,0 +1,7 @@
+PASS local ELF/BIN correspondence and Python-capable ARM GDB preflight
+PASS actual ARM ELF/GDB Python capture success; memory/RPC simulated; CPU recovery checked
+PASS actual ARM ELF/GDB Python capture flash; memory/RPC simulated; CPU recovery checked
+PASS actual ARM ELF/GDB Python capture sram; memory/RPC simulated; CPU recovery checked
+PASS actual ARM ELF/GDB Python capture odd; memory/RPC simulated; CPU recovery checked
+PASS actual ARM ELF/GDB Python capture unlocked; memory/RPC simulated; CPU recovery checked
+PASS actual ARM ELF/GDB Python capture boot; memory/RPC simulated; CPU recovery checked

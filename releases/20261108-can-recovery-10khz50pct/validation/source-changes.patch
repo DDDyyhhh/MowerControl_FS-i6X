@@ -1,0 +1,1070 @@
+Index: control_chassis/CONTEXT.md
+===================================================================
+--- control_chassis/CONTEXT.md	(版本 109)
++++ control_chassis/CONTEXT.md	(工作副本)
+@@ -187,4 +187,4 @@
+ 
+ ## 11. 推杆占空比与发布
+ 
+-`Core/UserDev/lifter.c`中刀盘升降和草袋开合运行占空比均为60%，正反转及升降归位共用该值，停止0%。草袋使用TIM2 CH3/CH4，升降使用TIM3 CH3/CH4，两定时器均为10kHz：84MHz输入、PSC=0、ARR=8399，60%比较值5040。CubeMX `concrol.ioc`保持一致。48V母线下理想平均输出约28.8V；机械计时、高度时间表及上升补偿沿用原值，实际速度和行程需现场确认。有效i-BUS帧超时仍默认300ms。当前双端交付见[10kHz/60%推杆发布说明](../docs/releases/actuator-10khz-60pct-ibus300ms-dual.md)。
++`Core/UserDev/lifter.c`中刀盘升降和草袋开合运行占空比均为50%，正反转及升降归位共用该值，停止0%。草袋使用TIM2 CH3/CH4，10kHz（84MHz输入、PSC=0、ARR=8399，50%比较值4200）；升降使用TIM3 CH3/CH4，10kHz（84MHz输入、PSC=0、ARR=8399，50%比较值4200）。两路推杆启动时由`lifter.c`软启动：400ms内从10%线性升到目标占空比，升速期间高度积分按实际占空比折算，任何停止立即清零。CubeMX `concrol.ioc`保持一致。48V母线下理想平均输出约24V；机械计时、高度时间表及上升补偿沿用原值，实际速度和行程需现场确认。有效i-BUS帧超时仍默认300ms。当前升降15kHz交付见[升降15kHz／60%发布说明](../docs/releases/lifter-15khz-r109.md)；原双端10kHz版本见[10kHz/60%推杆发布说明](../docs/releases/actuator-10khz-60pct-ibus300ms-dual.md)。
+Index: control_chassis/Core/Inc/blade_motor_config.h
+===================================================================
+--- control_chassis/Core/Inc/blade_motor_config.h	(版本 109)
++++ control_chassis/Core/Inc/blade_motor_config.h	(工作副本)
+@@ -36,6 +36,13 @@
+ #define BLADE_FTESC_ERPM_LEVEL_2  15000.0f
+ #define BLADE_FTESC_ERPM_LEVEL_3  16000.0f
+ #define BLADE_FTESC_KEEPALIVE_MS  200U
++/* Wire sign only: callers keep using positive ERPM as "run" intent. */
++#ifndef BLADE_FTESC_ERPM_DIRECTION
++#define BLADE_FTESC_ERPM_DIRECTION  (-1)
++#endif
++#if (BLADE_FTESC_ERPM_DIRECTION != 1) && (BLADE_FTESC_ERPM_DIRECTION != -1)
++#error "BLADE_FTESC_ERPM_DIRECTION must be 1 or -1"
++#endif
+ 
+ /* FTESC protocol settings. Change the ID to match ESC Tool configuration. */
+ #define FLIPSKY_ESC_ID                  154U
+Index: control_chassis/Core/Inc/can_tx_port.h
+===================================================================
+--- control_chassis/Core/Inc/can_tx_port.h	(版本 109)
++++ control_chassis/Core/Inc/can_tx_port.h	(工作副本)
+@@ -20,4 +20,5 @@
+ CAN_TxPortResult_t CAN_TxPort_Poll(uint8_t mailbox);
+ void CAN_TxPort_Abort(uint8_t mailbox);
+ uint32_t CAN_TxPort_GetError(void);
++bool CAN_TxPort_IsBusOff(void);
+ #endif
+Index: control_chassis/Core/Inc/can_tx_scheduler.h
+===================================================================
+--- control_chassis/Core/Inc/can_tx_scheduler.h	(版本 109)
++++ control_chassis/Core/Inc/can_tx_scheduler.h	(工作副本)
+@@ -6,6 +6,8 @@
+ 
+ #define CAN_BLADE_TX_ATTEMPT_TIMEOUT_MS 20U
+ #define CAN_BLADE_COMMAND_MAX_AGE_MS 250U
++/* Wheel/telemetry mailboxes: an unsent frame is stale; fresher intent replaces it. */
++#define CAN_GENERAL_TX_ATTEMPT_TIMEOUT_MS 20U
+ 
+ typedef struct
+ {
+@@ -59,4 +61,6 @@
+ extern volatile uint32_t g_can_speed_query_expired;
+ extern volatile uint32_t g_can_error_code;
+ extern volatile uint32_t g_can_tx_enqueue_failures;
++/* Bus-off entries since boot; hardware rejoins automatically (ABOM). */
++extern volatile uint32_t g_can_bus_off_events;
+ #endif
+Index: control_chassis/Core/Src/can.c
+===================================================================
+--- control_chassis/Core/Src/can.c	(版本 109)
++++ control_chassis/Core/Src/can.c	(工作副本)
+@@ -44,7 +44,7 @@
+   hcan1.Init.TimeSeg1 = CAN_BS1_9TQ;
+   hcan1.Init.TimeSeg2 = CAN_BS2_4TQ;
+   hcan1.Init.TimeTriggeredMode = DISABLE;
+-  hcan1.Init.AutoBusOff = DISABLE;
++  hcan1.Init.AutoBusOff = ENABLE;
+   hcan1.Init.AutoWakeUp = DISABLE;
+   hcan1.Init.AutoRetransmission = DISABLE;
+   hcan1.Init.ReceiveFifoLocked = DISABLE;
+Index: control_chassis/Core/UserDev/can_tx_port.c
+===================================================================
+--- control_chassis/Core/UserDev/can_tx_port.c	(版本 109)
++++ control_chassis/Core/UserDev/can_tx_port.c	(工作副本)
+@@ -61,6 +61,11 @@
+     }
+ }
+ 
++bool CAN_TxPort_IsBusOff(void)
++{
++    return (hcan1.Instance->ESR & CAN_ESR_BOFF) != 0U;
++}
++
+ uint32_t CAN_TxPort_GetError(void)
+ {
+     return HAL_CAN_GetError(&hcan1);
+Index: control_chassis/Core/UserDev/can_tx_scheduler.c
+===================================================================
+--- control_chassis/Core/UserDev/can_tx_scheduler.c	(版本 109)
++++ control_chassis/Core/UserDev/can_tx_scheduler.c	(工作副本)
+@@ -12,6 +12,8 @@
+ volatile uint32_t g_can_tx_mailbox_busy = 0;
+ volatile uint32_t g_can_speed_query_expired = 0;
+ volatile uint32_t g_can_error_code = 0;
++volatile uint32_t g_can_bus_off_events = 0;
++static bool g_can_was_bus_off;
+ static CAN_TxMsg_t g_speed_queries[5];
+ static uint8_t g_speed_query_pending[5];
+ static uint8_t g_speed_query_cursor = 1U;
+@@ -71,6 +73,8 @@
+     g_can_tx_mailbox_busy = 0U;
+     g_can_speed_query_expired = 0U;
+     g_can_error_code = 0U;
++    g_can_bus_off_events = 0U;
++    g_can_was_bus_off = false;
+ }
+ 
+ static bool CAN_IsBladeControlId(uint32_t id)
+@@ -362,6 +366,29 @@
+     taskEXIT_CRITICAL();
+ }
+ 
++/* Without this a frame queued before bus-off could go out after the rejoin. */
++static void CAN_ServiceGeneralAbort(void)
++{
++    uint8_t mailbox;
++    taskENTER_CRITICAL();
++    for (mailbox = 0U; mailbox < 2U; ++mailbox) {
++        CAN_MailboxOwner_t *owner = &g_mailboxes[mailbox];
++        if (owner->active && !owner->abort_requested &&
++            (uint32_t)(HAL_GetTick() - owner->submitted_at_ms) > CAN_GENERAL_TX_ATTEMPT_TIMEOUT_MS) {
++            CAN_TxPort_Abort(mailbox);
++            owner->abort_requested = true;
++        }
++    }
++    taskEXIT_CRITICAL();
++}
++
++static void CAN_TrackBusOff(void)
++{
++    bool bus_off = CAN_TxPort_IsBusOff();
++    if (bus_off && !g_can_was_bus_off) ++g_can_bus_off_events;
++    g_can_was_bus_off = bus_off;
++}
++
+ static bool CAN_SubmitBlade(void)
+ {
+     bool submitted = false;
+@@ -402,8 +429,10 @@
+     uint8_t mailbox, category = 0U;
+     bool submitted;
+     g_can_error_code = CAN_TxPort_GetError();
++    CAN_TrackBusOff();
+     for (mailbox = 0U; mailbox < 3U; ++mailbox) CAN_SettleMailbox(mailbox);
+     CAN_ServiceBladeAbort();
++    CAN_ServiceGeneralAbort();
+     if (CAN_SubmitBlade()) return true;
+     for (mailbox = 0U; mailbox < 2U; ++mailbox) {
+         if (!g_mailboxes[mailbox].active && CAN_TxPort_IsEmpty(mailbox)) break;
+@@ -423,6 +452,7 @@
+         g_mailboxes[mailbox].generation = ++g_generation;
+         g_mailboxes[mailbox].submitted_at_ms = HAL_GetTick();
+         g_mailboxes[mailbox].category = category;
++        g_mailboxes[mailbox].abort_requested = false;
+         g_mailboxes[mailbox].active = true;
+         taskEXIT_CRITICAL();
+     } else {
+Index: control_chassis/Core/UserDev/flipsky_can.c
+===================================================================
+--- control_chassis/Core/UserDev/flipsky_can.c	(版本 109)
++++ control_chassis/Core/UserDev/flipsky_can.c	(工作副本)
+@@ -289,7 +289,7 @@
+     }
+ 
+     // ERPM 为直接的整数，不需要乘以 1000000！
+-    scaled_erpm = (int32_t)erpm;
++    scaled_erpm = (int32_t)erpm * BLADE_FTESC_ERPM_DIRECTION;
+ 
+     // 1. 写入 4 字节大端序 ERPM 数值
+     Flipsky_WriteI32BE(data, scaled_erpm);
+Index: control_chassis/Core/UserDev/lifter.c
+===================================================================
+--- control_chassis/Core/UserDev/lifter.c	(版本 109)
++++ control_chassis/Core/UserDev/lifter.c	(工作副本)
+@@ -47,10 +47,10 @@
+ // =================================================================
+ // 2. 核心参数与数据表
+ // =================================================================
+-// 推杆10kHz/60%PWM版：48V母线下约为28.8V平均输出，脉冲幅度仍接近母线电压。
+-// 高度时间表、归位时间与草袋动作时长暂沿用旧值，待10kHz/60%PWM运行实测后重新标定。
++// 推杆10kHz/50%PWM版（草袋TIM2、高度TIM3）：48V母线下约为24V平均输出，脉冲幅度仍接近母线电压。
++// 高度时间表、归位时间与草袋动作时长暂沿用旧值，待10kHz/50%PWM运行实测后重新标定。
+ // --- 刀盘高度参数 ---
+-#define LIFTER_SPEED 60.0f      // 刀盘升降PWM占空比 (%)
++#define LIFTER_SPEED 50.0f      // 刀盘升降PWM占空比 (%)
+ #define HOMING_TIMEOUT_MS 10000U // 每次最高档归位完整上升10秒
+ #define DEAD_BAND_MS 100        // 死区：误差小于100ms(约2mm)认为到位
+ 
+@@ -60,7 +60,7 @@
+ #define UP_SPEED_FACTOR 0.80f
+ 
+ // --- 草袋开合参数 ---
+-#define GRASS_BAG_SPEED 60.0f      // 草袋开合PWM占空比 (%)
++#define GRASS_BAG_SPEED 50.0f      // 草袋开合PWM占空比 (%)
+ /* Run time is shared with the deterministic grass bag actuator model. */
+ 
+ // --- 【核心】实测数据点 (时间 ms -> 高度 cm) ---
+@@ -132,6 +132,52 @@
+ static osMutexId_t g_bag_mutex;
+ static bool g_bag_permitted = !MOWER_GRASS_BAG_CH6_ENABLED;
+ 
++/* Soft start limits the inrush step; every stop path still zeroes the bridge at once. */
++#ifndef ACTUATOR_SOFT_START_MS
++#define ACTUATOR_SOFT_START_MS 400U
++#endif
++#define ACTUATOR_SOFT_START_DUTY 10.0f
++
++typedef struct {
++    EG2104_HBridge_t *bridge;
++    float target;
++    uint32_t start_ms;
++    bool active;
++} ActuatorRamp_t;
++
++/* Height ramp is owned by Lifter_Task_Update; bag ramp is guarded by g_bag_mutex. */
++static ActuatorRamp_t g_height_ramp = {.bridge = &blade_height_bridge};
++static ActuatorRamp_t g_bag_ramp = {.bridge = &grass_bag_bridge};
++
++static float ActuatorRamp_Fraction(const ActuatorRamp_t *ramp, uint32_t now)
++{
++    uint32_t elapsed = now - ramp->start_ms;
++    if (!ramp->active || elapsed >= ACTUATOR_SOFT_START_MS)
++        return 1.0f;
++    float full = fabsf(ramp->target);
++    float progress = (float)elapsed / (float)ACTUATOR_SOFT_START_MS;
++    return (ACTUATOR_SOFT_START_DUTY + (full - ACTUATOR_SOFT_START_DUTY) * progress) / full;
++}
++
++static void ActuatorRamp_Start(ActuatorRamp_t *ramp, float target, uint32_t now)
++{
++    ramp->target = target;
++    ramp->start_ms = now;
++    ramp->active = ACTUATOR_SOFT_START_MS > 0U;
++    EG2104_HBridge_SetSpeed(ramp->bridge,
++        !ramp->active ? target : (target > 0.0f ? ACTUATOR_SOFT_START_DUTY : -ACTUATOR_SOFT_START_DUTY));
++}
++
++static void ActuatorRamp_Advance(ActuatorRamp_t *ramp, uint32_t now)
++{
++    if (!ramp->active)
++        return;
++    float fraction = ActuatorRamp_Fraction(ramp, now);
++    if (fraction >= 1.0f)
++        ramp->active = false;
++    EG2104_HBridge_SetSpeed(ramp->bridge, ramp->target * fraction);
++}
++
+ static bool GrassBag_Lock(void)
+ {
+     return g_bag_mutex != NULL && osMutexAcquire(g_bag_mutex, osWaitForever) == osOK;
+@@ -147,7 +193,7 @@
+ static void Motor_Up(void)
+ { // 物理向上 (高度增加，时间减小)
+     Lifter_Stop(); // 先关闭两路PWM，再施加反向后的上升输出
+-    EG2104_HBridge_SetSpeed(&blade_height_bridge, -LIFTER_SPEED);
++    ActuatorRamp_Start(&g_height_ramp, -LIFTER_SPEED, g_last_tick);
+     g_dir = 1;
+     g_flash_save_pending = 0; // 只要电机动了，就取消未执行的保存计划
+ }
+@@ -155,7 +201,7 @@
+ static void Motor_Down(void)
+ { // 物理向下 (高度减小，时间增加)
+     Lifter_Stop(); // 换向前先关闭两路PWM
+-    EG2104_HBridge_SetSpeed(&blade_height_bridge, LIFTER_SPEED);
++    ActuatorRamp_Start(&g_height_ramp, LIFTER_SPEED, g_last_tick);
+     g_dir = -1;
+     g_flash_save_pending = 0; // 只要电机动了，就取消未执行的保存计划
+ }
+@@ -162,6 +208,7 @@
+ 
+ void Lifter_Stop(void)
+ {
++    g_height_ramp.active = false;
+     EG2104_HBridge_Stop(&blade_height_bridge);
+     g_dir = 0;
+     // 停止时不改变 g_state，由调用者决定
+@@ -171,16 +218,17 @@
+ static void GrassBag_Motor_Open(void)
+ {
+     // 假设正转是打开草袋，如果实际相反，改为 -GRASS_BAG_SPEED 即可
+-    EG2104_HBridge_SetSpeed(&grass_bag_bridge, GRASS_BAG_SPEED);
++    ActuatorRamp_Start(&g_bag_ramp, GRASS_BAG_SPEED, HAL_GetTick());
+ }
+ 
+ static void GrassBag_Motor_Close(void)
+ {
+-    EG2104_HBridge_SetSpeed(&grass_bag_bridge, -GRASS_BAG_SPEED);
++    ActuatorRamp_Start(&g_bag_ramp, -GRASS_BAG_SPEED, HAL_GetTick());
+ }
+ 
+ static void GrassBag_Motor_Stop(void)
+ {
++    g_bag_ramp.active = false;
+     EG2104_HBridge_Stop(&grass_bag_bridge);
+ }
+ 
+@@ -471,6 +519,9 @@
+ {
+     uint32_t now = HAL_GetTick();
+     uint32_t dt = now - g_last_tick;
++    /* Open-loop position: travel during the ramp scales with the mean applied duty. */
++    float ramp_fraction = (ActuatorRamp_Fraction(&g_height_ramp, g_last_tick) +
++                           ActuatorRamp_Fraction(&g_height_ramp, now)) * 0.5f;
+     g_last_tick = now;
+     // =================================================================
+     //  A. 刀盘高度逻辑
+@@ -480,7 +531,7 @@
+     // 归位期间也累计位移，确保中途换档使用的是当前估算位置。
+     if (g_dir != 0)
+     {
+-        float change = (float)dt;
++        float change = (float)dt * ramp_fraction;
+         if (g_dir == 1)
+         {
+             g_current_pos_ms -= (change * UP_SPEED_FACTOR);
+@@ -495,6 +546,7 @@
+             g_current_pos_ms = 15000.0f;
+     }
+ 
++    ActuatorRamp_Advance(&g_height_ramp, now);
+     Update_Height_CM_From_MS(g_current_pos_ms);
+     Lifter_ApplyHeightRequest(now);
+ 
+@@ -596,6 +648,7 @@
+             if (g_bag_permitted) g_app.g_system_report_state = REPORT_DUMPING_DONE;
+         }
+     }
++    ActuatorRamp_Advance(&g_bag_ramp, now);
+     if (g_bag_permitted) {
+         switch (g_bag.state) {
+         case GRASS_BAG_OPENING:
+Index: control_chassis/concrol.ioc
+===================================================================
+--- control_chassis/concrol.ioc	(版本 109)
++++ control_chassis/concrol.ioc	(工作副本)
+@@ -16,7 +16,8 @@
+ CAN1.CalculateBaudRate=875000
+ CAN1.CalculateTimeBit=1142
+ CAN1.CalculateTimeQuantum=380.95238095238096
+-CAN1.IPParameters=CalculateTimeQuantum,CalculateTimeBit,CalculateBaudRate,BS1,BS2
++CAN1.ABOM=ENABLE
++CAN1.IPParameters=CalculateTimeQuantum,CalculateTimeBit,CalculateBaudRate,BS1,BS2,ABOM
+ Dma.Request0=SPI1_RX
+ Dma.Request1=SPI1_TX
+ Dma.Request10=USART2_RX
+Index: control_chassis/host/can_tx_port_harness.c
+===================================================================
+--- control_chassis/host/can_tx_port_harness.c	(版本 109)
++++ control_chassis/host/can_tx_port_harness.c	(工作副本)
+@@ -28,6 +28,8 @@
+     device.TSR = (CAN_TSR_RQCP0 | CAN_TSR_TXOK0) << 16;
+     device.TSR |= CAN_TSR_RQCP0 | CAN_TSR_TERR0;
+     assert(CAN_TxPort_Poll(2) == CAN_TX_SUCCESS);
++    device.ESR = 0U; assert(!CAN_TxPort_IsBusOff());
++    device.ESR = CAN_ESR_BOFF; assert(CAN_TxPort_IsBusOff()); device.ESR = 0U;
+     assert(device.TSR == (1U << 16)); /* W1C writes only the requested RQCP. */
+     device.TSR = (CAN_TSR_RQCP0 | CAN_TSR_ALST0) << 8;
+     assert(CAN_TxPort_Poll(1) == CAN_TX_ARBITRATION_LOST && device.TSR == 0x100U);
+Index: control_chassis/host/can_tx_scheduler_harness.c
+===================================================================
+--- control_chassis/host/can_tx_scheduler_harness.c	(版本 109)
++++ control_chassis/host/can_tx_scheduler_harness.c	(工作副本)
+@@ -69,9 +69,11 @@
+ }
+ void CAN_TxPort_Abort(uint8_t m) { assert(m < 3U && busy[m]); ++aborts[m]; }
+ uint32_t CAN_TxPort_GetError(void) { return 0U; }
++static bool bus_off;
++bool CAN_TxPort_IsBusOff(void) { return bus_off; }
+ static void Reset(void)
+ {
+-    now_ms = 0; attempts = 0; full = false; fail_submit = false;
++    now_ms = 0; attempts = 0; full = false; fail_submit = false; bus_off = false;
+     after_critical = NULL; on_poll = NULL; inject_stop_on_blade_submit = false;
+     read_pos = write_pos = 0;
+     memset(busy, 0, sizeof(busy)); memset(results, 0, sizeof(results));
+@@ -136,7 +138,7 @@
+     assert(!Diagnostics().stop_pending && attempts == 4);
+     assert(!Step(6)); /* Rejected run was not cached for replay. */
+     assert(Flipsky_CAN_SetSpeedErpm(16000)); assert(Step(7));
+-    assert(sent[4].data[2] == 0x3e && sent[4].data[3] == 0x80);
++    assert(sent[4].data[2] == 0xc1 && sent[4].data[3] == 0x80);
+ }
+ 
+ static void TestOldResultCannotClearNewStop(void)
+@@ -196,10 +198,10 @@
+     assert(!CAN_Enqueue_BladeControl_Message(0x9a18, zero, 5, false));
+     assert(Flipsky_CAN_SetSpeedErpm(14000));
+     assert(Flipsky_CAN_SetSpeedErpm(16000)); assert(Step(0));
+-    assert(sent[0].data[2] == 0x3e && sent[0].data[3] == 0x80);
++    assert(sent[0].data[2] == 0xc1 && sent[0].data[3] == 0x80);
+     /* Newer run survives failure of the older mailbox generation. */
+     assert(Flipsky_CAN_SetSpeedErpm(15500)); results[2] = CAN_TX_TRANSMIT_ERROR;
+-    assert(Step(1)); assert(sent[1].data[2] == 0x3c && sent[1].data[3] == 0x8c);
++    assert(Step(1)); assert(sent[1].data[2] == 0xc3 && sent[1].data[3] == 0x74);
+     results[2] = CAN_TX_SUCCESS; assert(Step(2)); /* unrelated FIFO uses mailbox 0 */
+     assert(sent_mailbox[2] == 0 && sent[2].extId == 0x9b18);
+     results[0] = CAN_TX_SUCCESS; assert(!Step(3));
+@@ -240,7 +242,7 @@
+     results[2] = CAN_TX_SUCCESS; assert(!Step(2));
+     assert(!Step(3)); /* Hardware recovery alone cannot replay rejected start. */
+     assert(BladeMotor_SetSpeed(14000) == HAL_OK); assert(Step(3));
+-    assert(sent[2].data[2] == 0x36 && sent[2].data[3] == 0xb0);
++    assert(sent[2].data[2] == 0xc9 && sent[2].data[3] == 0x50);
+     input.software_locked = true; SafetyOwnershipGate_Update(&input);
+     assert(BladeMotor_SetSpeed(16000) == HAL_OK); /* gate forces zero */
+     assert(!Step(4) && aborts[2] == 1);
+@@ -250,8 +252,31 @@
+     results[2] = CAN_TX_SUCCESS; assert(!Step(6));
+     assert(!Step(7) && attempts == 4);
+ }
++static void TestBusOffRecovery(void)
++{
++    uint8_t data[8] = {0};
++    /* A wheel frame stranded by bus-off is withdrawn, once, after its timeout. */
++    Reset();
++    assert(CAN_Enqueue_Message(0x123U, data, 8U, 0U));
++    assert(Step(100)); assert(attempts == 1U && sent_mailbox[0] == 0U);
++    (void)Step(100U + CAN_GENERAL_TX_ATTEMPT_TIMEOUT_MS); assert(aborts[0] == 0U);
++    (void)Step(101U + CAN_GENERAL_TX_ATTEMPT_TIMEOUT_MS); assert(aborts[0] == 1U);
++    (void)Step(150U); assert(aborts[0] == 1U);
++    /* The mailbox is reusable afterwards and a fresh frame gets a fresh timeout. */
++    results[0] = CAN_TX_ABORTED;
++    assert(CAN_Enqueue_Message(0x124U, data, 8U, 0U));
++    assert(Step(151U)); assert(attempts == 2U && sent_mailbox[1] == 0U && sent[1].stdId == 0x124U);
++    (void)Step(151U + CAN_GENERAL_TX_ATTEMPT_TIMEOUT_MS); assert(aborts[0] == 1U);
++    /* Bus-off entries are counted per edge. */
++    Reset(); assert(g_can_bus_off_events == 0U);
++    bus_off = true; (void)Step(1U); (void)Step(2U); assert(g_can_bus_off_events == 1U);
++    bus_off = false; (void)Step(3U); assert(g_can_bus_off_events == 1U);
++    bus_off = true; (void)Step(4U); assert(g_can_bus_off_events == 2U);
++}
++
+ int main(void)
+ {
++    TestBusOffRecovery();
+     TestStopSurvivesFailures();
+     TestStopCancelsRunWithoutTouchingOtherMailboxes();
+     TestOldResultCannotClearNewStop();
+Index: control_chassis/host/ftesc_realtime_feedback_harness.c
+===================================================================
+--- control_chassis/host/ftesc_realtime_feedback_harness.c	(版本 109)
++++ control_chassis/host/ftesc_realtime_feedback_harness.c	(工作副本)
+@@ -38,9 +38,10 @@
+     static const float speeds[] = {0.0f, 14000.0f, 15500.0f, 16000.0f};
+     static const uint8_t expected[][5] = {
+         {0x00U, 0x00U, 0x00U, 0x00U, 0x00U},
+-        {0x00U, 0x00U, 0x36U, 0xB0U, 0x00U},
+-        {0x00U, 0x00U, 0x3CU, 0x8CU, 0x00U},
+-        {0x00U, 0x00U, 0x3EU, 0x80U, 0x00U}
++        /* Blade direction is reversed on the wire: -14000, -15500, -16000 ERPM. */
++        {0xFFU, 0xFFU, 0xC9U, 0x50U, 0x00U},
++        {0xFFU, 0xFFU, 0xC3U, 0x74U, 0x00U},
++        {0xFFU, 0xFFU, 0xC1U, 0x80U, 0x00U}
+     };
+ 
+     for (size_t i = 0U; i < sizeof(speeds) / sizeof(speeds[0]); ++i)
+Index: control_chassis/host/grass_bag_lifter_harness.c
+===================================================================
+--- control_chassis/host/grass_bag_lifter_harness.c	(版本 109)
++++ control_chassis/host/grass_bag_lifter_harness.c	(工作副本)
+@@ -61,24 +61,24 @@
+     Lifter_SetGrassBagTarget(1); assert(bag_speed == 0.0f); /* default fail closed */
+     Lifter_SetGrassBagPermission(true);
+     now_ms = 100;
+-    Lifter_SetGrassBagTarget(1); assert(bag_speed == 60.0f && bag_starts == 1);
++    Lifter_SetGrassBagTarget(1); assert(bag_speed == 50.0f && bag_starts == 1);
+     now_ms = 200;
+     Lifter_SetGrassBagTarget(1); assert(bag_starts == 1);
+     now_ms = 20099;
+-    Lifter_Task_Update(); assert(!g_app.grass_bag_status && bag_speed == 60.0f);
++    Lifter_Task_Update(); assert(!g_app.grass_bag_status && bag_speed == 50.0f);
+     now_ms = 20100;
+     Lifter_Task_Update(); assert(g_app.grass_bag_status && bag_speed == 0.0f);
+-    Lifter_SetGrassBagTarget(0); assert(bag_speed == -60.0f);
++    Lifter_SetGrassBagTarget(0); assert(bag_speed == -50.0f);
+     Lifter_SetGrassBagPermission(false); assert(bag_speed == 0.0f);
+     now_ms = 60000;
+     Lifter_Task_Update(); assert(g_app.grass_bag_status); /* no false completion */
+     Lifter_SetGrassBagTarget(0); assert(bag_speed == 0.0f);
+     Lifter_SetGrassBagPermission(true);
+-    Lifter_SetGrassBagTarget(0); assert(bag_speed == -60.0f);
++    Lifter_SetGrassBagTarget(0); assert(bag_speed == -50.0f);
+     now_ms = 80000;
+     Lifter_Task_Update(); assert(!g_app.grass_bag_status && bag_speed == 0.0f);
+-    Lifter_SetGrassBagTarget(1); assert(bag_speed == 60.0f);
+-    Lifter_SetGrassBagTarget(0); assert(bag_speed == -60.0f);
++    Lifter_SetGrassBagTarget(1); assert(bag_speed == 50.0f);
++    Lifter_SetGrassBagTarget(0); assert(bag_speed == -50.0f);
+     Lifter_StopGrassBag(); assert(bag_speed == 0.0f);
+     now_ms = 110000;
+     Lifter_Task_Update(); assert(!g_app.grass_bag_status);
+@@ -90,7 +90,7 @@
+     now_ms += 10000;
+     inject_target = true;
+     Lifter_Task_Update();
+-    assert(bag_speed == 60.0f && !g_app.grass_bag_status);
++    assert(bag_speed == 50.0f && !g_app.grass_bag_status);
+     assert(!inject_target && lock_depth == 0);
+     Lifter_StopGrassBag();
+     initialized = false; fail_mutex = true;
+Index: control_chassis/host/lifter_height_harness.c
+===================================================================
+--- control_chassis/host/lifter_height_harness.c	(版本 109)
++++ control_chassis/host/lifter_height_harness.c	(工作副本)
+@@ -62,12 +62,12 @@
+     if (bridge->left_timer == &htim3) {
+         /* Every start/reversal must first clear both bridge legs. */
+         assert(lift_speed == 0.0f);
+-        assert(speed == -60.0f || speed == 60.0f);
++        assert(speed == -50.0f || speed == 50.0f);
+         lift_speed = speed;
+         ++lift_starts;
+     } else {
+         assert(bridge->left_timer == &htim2 && bag_speed == 0.0f);
+-        assert(speed == 60.0f || speed == -60.0f);
++        assert(speed == 50.0f || speed == -50.0f);
+         bag_speed = speed;
+     }
+     return HAL_OK;
+@@ -120,11 +120,11 @@
+ {
+     Reset(7.0f, true, 0);
+     Lifter_SetTargetLevel(5); Tick(0);
+-    assert(lift_speed == -60.0f);
++    assert(lift_speed == -50.0f);
+     Lifter_SetTargetLevel(3); Tick(1000);
+     /* After 1s upward, the estimate is above 7cm: change to downward now. */
+     assert(Lifter_GetState() == LIFTER_STATE_AUTO_ADJUST);
+-    assert(lift_speed == 60.0f);
++    assert(lift_speed == 50.0f);
+     assert(g_app.g_system_report_state == REPORT_NONE);
+     assert(Lifter_GetCurrentHeight_cm() > 7.0f && Lifter_GetCurrentHeight_cm() < 11.0f);
+     puts("[PASS] New height target interrupts homing on the next lifter update");
+@@ -138,16 +138,16 @@
+         Lifter_SetTargetLevel(5);
+         assert(lift_speed == 0.0f && Lifter_GetState() == LIFTER_STATE_IDLE);
+         Tick(1200U); /* Count from actual PWM start, not request or boot. */
+-        assert(lift_speed == -60.0f && lift_starts == 1);
++        assert(lift_speed == -50.0f && lift_starts == 1);
+         assert((Lifter_GetHeightFeedback() & MOWER_HEIGHT_VALUE_MASK) == (uint16_t)(heights[i]*10.0f));
+         assert(g_app.g_system_report_state == REPORT_BLADE_INITIALIZING);
+         for (uint32_t t = 1250U; t < 11200U; t += 50U) {
+             Lifter_SetTargetLevel(5);
+             Tick(t);
+-            assert(lift_speed == -60.0f && lift_starts == 1 && !flash_saves);
++            assert(lift_speed == -50.0f && lift_starts == 1 && !flash_saves);
+         }
+         Tick(11199U);
+-        assert(lift_speed == -60.0f);
++        assert(lift_speed == -50.0f);
+         Tick(11200U);
+         assert(lift_speed == 0.0f && Lifter_GetState() == LIFTER_STATE_HOMING_DONE);
+         assert(Lifter_GetCurrentHeight_cm() == 11.0f);
+@@ -169,14 +169,14 @@
+     Lifter_SetTargetLevel(1);
+     Lifter_SetTargetLevel(2); /* Latest target cancels the unconsumed home edge. */
+     Tick(0);
+-    assert(lift_speed == 60.0f && Lifter_GetState() == LIFTER_STATE_AUTO_ADJUST);
++    assert(lift_speed == 50.0f && Lifter_GetState() == LIFTER_STATE_AUTO_ADJUST);
+     assert(lift_starts == 1);
+     Tick(2000); assert(lift_speed == 0.0f && Lifter_GetCurrentHeight_cm() == 5.0f);
+     Lifter_SetTargetLevel(5); Tick(2020);
+-    assert(lift_speed == -60.0f);
++    assert(lift_speed == -50.0f);
+     Lifter_SetTargetLevel(4); Lifter_SetTargetLevel(3); Lifter_SetTargetLevel(1);
+     Tick(3020); /* pos 6500 - 1000*0.8 = 5700: descend to level 1 now. */
+-    assert(lift_speed == 60.0f && Lifter_GetState() == LIFTER_STATE_AUTO_ADJUST);
++    assert(lift_speed == 50.0f && Lifter_GetState() == LIFTER_STATE_AUTO_ADJUST);
+     Tick(6820); assert(lift_speed == 0.0f && Lifter_GetCurrentHeight_cm() == 2.0f);
+     Tick(12020); /* Original homing deadline must not force a false top reset. */
+     assert(lift_speed == 0.0f && Lifter_GetCurrentHeight_cm() == 2.0f && !flash_saves);
+@@ -190,18 +190,18 @@
+     Reset(7.0f, true, 0);
+     Lifter_SetTargetLevel(5); Tick(0);
+     Lifter_SetTargetLevel(3); Tick(1000);
+-    assert(lift_speed == 60.0f);
++    assert(lift_speed == 50.0f);
+     Lifter_SetTargetLevel(5); Tick(1100); /* A new home starts with a fresh 10s. */
+-    assert(lift_speed == -60.0f);
++    assert(lift_speed == -50.0f);
+     Lifter_SetTargetLevel(5); Tick(3000);
+     Lifter_User_Init(); Tick(5000); /* No restart during active homing. */
+-    Tick(10000); assert(lift_speed == -60.0f); /* Original deadline is obsolete. */
+-    Tick(11099); assert(lift_speed == -60.0f);
++    Tick(10000); assert(lift_speed == -50.0f); /* Original deadline is obsolete. */
++    Tick(11099); assert(lift_speed == -50.0f);
+     Tick(11100); assert(lift_speed == 0.0f);
+     Tick(11120); Tick(11140); assert(lift_speed == 0.0f && lift_starts == 3);
+     /* Leaving and returning between task cycles still records a fresh edge. */
+     Lifter_SetTargetLevel(4); Lifter_SetTargetLevel(5); Tick(11200);
+-    assert(lift_speed == -60.0f && lift_starts == 4);
++    assert(lift_speed == -50.0f && lift_starts == 4);
+     puts("[PASS] Level-5 reentry and repeated/manual requests during active homing");
+ }
+ 
+@@ -209,10 +209,10 @@
+ {
+     Reset(11.0f, true, 0);
+     Lifter_SetTargetLevel(1); Tick(0);
+-    assert(lift_speed == 60.0f);
++    assert(lift_speed == 50.0f);
+     Tick(9500); assert(lift_speed == 0.0f && Lifter_GetCurrentHeight_cm() == 2.0f);
+     Lifter_SetTargetLevel(2); Tick(9500);
+-    assert(lift_speed == -60.0f);
++    assert(lift_speed == -50.0f);
+     Tick(13250); assert(lift_speed == 0.0f && Lifter_GetCurrentHeight_cm() == 5.0f);
+     Lifter_SetTargetLevel(3); Tick(13250);
+     Tick(15750); assert(lift_speed == 0.0f && Lifter_GetCurrentHeight_cm() == 7.0f);
+@@ -221,7 +221,7 @@
+     /* Reverse while still moving: mock requires an intervening bridge stop. */
+     Lifter_SetTargetLevel(1); Tick(17875); Tick(18075);
+     Lifter_SetTargetLevel(4); Tick(18175);
+-    assert(lift_speed == -60.0f);
++    assert(lift_speed == -50.0f);
+     puts("[PASS] Levels 1-4 unchanged, reversed +/-60% PWM and stop before reversal");
+ }
+ 
+@@ -230,12 +230,12 @@
+     uint32_t start = UINT32_MAX - 4000U;
+     Reset(7.0f, true, start);
+     Lifter_SetTargetLevel(5); Tick(start);
+-    Tick(start + 9999U); assert(lift_speed == -60.0f);
++    Tick(start + 9999U); assert(lift_speed == -50.0f);
+     Tick(start + 10000U); assert(lift_speed == 0.0f);
+     Reset(0.0f, false, 100);
+-    Tick(300); assert(lift_speed == -60.0f);
++    Tick(300); assert(lift_speed == -50.0f);
+     Lifter_SetTargetLevel(3); Tick(1300);
+-    assert(lift_speed == 60.0f && Lifter_GetState() == LIFTER_STATE_AUTO_ADJUST);
++    assert(lift_speed == 50.0f && Lifter_GetState() == LIFTER_STATE_AUTO_ADJUST);
+     Tick(5800); assert(lift_speed == 0.0f && Lifter_GetCurrentHeight_cm() == 7.0f);
+     Tick(10300); assert(lift_speed == 0.0f && Lifter_GetCurrentHeight_cm() == 7.0f);
+     puts("[PASS] Tick rollover and interruptible invalid-Flash boot homing");
+@@ -246,19 +246,19 @@
+     Reset(7.0f, true, 0);
+     Lifter_User_Init();
+     assert(lift_speed == 0.0f && g_app.g_system_report_state == REPORT_NONE);
+-    Tick(0); assert(lift_speed == -60.0f);
++    Tick(0); assert(lift_speed == -50.0f);
+     /* Arrival just after the consumer snapshot must survive for the next update. */
+     inject_level_on_exit = 4;
+     g_app.g_system_report_state = REPORT_DUMPING_START;
+-    Tick(1000); assert(lift_speed == -60.0f);
++    Tick(1000); assert(lift_speed == -50.0f);
+     Tick(1020); /* Late request is consumed on the following update. */
+-    assert(lift_speed == -60.0f && Lifter_GetState() == LIFTER_STATE_AUTO_ADJUST);
++    assert(lift_speed == -50.0f && Lifter_GetState() == LIFTER_STATE_AUTO_ADJUST);
+     assert(g_app.g_system_report_state == REPORT_DUMPING_START);
+     Tick(2125); assert(lift_speed == 0.0f && Lifter_GetCurrentHeight_cm() == 9.0f);
+     Tick(10000); assert(lift_speed == 0.0f && Lifter_GetCurrentHeight_cm() == 9.0f);
+-    Lifter_User_Init(); Tick(10020); assert(lift_speed == -60.0f);
++    Lifter_User_Init(); Tick(10020); assert(lift_speed == -50.0f);
+     Lifter_SetTargetLevel(2); Tick(11020);
+-    assert(lift_speed == 60.0f && Lifter_GetState() == LIFTER_STATE_AUTO_ADJUST);
++    assert(lift_speed == 50.0f && Lifter_GetState() == LIFTER_STATE_AUTO_ADJUST);
+     puts("[PASS] Manual homing interruption, continued upward target, late request/fault report");
+ }
+ 
+@@ -279,15 +279,15 @@
+     Reset(2.0f, true, 0);
+     Lifter_SetTargetLevel(5); Tick(0);
+     Lifter_SetTargetLevel(3); Tick(9999); /* Last millisecond still interrupts. */
+-    assert(lift_speed == 60.0f && Lifter_GetCurrentHeight_cm() < 11.0f);
++    assert(lift_speed == 50.0f && Lifter_GetCurrentHeight_cm() < 11.0f);
+     Tick(10000);
+-    assert(lift_speed == 60.0f && Lifter_GetState() == LIFTER_STATE_AUTO_ADJUST);
++    assert(lift_speed == 50.0f && Lifter_GetState() == LIFTER_STATE_AUTO_ADJUST);
+     assert(Lifter_GetCurrentHeight_cm() < 11.0f);
+ 
+     Reset(2.0f, true, 0);
+     Lifter_SetTargetLevel(5); Tick(0);
+     Lifter_SetTargetLevel(3); Tick(10000); /* PWM already ran the full 10s. */
+-    assert(lift_speed == 60.0f && Lifter_GetState() == LIFTER_STATE_AUTO_ADJUST);
++    assert(lift_speed == 50.0f && Lifter_GetState() == LIFTER_STATE_AUTO_ADJUST);
+     assert(Lifter_GetCurrentHeight_cm() == 11.0f);
+     Tick(14500); assert(lift_speed == 0.0f && Lifter_GetCurrentHeight_cm() == 7.0f);
+ 
+@@ -295,7 +295,7 @@
+     Reset(7.0f, true, start);
+     Lifter_SetTargetLevel(5); Tick(start);
+     Lifter_SetTargetLevel(3); Tick(start + 1000U);
+-    assert(lift_speed == 60.0f);
++    assert(lift_speed == 50.0f);
+     Tick(start + 1800U);
+     assert(lift_speed == 0.0f && Lifter_GetCurrentHeight_cm() == 7.0f);
+     Tick(start + 10000U); assert(Lifter_GetCurrentHeight_cm() == 7.0f);
+@@ -306,13 +306,13 @@
+ {
+     Reset(7.0f, true, 0);
+     Lifter_SetGrassBagPermission(true);
+-    Lifter_SetGrassBagTarget(1); assert(bag_speed == 60.0f);
++    Lifter_SetGrassBagTarget(1); assert(bag_speed == 50.0f);
+     Lifter_SetTargetLevel(5); Tick(0);
+-    assert(lift_speed == -60.0f && bag_speed == 60.0f);
+-    Tick(10000); assert(lift_speed == 0.0f && bag_speed == 60.0f);
+-    Tick(19999); assert(bag_speed == 60.0f);
++    assert(lift_speed == -50.0f && bag_speed == 50.0f);
++    Tick(10000); assert(lift_speed == 0.0f && bag_speed == 50.0f);
++    Tick(19999); assert(bag_speed == 50.0f);
+     Tick(20000); assert(bag_speed == 0.0f && g_app.grass_bag_status);
+-    Lifter_SetGrassBagTarget(0); assert(bag_speed == -60.0f);
++    Lifter_SetGrassBagTarget(0); assert(bag_speed == -50.0f);
+     Lifter_SetGrassBagPermission(false); assert(bag_speed == 0.0f);
+     puts("[PASS] Concurrent grass-bag direction, 20s timing and permission stop unchanged");
+ }
+Index: experiments/ticket03/exp3_auto_session.c
+===================================================================
+--- experiments/ticket03/exp3_auto_session.c	(版本 109)
++++ experiments/ticket03/exp3_auto_session.c	(工作副本)
+@@ -60,6 +60,33 @@
+                       ((uint16_t)session->tx_index << 8) | value);
+ }
+ 
++uint32_t exp3_auto_hmi_interval(Exp3AutoPace *pace, bool bound, bool link_fresh)
++{
++    if (pace->link_was_fresh && !link_fresh)
++        pace->settled = 0U; /* The chassis may have rebooted: its session is unknown. */
++    pace->link_was_fresh = link_fresh ? 1U : 0U;
++    return (!bound || (!link_fresh && !pace->settled)) ?
++        EXP3_AUTO_HMI_FAST_ROUND_MS : EXP3_AUTO_ROUND_MS;
++}
++
++void exp3_auto_hmi_settled(Exp3AutoPace *pace)
++{
++    pace->settled = 1U;
++}
++
++void exp3_auto_controller_bound(Exp3AutoPace *pace, uint32_t now)
++{
++    pace->settled = 1U;
++    pace->bound_at = now;
++}
++
++uint32_t exp3_auto_controller_interval(Exp3AutoPace *pace, uint32_t now)
++{
++    if (pace->settled && (uint32_t)(now - pace->bound_at) >= EXP3_AUTO_CONTROLLER_FAST_WINDOW_MS)
++        pace->settled = 0U; /* Hand the idle SENS slot back to battery diagnostics. */
++    return pace->settled ? EXP3_AUTO_CONTROLLER_FAST_ROUND_MS : EXP3_AUTO_ROUND_MS;
++}
++
+ int exp3_auto_receive(Exp3AutoSession *session, uint16_t word, uint32_t now,
+                       uint32_t timeout)
+ {
+Index: experiments/ticket03/exp3_auto_session.h
+===================================================================
+--- experiments/ticket03/exp3_auto_session.h	(版本 109)
++++ experiments/ticket03/exp3_auto_session.h	(工作副本)
+@@ -17,6 +17,22 @@
+     uint8_t role, rx_next, tx_index, tx_active;
+ } Exp3AutoSession;
+ 
++/* Handshake pacing: retry fast only while a session is actually missing. */
++#define EXP3_AUTO_ROUND_MS 2000U
++#define EXP3_AUTO_HMI_FAST_ROUND_MS 400U
++#define EXP3_AUTO_CONTROLLER_FAST_ROUND_MS 500U
++#define EXP3_AUTO_CONTROLLER_FAST_WINDOW_MS 6000U
++
++typedef struct {
++    uint32_t bound_at;
++    uint8_t settled, link_was_fresh;
++} Exp3AutoPace;
++
++uint32_t exp3_auto_hmi_interval(Exp3AutoPace *pace, bool bound, bool link_fresh);
++void exp3_auto_hmi_settled(Exp3AutoPace *pace);
++void exp3_auto_controller_bound(Exp3AutoPace *pace, uint32_t now);
++uint32_t exp3_auto_controller_interval(Exp3AutoPace *pace, uint32_t now);
++
+ void exp3_auto_init(Exp3AutoSession *session, uint8_t role, uint32_t nonce, uint32_t now);
+ uint16_t exp3_auto_word(Exp3AutoSession *session, uint32_t now, uint32_t dwell,
+                         uint32_t interval);
+Index: experiments/ticket03/openi6x_adapter.c
+===================================================================
+--- experiments/ticket03/openi6x_adapter.c	(版本 109)
++++ experiments/ticket03/openi6x_adapter.c	(工作副本)
+@@ -170,6 +170,7 @@
+ #if EXP3_AUTO_SESSION_ENABLED
+ static Exp3AutoSession auto_session;
+ static uint8_t auto_started;
++static Exp3AutoPace auto_pace;
+ static volatile uint32_t auto_seed, auto_seed_at;
+ void exp3_board_auto_start(uint32_t seed, uint32_t now) {
+     if (auto_started) return;
+@@ -186,6 +187,7 @@
+ #endif
+     if (auto_started && exp3_auto_is_word(word)) {
+         if (exp3_auto_receive(&auto_session, word, now, 5000U) == 1) {
++            exp3_auto_hmi_settled(&auto_pace);
+             g_exp3_mailbox.command = 0U;
+ #if MOWER_BLADE_OK_ENABLED
+             runtime.state=0U;
+@@ -335,8 +337,16 @@
+     {
+         uint16_t word = g_exp3_hil.published_word;
+ #if EXP3_AUTO_SESSION_ENABLED
+-        if (auto_started && !g_exp3_hil.link.tx_active)
+-            word = exp3_auto_word(&auto_session, now, 20U, 2000U);
++        if (auto_started && !g_exp3_hil.link.tx_active) {
++#if MOWER_BLADE_OK_ENABLED
++            uint16_t runtime_word;
++            uint32_t interval = exp3_auto_hmi_interval(&auto_pace, g_exp3_hil.bound,
++                                                       exp3_board_runtime(now, &runtime_word));
++#else
++            uint32_t interval = EXP3_AUTO_ROUND_MS;
++#endif
++            word = exp3_auto_word(&auto_session, now, 20U, interval);
++        }
+         if (word) {
+             exp3_channels(word, &a, &b);
+             g_exp3_uplink_channels = (uint32_t)a | ((uint32_t)b << 16);
+Index: experiments/ticket03/run_host.sh
+===================================================================
+--- experiments/ticket03/run_host.sh	(版本 109)
++++ experiments/ticket03/run_host.sh	(工作副本)
+@@ -38,12 +38,12 @@
+   "$root/../../control_chassis/Core/UserDev/flysky_ibus_servo.c" -o "$work/servo-gate"
+ ASAN_OPTIONS=detect_leaks=0 "$work/servo-gate"
+ "$cc" -std=c99 -Wall -Wextra -Werror -c "$root/exp3.c" -o "$work/disabled.o"
+-test -z "$(nm --defined-only "$work/disabled.o")"
++test -z "$(nm -g --defined-only "$work/disabled.o")"
+ "$cc" -std=c99 -Wall -Wextra -Werror -c "$root/exp3_probe.c" -o "$work/probe-disabled.o"
+ "$cc" -std=c99 -Wall -Wextra -Werror -I"$root" \
+   -c "$root/exp3_blade_adapter.c" -o "$work/blade-disabled.o"
+-test -z "$(nm --defined-only "$work/probe-disabled.o")"
+-test -z "$(nm --defined-only "$work/blade-disabled.o")"
++test -z "$(nm -g --defined-only "$work/probe-disabled.o")"
++test -z "$(nm -g --defined-only "$work/blade-disabled.o")"
+ 
+ "$cc" -std=c99 -Wall -Wextra -Werror -fsanitize=undefined,address -DEXP3_ENABLED=1 \
+   "$root/test_rf.c" "$root/exp3.c" "$root/exp3_link.c" "$root/exp3_hil.c" \
+Index: experiments/ticket03/stm32_adapter.c
+===================================================================
+--- experiments/ticket03/stm32_adapter.c	(版本 109)
++++ experiments/ticket03/stm32_adapter.c	(工作副本)
+@@ -20,6 +20,7 @@
+ #if EXP3_AUTO_SESSION_ENABLED
+ static Exp3AutoSession auto_session;
+ static uint8_t auto_started;
++static Exp3AutoPace auto_pace;
+ #endif
+ #if EXP3_PWM_PROBE_ENABLED
+ static Exp3PwmProbe pwm_probe;
+@@ -241,7 +242,8 @@
+     g_exp3_downlink_word = g_exp3_hil.published_word;
+ #if EXP3_AUTO_SESSION_ENABLED
+     if (auto_started && !g_exp3_hil.link.tx_active)
+-        g_exp3_downlink_word = exp3_auto_word(&auto_session, now, 250U, 2000U);
++        g_exp3_downlink_word = exp3_auto_word(&auto_session, now, 250U,
++                                               exp3_auto_controller_interval(&auto_pace, now));
+ #endif
+ }
+ void exp3_board_channels(uint32_t now, uint16_t ch4, uint16_t a, uint16_t b) {
+@@ -312,6 +314,7 @@
+         exp3_hil_trace(&g_exp3_hil, now, E3_CHANNELS, a, b);
+         exp3_hil_trace(&g_exp3_hil, now, E3_RAW_RX, raw_word, 0U);
+         if (exp3_auto_receive(&auto_session, raw_word, now, 5000U) == 1) {
++            exp3_auto_controller_bound(&auto_pace, now);
+             g_exp3_mailbox.command = 0U;
+ #if MOWER_BLADE_OK_ENABLED
+             reset_completions();
+Index: experiments/ticket03/test_auto_session.c
+===================================================================
+--- experiments/ticket03/test_auto_session.c	(版本 109)
++++ experiments/ticket03/test_auto_session.c	(工作副本)
+@@ -135,8 +135,36 @@
+     assert(hmi.matches == 1U && hmi.last_result.status == EXP3_ACCEPTED);
+ }
+ 
++static void handshake_pacing(void)
++{
++    Exp3AutoPace hmi = {0}, controller = {0};
++    /* Cold start: unbound retries fast; a bind settles even before E9 is fresh. */
++    assert(exp3_auto_hmi_interval(&hmi, false, false) == EXP3_AUTO_HMI_FAST_ROUND_MS);
++    exp3_auto_hmi_settled(&hmi);
++    assert(exp3_auto_hmi_interval(&hmi, true, false) == EXP3_AUTO_ROUND_MS);
++    assert(exp3_auto_hmi_interval(&hmi, true, true) == EXP3_AUTO_ROUND_MS);
++    /* Chassis powered off for any duration: stay fast until a new bind. */
++    assert(exp3_auto_hmi_interval(&hmi, true, false) == EXP3_AUTO_HMI_FAST_ROUND_MS);
++    assert(exp3_auto_hmi_interval(&hmi, true, false) == EXP3_AUTO_HMI_FAST_ROUND_MS);
++    exp3_auto_hmi_settled(&hmi);
++    assert(exp3_auto_hmi_interval(&hmi, true, false) == EXP3_AUTO_ROUND_MS);
++    /* A link blip with the same session recovers without a bind. */
++    assert(exp3_auto_hmi_interval(&hmi, true, true) == EXP3_AUTO_ROUND_MS);
++    assert(exp3_auto_hmi_interval(&hmi, true, false) == EXP3_AUTO_HMI_FAST_ROUND_MS);
++    assert(exp3_auto_hmi_interval(&hmi, true, true) == EXP3_AUTO_ROUND_MS);
++    /* Controller repeats fast only for a bounded window, across tick wrap. */
++    assert(exp3_auto_controller_interval(&controller, 100U) == EXP3_AUTO_ROUND_MS);
++    uint32_t bound_at = 0xfffff000U;
++    exp3_auto_controller_bound(&controller, bound_at);
++    assert(exp3_auto_controller_interval(&controller, bound_at + 5999U) ==
++           EXP3_AUTO_CONTROLLER_FAST_ROUND_MS);
++    assert(exp3_auto_controller_interval(&controller, bound_at + 6000U) == EXP3_AUTO_ROUND_MS);
++    assert(exp3_auto_controller_interval(&controller, bound_at + 6001U) == EXP3_AUTO_ROUND_MS);
++}
++
+ int main(void)
+ {
++    handshake_pacing();
+     automatic_pairing_and_reboot();
+     loss_static_and_order_never_bind();
+     session_change_discards_old_transfer_and_result();
+Index: tools/test_actuator_pwm.py
+===================================================================
+--- tools/test_actuator_pwm.py	(版本 109)
++++ tools/test_actuator_pwm.py	(工作副本)
+@@ -128,18 +128,18 @@
+ '''
+ 
+ TEST = r'''
+-static void check_bridge(EG2104_HBridge_t *bridge, float duty) {
++static void check_bridge(EG2104_HBridge_t *bridge, float duty, uint32_t expected_compare) {
+     EG2104_HBridge_Init(bridge);
+     assert(bridge->current_speed == 0.0f && bridge->direction == 0U);
+     assert(bridge->left_timer->compare[bridge->left_in_channel / 4U] == 0U);
+     assert(bridge->right_timer->compare[bridge->right_in_channel / 4U] == 0U);
+     assert(EG2104_HBridge_SetSpeed(bridge, duty) == HAL_OK);
+-    assert(bridge->left_timer->compare[bridge->left_in_channel / 4U] == 5040U);
++    assert(bridge->left_timer->compare[bridge->left_in_channel / 4U] == expected_compare);
+     assert(bridge->right_timer->compare[bridge->right_in_channel / 4U] == 0U);
+     EG2104_HBridge_Stop(bridge);
+     assert(EG2104_HBridge_SetSpeed(bridge, -duty) == HAL_OK);
+     assert(bridge->left_timer->compare[bridge->left_in_channel / 4U] == 0U);
+-    assert(bridge->right_timer->compare[bridge->right_in_channel / 4U] == 5040U);
++    assert(bridge->right_timer->compare[bridge->right_in_channel / 4U] == expected_compare);
+     EG2104_HBridge_Stop(bridge);
+     assert(bridge->left_timer->compare[bridge->left_in_channel / 4U] == 0U);
+     assert(bridge->right_timer->compare[bridge->right_in_channel / 4U] == 0U);
+@@ -153,19 +153,20 @@
+     assert(timer_clock == 84000000U && post_init_calls == 2U);
+     TIM_HandleTypeDef *timers[] = { &htim2, &htim3 };
+     const uint32_t ioc_period[] = { IOC_TIM2_PERIOD, IOC_TIM3_PERIOD };
++    const uint32_t expected_hz[] = { 10000U, 10000U };
+     for (unsigned i = 0; i < 2U; ++i) {
+         assert(timers[i]->Init.CounterMode == TIM_COUNTERMODE_UP);
+         uint32_t divider = (timers[i]->Init.Prescaler + 1U) * (timers[i]->Init.Period + 1U);
+-        assert(timer_clock == 10000U * divider);
++        assert(timer_clock == expected_hz[i] * divider);
+         assert(timers[i]->Init.Period == ioc_period[i]);
+     }
+     assert(blade_height_bridge.left_timer == &htim3 && blade_height_bridge.right_timer == &htim3);
+     assert(grass_bag_bridge.left_timer == &htim2 && grass_bag_bridge.right_timer == &htim2);
+-    check_bridge(&blade_height_bridge, LIFTER_SPEED);
+-    check_bridge(&grass_bag_bridge, GRASS_BAG_SPEED);
++    check_bridge(&blade_height_bridge, LIFTER_SPEED, 4200U);
++    check_bridge(&grass_bag_bridge, GRASS_BAG_SPEED, 4200U);
+     assert(htim2.started == 12U && htim3.started == 12U);
+     assert(htim2.compare[0] == 0U && htim2.compare[1] == 0U);
+-    puts("PASS actual RCC/TIM2/TIM3/EG2104: 84MHz -> 10kHz, IOC agrees, both +/-60% -> CCR5040/8400, startup/stop zero");
++    puts("PASS actual RCC/TIM2/TIM3/EG2104: 84MHz -> bag 10kHz / height 10kHz, IOC agrees, +/-50% -> CCR4200/8400 on both, startup/stop zero");
+ }
+ '''
+ 
+Index: tools/test_can_feedback_pipeline.py
+===================================================================
+--- tools/test_can_feedback_pipeline.py	(版本 109)
++++ tools/test_can_feedback_pipeline.py	(工作副本)
+@@ -44,6 +44,7 @@
+ void CanTxTest_EnterCritical(void) { ++critical_depth; }
+ void CanTxTest_ExitCritical(void) { --critical_depth; }
+ uint32_t CAN_TxPort_GetError(void) { return 0; }
++bool CAN_TxPort_IsBusOff(void) { return false; }
+ bool CAN_TxPort_IsEmpty(uint8_t m) { return free_mailboxes && !busy[m]; }
+ CAN_TxPortResult_t CAN_TxPort_Poll(uint8_t m) {
+  if(!busy[m]) return CAN_TX_PENDING;
+Index: tools/test_can_tx_scheduler.py
+===================================================================
+--- tools/test_can_tx_scheduler.py	(版本 109)
++++ tools/test_can_tx_scheduler.py	(工作副本)
+@@ -7,6 +7,9 @@
+ 
+ root = Path(__file__).resolve().parents[1]
+ core = root / 'control_chassis/Core'
++# Without ABOM a bus-off CAN controller stays offline until a power cycle.
++assert 'hcan1.Init.AutoBusOff = ENABLE;' in (core / 'Src/can.c').read_text(encoding='utf-8')
++assert 'CAN1.ABOM=ENABLE' in (root / 'control_chassis/concrol.ioc').read_text(encoding='utf-8', errors='replace')
+ with tempfile.TemporaryDirectory(prefix='mower-can-tx-') as tmp:
+     tmp = Path(tmp)
+     (tmp / 'can.h').write_text('#include "stm32f4xx_hal.h"\ntypedef struct {uint32_t ErrorCode;} CAN_HandleTypeDef;\n')
+@@ -33,7 +36,7 @@
+ #include <stdint.h>
+ #include <stdbool.h>
+ typedef struct { volatile uint32_t TIR, TDTR, TDLR, TDHR; } CAN_TxMailBox_TypeDef;
+-typedef struct { volatile uint32_t TSR; CAN_TxMailBox_TypeDef sTxMailBox[3]; } CAN_TypeDef;
++typedef struct { volatile uint32_t TSR, ESR; CAN_TxMailBox_TypeDef sTxMailBox[3]; } CAN_TypeDef;
+ typedef struct { CAN_TypeDef *Instance; uint32_t State; } CAN_HandleTypeDef;
+ extern CAN_HandleTypeDef hcan1;
+ #define HAL_CAN_STATE_READY 1U
+@@ -45,6 +48,7 @@
+ #define CAN_TI0R_EXID_Pos 3U
+ #define CAN_TI0R_STID_Pos 21U
+ #define CAN_TSR_TME0 (1U << 26)
++#define CAN_ESR_BOFF 4U
+ #define CAN_TSR_RQCP0 1U
+ #define CAN_TSR_TXOK0 2U
+ #define CAN_TSR_ALST0 4U
+Index: tools/verify.sh
+===================================================================
+--- tools/verify.sh	(版本 109)
++++ tools/verify.sh	(工作副本)
+@@ -347,7 +347,7 @@
+             fi
+             # FlySky i-BUS Backend Test
+             "$cc" -std=c99 -Wall -Wextra -Werror \
+-                -DREMOTE_BACKEND_HOST "${timeout_defs[@]}" \
++                -DREMOTE_BACKEND_HOST ${timeout_defs[@]+"${timeout_defs[@]}"} \
+                 -DREMOTE_BACKEND_A28_E34=0 -DREMOTE_BACKEND_FLYSKY_IBUS=1 \
+                 -I"${REPO_ROOT}/control_chassis/Core/Inc" \
+                 "${REPO_ROOT}/control_chassis/host/remote_backend_harness.c" \
+@@ -360,7 +360,7 @@
+             "${WORK_DIR}/remote_backend_flysky_${timeout_ms}" || return 1
+             # Exercise the production CH6 bag + explicit OK blade configuration.
+             "$cc" -std=c99 -Wall -Wextra -Werror \
+-                -DREMOTE_BACKEND_HOST "${timeout_defs[@]}" -DMOWER_BLADE_OK_ENABLED=1 -DMOWER_GRASS_BAG_CH6_ENABLED=1 \
++                -DREMOTE_BACKEND_HOST ${timeout_defs[@]+"${timeout_defs[@]}"} -DMOWER_BLADE_OK_ENABLED=1 -DMOWER_GRASS_BAG_CH6_ENABLED=1 \
+                 -DREMOTE_BACKEND_A28_E34=0 -DREMOTE_BACKEND_FLYSKY_IBUS=1 \
+                 -I"${REPO_ROOT}/control_chassis/Core/Inc" \
+                 "${REPO_ROOT}/control_chassis/host/remote_backend_harness.c" \
+@@ -378,6 +378,7 @@
+             "${REPO_ROOT}/control_chassis/Core/UserDev/grass_bag_control.c" \
+             -o "${WORK_DIR}/grass_bag_control" || return 1
+         "${WORK_DIR}/grass_bag_control" || return 1
++        # Default soft start, exercised against the real lifter.c ramp.
+         "$cc" -std=c99 -Wall -Wextra -Werror \
+             -DMOWER_GRASS_BAG_CH6_ENABLED=1 -DMOWER_BLADE_OK_ENABLED=1 \
+             -DREMOTE_BACKEND_A28_E34=0 -DREMOTE_BACKEND_FLYSKY_IBUS=1 \
+@@ -384,6 +385,17 @@
+             -include "${REPO_ROOT}/control_chassis/host/lifter_fakes/main.h" \
+             -I"${REPO_ROOT}/control_chassis/host/lifter_fakes" \
+             -I"${REPO_ROOT}/control_chassis/Core/Inc" \
++            "${REPO_ROOT}/control_chassis/host/actuator_soft_start_harness.c" \
++            "${REPO_ROOT}/control_chassis/Core/UserDev/lifter.c" \
++            "${REPO_ROOT}/control_chassis/Core/UserDev/grass_bag_control.c" \
++            -lm -o "${WORK_DIR}/actuator_soft_start" || return 1
++        "${WORK_DIR}/actuator_soft_start" || return 1
++        "$cc" -std=c99 -Wall -Wextra -Werror -DACTUATOR_SOFT_START_MS=0 \
++            -DMOWER_GRASS_BAG_CH6_ENABLED=1 -DMOWER_BLADE_OK_ENABLED=1 \
++            -DREMOTE_BACKEND_A28_E34=0 -DREMOTE_BACKEND_FLYSKY_IBUS=1 \
++            -include "${REPO_ROOT}/control_chassis/host/lifter_fakes/main.h" \
++            -I"${REPO_ROOT}/control_chassis/host/lifter_fakes" \
++            -I"${REPO_ROOT}/control_chassis/Core/Inc" \
+             "${REPO_ROOT}/control_chassis/host/grass_bag_lifter_harness.c" \
+             "${REPO_ROOT}/control_chassis/Core/UserDev/lifter.c" \
+             "${REPO_ROOT}/control_chassis/Core/UserDev/grass_bag_control.c" \
+@@ -417,7 +429,7 @@
+         cat "${LOG_DIR}/host_actuator_pwm.log" >&2
+         return 1
+     }
+-    pass "Actuator PWM (actual RCC/TIM/EG2104, 10kHz, +/-60%, startup and stop zero)"
++    pass "Actuator PWM (actual RCC/TIM/EG2104, bag 10kHz / height 10kHz, +/-50%, startup and stop zero)"
+ 
+     info "=== Running Lifter Height Homing Harness (both remote backends) ==="
+     log="${LOG_DIR}/host_lifter_height.log"
+@@ -428,7 +440,7 @@
+                 height_defs=(-DREMOTE_BACKEND_A28_E34=0 -DREMOTE_BACKEND_FLYSKY_IBUS=1
+                     -DMOWER_GRASS_BAG_CH6_ENABLED=1 -DMOWER_BLADE_OK_ENABLED=1)
+             fi
+-            "$cc" -std=c99 -Wall -Wextra -Werror "${height_defs[@]}" \
++            "$cc" -std=c99 -Wall -Wextra -Werror -DACTUATOR_SOFT_START_MS=0 "${height_defs[@]}" \
+                 -include "${REPO_ROOT}/control_chassis/host/lifter_fakes/main.h" \
+                 -I"${REPO_ROOT}/control_chassis/host/lifter_fakes" \
+                 -I"${REPO_ROOT}/control_chassis/Core/Inc" \
+@@ -585,7 +597,7 @@
+             run_chassis_build
+             ;;
+         all)
+-            run_host_harnesses
++            run_host_harnesses || return 1
+             echo ""
+             run_chassis_build
+             ;;

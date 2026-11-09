@@ -1,3 +1,0 @@
-PASS production i-BUS CH8/OK backend, CH7, CH9, CH10, CH6 isolation and timeout
-[PASS] Grass bag baseline/debounce/invalidation/reversal/stop/timeout
-[PASS] Production Lifter mutex/permission/PWM stop/completion/time race/fail closed

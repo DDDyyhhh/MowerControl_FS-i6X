@@ -10,7 +10,8 @@ sources=(
     "$root_dir/Core/UserApp/safety_ownership_gate.c"
 )
 
-"$cc" "${common[@]}" "${sources[@]}" -lm -o /tmp/blade_manual_control_pwm_harness
+"$cc" "${common[@]}" -DBLADE_MOTOR_DRIVER_USED=1U \
+    "${sources[@]}" -lm -o /tmp/blade_manual_control_pwm_harness
 /tmp/blade_manual_control_pwm_harness
 
 "$cc" "${common[@]}" -DBLADE_MOTOR_DRIVER_USED=2U \

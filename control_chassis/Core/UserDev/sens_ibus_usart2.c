@@ -98,7 +98,7 @@ static void SensIbusUsart2_Addr9TxComplete(void)
     if (g_sens9.rsp[index] == 0U)
     {
         size = (index == 0U) ?
-            SENS_IBUS_REQUEST_SIZE : SENS_IBUS_MAX_RESPONSE_SIZE;
+            SENS_IBUS_REQUEST_SIZE : SENS_IBUS_STANDARD_RESPONSE_SIZE;
         for (i = 0U; i < size; i++)
             g_sens9.first_rsp[index][i] = g_tx_buffer[i];
     }
@@ -224,7 +224,7 @@ static void SensIbusUsart2_ReadTelemetrySourceDiag(
     SensIbusTelemetrySourceDiag_t *source)
 {
     uint32_t sequence_before;
-    uint32_t sequence_after;
+    uint32_t sequence_after = 0U;
     uint8_t i;
 
     do

@@ -1,0 +1,2 @@
+PASS HAL SPI shared deadline: 0/1/2/expired, tick wrap, frozen tick, infinite wait and stuck BSY
+PASS HAL SPI shared deadline: 0/1/2/expired, tick wrap, frozen tick, infinite wait and stuck BSY

@@ -127,7 +127,13 @@ uint8_t OID_Req_Parameter(uint8_t node_id, uint8_t sub_index)
         g_oid_drives[node_id].pending_subidx = sub_index;
     }
 
-    uint8_t result = CAN_Enqueue_Message(node_id, tx_data, 2, 0);
+    uint8_t speed = sub_index == OID_PARAM_ACTUAL_SPEED;
+    uint8_t result = speed ? CAN_Enqueue_SpeedQuery(node_id) :
+                            CAN_Enqueue_Message(node_id, tx_data, 2, 0);
+    if (speed && node_id > 0U && node_id < OID_MAX_NODES) {
+        ++g_oid_drives[node_id].speed_query_attempts;
+        if (result) ++g_oid_drives[node_id].speed_query_queued;
+    }
     #if SENS_IBUS_HIL_DIAG_USART1_TX_ENABLED && MOTOR_DRIVER_USED == DRIVER_TYPE_OID
     if ((node_id > 0U) && (node_id < OID_MAX_NODES) &&
         (sub_index == OID_PARAM_ACTUAL_SPEED))
@@ -158,13 +164,18 @@ uint8_t OID_Req_Actual_Speed(uint8_t node_id)
 
 void OID_Parse_Rx_Message(uint32_t can_id, uint8_t *data, uint8_t dlc)
 {
+    OID_Parse_Rx_MessageAt(can_id, data, dlc, HAL_GetTick());
+}
+
+void OID_Parse_Rx_MessageAt(uint32_t can_id, uint8_t *data, uint8_t dlc, uint32_t rx_tick)
+{
     // CAN ID 范围检查
-    if (can_id == 0 || can_id >= OID_MAX_NODES || data == NULL)
+    if (can_id == 0 || can_id >= OID_MAX_NODES || data == NULL || dlc == 0U)
         return;
 
     volatile OID_Data_t *drive = &g_oid_drives[can_id];
     drive->is_online = 1;
-    drive->last_update_tick = HAL_GetTick();
+    drive->last_update_tick = rx_tick;
     #if SENS_IBUS_HIL_DIAG_USART1_TX_ENABLED && MOTOR_DRIVER_USED == DRIVER_TYPE_OID
     OID_HilRecordResponse(&g_oid_hil_diag[can_id].any_response,
                           can_id, data, dlc, drive->last_update_tick);
@@ -189,6 +200,11 @@ void OID_Parse_Rx_Message(uint32_t can_id, uint8_t *data, uint8_t dlc)
         case OID_PARAM_ACTUAL_SPEED: // 实时电转速 (DLC=6, int32 erpm)
             if (dlc >= 6)
             {
+                if (drive->actual_speed_valid) {
+                    uint32_t gap = rx_tick - drive->actual_speed_update_tick;
+                    if (gap > drive->speed_max_gap_ms) drive->speed_max_gap_ms = gap;
+                }
+                ++drive->speed_responses;
                 drive->actual_speed_erpm = (int32_t)((uint32_t)data[2] << 24) |
                                             ((uint32_t)data[3] << 16) |
                                             ((uint32_t)data[4] << 8)  |

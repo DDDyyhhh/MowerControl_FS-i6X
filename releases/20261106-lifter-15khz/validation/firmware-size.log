@@ -1,2 +1,3 @@
    text	   data	    bss	    dec	    hex	filename
-  82648	    428	  53228	 136304	  21470	/Users/dyh/Documents/Codex/MowerControl/releases/20261106-lifter-15khz/control-chassis-lifter-15khz.elf
+  89624	    764	  54132	 144520	  23488	/Users/dyh/phld/MowerControl_FS-i6X/releases/20261106-lifter-15khz/control-chassis-lifter-15khz60pct.elf
+ 130792	     72	  15784	 146648	  23cd8	/Users/dyh/phld/MowerControl_FS-i6X/releases/20261106-lifter-15khz/fs-i6x-lifter15khz-paired.elf

@@ -46,6 +46,7 @@
 #include "BladeMotor.h"
 #include "connet_check.h"
 #include "app_context.h"
+#include "remote_backend.h"
 #include "chassis_control.h"
 #include "odrive_can.h"
 
@@ -220,7 +221,7 @@ void MX_FREERTOS_Init(void) {
 
   /* Create the queue(s) */
   /* creation of Queue_RxData */
-  Queue_RxDataHandle = osMessageQueueNew (16, 68, &Queue_RxData_attributes);
+  Queue_RxDataHandle = osMessageQueueNew (16, sizeof(RemoteRxMsg_t), &Queue_RxData_attributes);
 
   /* creation of Queue_TxDataWireless */
   Queue_TxDataWirelessHandle = osMessageQueueNew (16, 140, &Queue_TxDataWireless_attributes);

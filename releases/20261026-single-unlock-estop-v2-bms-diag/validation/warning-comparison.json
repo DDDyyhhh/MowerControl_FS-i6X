@@ -1,0 +1,108 @@
+[
+  {
+    "config": "control_chassis/build/gcc15/debug/compile_commands.json",
+    "source": "app_Motion.c",
+    "warnings": [
+      "unused variable 'cruise_key_lock' [-Wunused-variable]",
+      "unused variable 'cruise_toggle_tick' [-Wunused-variable]",
+      "unused variable 'is_joystick_active' [-Wunused-variable]",
+      "unused variable 'last_blade_command' [-Wunused-variable]",
+      "unused variable 'last_blade_knob' [-Wunused-variable]",
+      "unused variable 'us_toggle_lock' [-Wunused-variable]",
+      "variable 'last_key_state' set but not used [-Wunused-but-set-variable]"
+    ],
+    "unchanged": true
+  },
+  {
+    "config": "control_chassis/build/gcc15/debug/compile_commands.json",
+    "source": "battery_monitor.c",
+    "warnings": [],
+    "unchanged": true
+  },
+  {
+    "config": "control_chassis/build/gcc15/debug/compile_commands.json",
+    "source": "remote_authorization.c",
+    "warnings": [],
+    "unchanged": true
+  },
+  {
+    "config": "control_chassis/build/gcc15/debug/compile_commands.json",
+    "source": "remote_backend.c",
+    "warnings": [],
+    "unchanged": true
+  },
+  {
+    "config": "control_chassis/build/gcc15/debug/compile_commands.json",
+    "source": "sens_ibus_responder.c",
+    "warnings": [],
+    "unchanged": true
+  },
+  {
+    "config": "control_chassis/build/gcc15/mower-ok-release/compile_commands.json",
+    "source": "app_Motion.c",
+    "warnings": [
+      "unused variable 'cruise_key_lock' [-Wunused-variable]",
+      "unused variable 'cruise_toggle_tick' [-Wunused-variable]",
+      "unused variable 'is_joystick_active' [-Wunused-variable]",
+      "unused variable 'last_blade_command' [-Wunused-variable]",
+      "unused variable 'last_blade_knob' [-Wunused-variable]",
+      "unused variable 'us_toggle_lock' [-Wunused-variable]",
+      "variable 'last_key_state' set but not used [-Wunused-but-set-variable]"
+    ],
+    "unchanged": true
+  },
+  {
+    "config": "control_chassis/build/gcc15/mower-ok-release/compile_commands.json",
+    "source": "battery_monitor.c",
+    "warnings": [],
+    "unchanged": true
+  },
+  {
+    "config": "control_chassis/build/gcc15/mower-ok-release/compile_commands.json",
+    "source": "remote_authorization.c",
+    "warnings": [],
+    "unchanged": true
+  },
+  {
+    "config": "control_chassis/build/gcc15/mower-ok-release/compile_commands.json",
+    "source": "remote_backend.c",
+    "warnings": [],
+    "unchanged": true
+  },
+  {
+    "config": "control_chassis/build/gcc15/mower-ok-release/compile_commands.json",
+    "source": "sens_ibus_responder.c",
+    "warnings": [],
+    "unchanged": true
+  },
+  {
+    "config": "control_chassis/build/gcc15/mower-ok-release/compile_commands.json",
+    "source": "stm32_adapter.c",
+    "warnings": [],
+    "unchanged": true
+  },
+  {
+    "config": "control_chassis/build/gcc15/mower-ok-release/compile_commands.json",
+    "source": "exp3_probe.c",
+    "warnings": [],
+    "unchanged": true
+  },
+  {
+    "config": "OpenI6X/FS-I6X/opentx/build-mower-ok-gcc15/compile_commands.json",
+    "source": "view_main.cpp",
+    "warnings": [],
+    "unchanged": true
+  },
+  {
+    "config": "OpenI6X/FS-I6X/opentx/build-mower-ok-gcc15/compile_commands.json",
+    "source": "exp3_probe.c",
+    "warnings": [],
+    "unchanged": true
+  },
+  {
+    "config": "OpenI6X/FS-I6X/opentx/build-mower-ok-gcc15/compile_commands.json",
+    "source": "openi6x_adapter.c",
+    "warnings": [],
+    "unchanged": true
+  }
+]

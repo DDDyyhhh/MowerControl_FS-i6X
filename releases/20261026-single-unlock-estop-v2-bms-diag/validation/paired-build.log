@@ -1,0 +1,402 @@
+[1m=== Running Battery Protection Harnesses ===[0m
+  [[0;32mPASS[0m] Battery Protection (BMS publication, Motion recovery, full-speed wheel adapters and LOW latch)
+[1m=== [1/9] Running Blade Driver Selection Harness ===[0m
+  [[0;32mPASS[0m] Blade Driver Selection (default FTESC CAN, explicit PWM/FTESC CAN, negative compile guards)
+[1m=== [2/9] Running Blade Manual Control Harness ===[0m
+  [[0;32mPASS[0m] Blade Manual Control (PWM & FTESC CAN confirmation state machine)
+[1m=== [3/9] Running Blade Confirm CH6 Adapter Harness ===[0m
+  [[0;32mPASS[0m] Blade Confirm CH6 Adapter (Baseline, edge debounce, duplicate rejection & BMC integration)
+[1m=== [4/9] Running FTESC Realtime Feedback Harness ===[0m
+  [[0;32mPASS[0m] FTESC Realtime Feedback (CAN packet parsing & CRC validation)
+[1m=== [5/9] Running SENS i-BUS Responder Harness ===[0m
+  [[0;32mPASS[0m] SENS i-BUS Responder (Discovery, measurement request & packet packing)
+[1m=== [6/9] Running Telemetry Snapshot Harness ===[0m
+  [[0;32mPASS[0m] Telemetry Snapshot (BMS, odometry, fault bitfield & atomic exchange)
+[1m=== [7/9] Running Remote Authorization Harness ===[0m
+  [[0;32mPASS[0m] Remote Authorization (CH8 dual-edge unlock state machine)
+[1m=== [8/9] Running Remote Backend Harness ===[0m
+  [[0;32mPASS[0m] Remote Backend (A28/E34 & FlySky i-BUS stream/framing isolation)
+[1m=== Running Lifter Height Homing Harness (both remote backends) ===[0m
+  [[0;32mPASS[0m] Lifter Height (interruptible 10s homing, reversed PWM, latest target wins)
+  [[0;32mPASS[0m] i6X stick calibration validation and neutral fallback
+  [[0;32mPASS[0m] i6X mower direct startup, native throttle/switch warnings and calibration isolation
+[1m=== Running IMU Numeric Harness (optimized strict aliasing) ===[0m
+  [[0;32mPASS[0m] IMU Numeric (accuracy, pose and strict-aliasing optimization)
+[1m=== [9/9] Running Safety Ownership Gate Harness ===[0m
+  [[0;32mPASS[0m] Safety Ownership Gate (Arbitration, latching, zero-intent enforcement)
+
+  [[0;32mPASS[0m] Ticket03 Experiment3 protocol and transport
+  [[0;32mPASS[0m] Mower OK release flow, controller runtime and home display
+  [[0;32mPASS[0m] Production API ownership and safety boundaries
+[0;32m[1mALL HOST HARNESSES PASSED![0m
+
+[1m=== Building Chassis Firmware (CMake / ARM GCC) ===[0m
+  [[0;32mPASS[0m] Chassis CMake build succeeded (ELF, HEX and BIN generated)
+Preset CMake variables:
+
+  CMAKE_BUILD_TYPE="Release"
+  CMAKE_TOOLCHAIN_FILE="/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/cmake/arm-none-eabi-gcc.cmake"
+  MOWER_BLADE_OK="ON"
+  TICKET03_EXP3_HIL="OFF"
+  TICKET03_EXP3_PWM_HIL="OFF"
+
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/build/gcc15/mower-ok-release
+[1/30] Building C object CMakeFiles/control_chassis.dir/Core/UserApp/battery_monitor.c.obj
+[2/30] Building C object CMakeFiles/control_chassis.dir/Core/UserApp/blade_manual_control.c.obj
+[3/30] Building C object CMakeFiles/control_chassis.dir/Core/UserApp/telemetry_snapshot.c.obj
+[4/30] Building C object CMakeFiles/control_chassis.dir/Core/UserApp/app_context.c.obj
+[5/30] Building C object CMakeFiles/control_chassis.dir/Core/UserApp/app_Comm.c.obj
+[6/30] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/connet_check.c.obj
+[7/30] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/flysky_ibus_servo.c.obj
+[8/30] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/cruise_control.c.obj
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/UserDev/cruise_control.c:73:14: warning: 'Yaw_PID_Compute' defined but not used [-Wunused-function]
+   73 | static float Yaw_PID_Compute(float target, float current)
+      |              ^~~~~~~~~~~~~~~
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/UserDev/cruise_control.c:62:14: warning: 'Get_Angle_Diff' defined but not used [-Wunused-function]
+   62 | static float Get_Angle_Diff(float start_angle, float current_angle)
+      |              ^~~~~~~~~~~~~~
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/UserDev/cruise_control.c:42:14: warning: 'Normalize_Angle' defined but not used [-Wunused-function]
+   42 | static float Normalize_Angle(float angle)
+      |              ^~~~~~~~~~~~~~~
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/UserDev/cruise_control.c:33:16: warning: 'obstacle_filter_count' defined but not used [-Wunused-variable]
+   33 | static uint8_t obstacle_filter_count = 0;
+      |                ^~~~~~~~~~~~~~~~~~~~~
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/UserDev/cruise_control.c:30:14: warning: 'g_u_turn_start_yaw' defined but not used [-Wunused-variable]
+   30 | static float g_u_turn_start_yaw = 0.0f;  // 掉头起始航向
+      |              ^~~~~~~~~~~~~~~~~~
+[9/30] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/car_Control.c.obj
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/UserDev/car_Control.c: In function 'v_ctl_uart':
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/UserDev/car_Control.c:448:17: warning: unused variable 'current_sign' [-Wunused-variable]
+  448 |     const char *current_sign = (current_int < 0) ? "-" : "";
+      |                 ^~~~~~~~~~~~
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/UserDev/car_Control.c:447:9: warning: unused variable 'current_abs' [-Wunused-variable]
+  447 |     int current_abs = (current_int < 0) ? -current_int : current_int;
+      |         ^~~~~~~~~~~
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/UserDev/car_Control.c:444:17: warning: unused variable 'speed_sign' [-Wunused-variable]
+  444 |     const char *speed_sign = (speed_int < 0) ? "-" : "";
+      |                 ^~~~~~~~~~
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/UserDev/car_Control.c:443:9: warning: unused variable 'speed_abs' [-Wunused-variable]
+  443 |     int speed_abs = (speed_int < 0) ? -speed_int : speed_int;
+      |         ^~~~~~~~~
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/UserDev/car_Control.c:422:20: warning: unused variable 'reset_counter' [-Wunused-variable]
+  422 |     static uint8_t reset_counter[4] = {0, 0, 0, 0};
+      |                    ^~~~~~~~~~~~~
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/UserDev/car_Control.c:420:18: warning: variable 'last_speed' set but not used [-Wunused-but-set-variable]
+  420 |     static float last_speed[4] = {0.0f, 0.0f, 0.0f, 0.0f};
+      |                  ^~~~~~~~~~
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/UserDev/car_Control.c:416:13: warning: variable 'motor_axis_id' set but not used [-Wunused-but-set-variable]
+  416 |     uint8_t motor_axis_id;
+      |             ^~~~~~~~~~~~~
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/UserDev/car_Control.c: In function 'MotionControl_Parking':
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/UserDev/car_Control.c:529:11: warning: unused variable 'hold_rpm' [-Wunused-variable]
+  529 |     float hold_rpm = 0.0f;
+      |           ^~~~~~~~
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/UserDev/car_Control.c: In function 'Send_Motor_Command':
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/UserDev/car_Control.c:585:17: warning: unused variable 'current_sign' [-Wunused-variable]
+  585 |     const char *current_sign = (current_int < 0) ? "-" : "";
+      |                 ^~~~~~~~~~~~
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/UserDev/car_Control.c:584:9: warning: unused variable 'current_abs' [-Wunused-variable]
+  584 |     int current_abs = (current_int < 0) ? -current_int : current_int;
+      |         ^~~~~~~~~~~
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/UserDev/car_Control.c:581:17: warning: unused variable 'speed_sign' [-Wunused-variable]
+  581 |     const char *speed_sign = (speed_int < 0) ? "-" : "";
+      |                 ^~~~~~~~~~
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/UserDev/car_Control.c:580:9: warning: unused variable 'speed_abs' [-Wunused-variable]
+  580 |     int speed_abs = (speed_int < 0) ? -speed_int : speed_int;
+      |         ^~~~~~~~~
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/UserDev/car_Control.c:561:13: warning: variable 'motor_axis_id' set but not used [-Wunused-but-set-variable]
+  561 |     uint8_t motor_axis_id;
+      |             ^~~~~~~~~~~~~
+[10/30] Building C object CMakeFiles/control_chassis.dir/Core/UserApp/app_Report.c.obj
+[11/30] Building C object CMakeFiles/control_chassis.dir/Core/UserApp/app_SerialTX.c.obj
+[12/30] Building C object CMakeFiles/control_chassis.dir/Core/UserApp/app_BMS_Sensor.c.obj
+[13/30] Building C object CMakeFiles/control_chassis.dir/Core/Src/freertos.c.obj
+In file included from /media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/Src/freertos.c:34:
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/Inc/rs485.h:46:13: warning: 'RS485_Start_Receive' declared 'static' but never defined [-Wunused-function]
+   46 | static void RS485_Start_Receive(void);
+      |             ^~~~~~~~~~~~~~~~~~~
+[14/30] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/pairing_receiver.c.obj
+[15/30] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/lifter.c.obj
+[16/30] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/remote_authorization.c.obj
+[17/30] Building C object CMakeFiles/control_chassis.dir/Core/Src/main.c.obj
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/Src/main.c: In function 'main':
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/Src/main.c:201:9: warning: unused variable 'angles' [-Wunused-variable]
+  201 |   float angles[3];
+      |         ^~~~~~
+In file included from /media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/Src/main.c:57:
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/Inc/rs485.h: At top level:
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/Inc/rs485.h:46:13: warning: 'RS485_Start_Receive' declared 'static' but never defined [-Wunused-function]
+   46 | static void RS485_Start_Receive(void);
+      |             ^~~~~~~~~~~~~~~~~~~
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/Src/main.c:170:17: warning: 'obstacle_clear_timestamp' defined but not used [-Wunused-variable]
+  170 | static uint32_t obstacle_clear_timestamp = 0; // 鐢ㄤ簬寤惰繜娓呴櫎鐨勮鏃跺櫒
+      |                 ^~~~~~~~~~~~~~~~~~~~~~~~
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/Src/main.c:168:17: warning: 'g_key_press_time' defined but not used [-Wunused-variable]
+  168 | static uint32_t g_key_press_time[8] = {0}; // 淇濆瓨8涓寜閿殑鎸変笅璧峰鏃堕棿
+      |                 ^~~~~~~~~~~~~~~~
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/Src/main.c:165:16: warning: 'key1_was_pressed' defined but not used [-Wunused-variable]
+  165 | static uint8_t key1_was_pressed = 0;
+      |                ^~~~~~~~~~~~~~~~
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/Src/main.c:164:16: warning: 'key0_was_pressed' defined but not used [-Wunused-variable]
+  164 | static uint8_t key0_was_pressed = 0;
+      |                ^~~~~~~~~~~~~~~~
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/Src/main.c:159:16: warning: 'g_stopwatch_running' defined but not used [-Wunused-variable]
+  159 | static uint8_t g_stopwatch_running = 0;
+      |                ^~~~~~~~~~~~~~~~~~~
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/Src/main.c:158:17: warning: 'g_stopwatch_start_time' defined but not used [-Wunused-variable]
+  158 | static uint32_t g_stopwatch_start_time = 0;
+      |                 ^~~~~~~~~~~~~~~~~~~~~~
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/Src/main.c:106:14: warning: 'g_ultrasonic_distance_cm' defined but not used [-Wunused-variable]
+  106 | static float g_ultrasonic_distance_cm = -1.0f; // 鐢ㄤ簬淇濆瓨鏈€鏂扮殑鏈夋晥璺濈
+      |              ^~~~~~~~~~~~~~~~~~~~~~~~
+[18/30] Building C object 'CMakeFiles/control_chassis.dir/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/experiments/ticket03/exp3_hil.c.obj'
+[19/30] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/chassis_control.c.obj
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/UserDev/chassis_control.c: In function 'chassis_control_parse_host_frame':
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/UserDev/chassis_control.c:149:12: warning: unused variable 'vy_raw' [-Wunused-variable]
+  149 |     int8_t vy_raw = (int8_t)payload[2];
+      |            ^~~~~~
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/UserDev/chassis_control.c: At top level:
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/UserDev/chassis_control.c:375:13: warning: 'chassis_control_send_oid_wheel_speed_feedback' defined but not used [-Wunused-function]
+  375 | static void chassis_control_send_oid_wheel_speed_feedback(void)
+      |             ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+[20/30] Building C object 'CMakeFiles/control_chassis.dir/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/experiments/ticket03/exp3_blade_adapter.c.obj'
+[21/30] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/sens_ibus_responder.c.obj
+[22/30] Building C object 'CMakeFiles/control_chassis.dir/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/experiments/ticket03/exp3_auto_session.c.obj'
+[23/30] Building C object 'CMakeFiles/control_chassis.dir/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/experiments/ticket03/exp3_link.c.obj'
+[24/30] Building C object 'CMakeFiles/control_chassis.dir/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/experiments/ticket03/exp3_probe.c.obj'
+[25/30] Building C object 'CMakeFiles/control_chassis.dir/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/experiments/ticket03/exp3.c.obj'
+[26/30] Building C object 'CMakeFiles/control_chassis.dir/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/experiments/ticket03/stm32_adapter.c.obj'
+[27/30] Building C object CMakeFiles/control_chassis.dir/Core/UserApp/app_Motion.c.obj
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/UserApp/app_Motion.c: In function 'StartTask_Motion':
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/UserApp/app_Motion.c:397:12: warning: unused variable 'is_joystick_active' [-Wunused-variable]
+  397 |       bool is_joystick_active = (abs((int)mapped_throttle - 2048) > 200) ||
+      |            ^~~~~~~~~~~~~~~~~~
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/UserApp/app_Motion.c:175:19: warning: unused variable 'cruise_toggle_tick' [-Wunused-variable]
+  175 |   static uint32_t cruise_toggle_tick = 0;
+      |                   ^~~~~~~~~~~~~~~~~~
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/UserApp/app_Motion.c:173:18: warning: unused variable 'cruise_key_lock' [-Wunused-variable]
+  173 |   static uint8_t cruise_key_lock = 0;
+      |                  ^~~~~~~~~~~~~~~
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/UserApp/app_Motion.c:171:18: warning: unused variable 'us_toggle_lock' [-Wunused-variable]
+  171 |   static uint8_t us_toggle_lock = 0;
+      |                  ^~~~~~~~~~~~~~
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/UserApp/app_Motion.c:159:16: warning: unused variable 'last_blade_command' [-Wunused-variable]
+  159 |   static float last_blade_command = -1.0f;
+      |                ^~~~~~~~~~~~~~~~~~
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/UserApp/app_Motion.c:158:18: warning: unused variable 'last_blade_knob' [-Wunused-variable]
+  158 |   static uint8_t last_blade_knob = 0xFF;
+      |                  ^~~~~~~~~~~~~~~
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/UserApp/app_Motion.c:155:15: warning: variable 'last_key_state' set but not used [-Wunused-but-set-variable]
+  155 |   static bool last_key_state[8] = {0};
+      |               ^~~~~~~~~~~~~~
+[28/30] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/remote_backend.c.obj
+[29/30] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/sens_ibus_usart2.c.obj
+[30/30] Linking C executable control_chassis.elf
+/home/dyh/.local/opt/arm-gnu-toolchain-15.3.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/bin/ld: /home/dyh/.local/opt/arm-gnu-toolchain-15.3.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard/libc_nano.a(libc_a-closer.o): in function `_close_r':
+closer.c:(.text._close_r+0xc): warning: _close is not implemented and will always fail
+/home/dyh/.local/opt/arm-gnu-toolchain-15.3.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/bin/ld: /home/dyh/.local/opt/arm-gnu-toolchain-15.3.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard/libc_nano.a(libc_a-closer.o): note: the message above does not take linker garbage collection into account
+/home/dyh/.local/opt/arm-gnu-toolchain-15.3.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/bin/ld: /home/dyh/.local/opt/arm-gnu-toolchain-15.3.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard/libc_nano.a(libc_a-lseekr.o): in function `_lseek_r':
+lseekr.c:(.text._lseek_r+0x10): warning: _lseek is not implemented and will always fail
+/home/dyh/.local/opt/arm-gnu-toolchain-15.3.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/bin/ld: /home/dyh/.local/opt/arm-gnu-toolchain-15.3.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard/libc_nano.a(libc_a-lseekr.o): note: the message above does not take linker garbage collection into account
+/home/dyh/.local/opt/arm-gnu-toolchain-15.3.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/bin/ld: /home/dyh/.local/opt/arm-gnu-toolchain-15.3.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard/libc_nano.a(libc_a-readr.o): in function `_read_r':
+readr.c:(.text._read_r+0x10): warning: _read is not implemented and will always fail
+/home/dyh/.local/opt/arm-gnu-toolchain-15.3.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/bin/ld: /home/dyh/.local/opt/arm-gnu-toolchain-15.3.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard/libc_nano.a(libc_a-readr.o): note: the message above does not take linker garbage collection into account
+/home/dyh/.local/opt/arm-gnu-toolchain-15.3.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/bin/ld: /home/dyh/.local/opt/arm-gnu-toolchain-15.3.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard/libc_nano.a(libc_a-writer.o): in function `_write_r':
+writer.c:(.text._write_r+0x10): warning: _write is not implemented and will always fail
+/home/dyh/.local/opt/arm-gnu-toolchain-15.3.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/bin/ld: /home/dyh/.local/opt/arm-gnu-toolchain-15.3.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard/libc_nano.a(libc_a-writer.o): note: the message above does not take linker garbage collection into account
+Memory region         Used Size  Region Size  %age Used
+             RAM:       54224 B       128 KB     41.37%
+          CCMRAM:           0 B        64 KB      0.00%
+           FLASH:       85976 B       512 KB     16.40%
+   text	   data	    bss	    dec	    hex	filename
+  85464	    504	  53720	 139688	  221a8	/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/build/gcc15/mower-ok-release/control_chassis.elf
+CMake Deprecation Warning at CMakeLists.txt:19 (cmake_policy):
+  The OLD behavior for policy CMP0023 will be removed from a future version
+  of CMake.
+
+  The cmake-policies(7) manual explains that the OLD behaviors of all
+  policies are deprecated and that a policy should be set to OLD only under
+  specific short-term circumstances.  Projects should be ported to the NEW
+  behavior and not rely on setting a policy to OLD.
+
+
+-- OpenI6X 2.3.0 @f64ed459
+-- Python executable: /usr/bin/python3.10
+-- Python bin directory: /usr/bin
+CMake Warning at CMakeLists.txt:92 (find_package):
+  By not providing "FindQt5Core.cmake" in CMAKE_MODULE_PATH this project has
+  asked CMake to find a package configuration file provided by "Qt5Core", but
+  CMake did not find one.
+
+  Could not find a package configuration file provided by "Qt5Core" with any
+  of the following names:
+
+    Qt5CoreConfig.cmake
+    qt5core-config.cmake
+
+  Add the installation prefix of "Qt5Core" to CMAKE_PREFIX_PATH or set
+  "Qt5Core_DIR" to a directory containing one of the above files.  If
+  "Qt5Core" provides a separate development package or SDK, be sure it has
+  been installed.
+
+
+CMake Warning at CMakeLists.txt:93 (find_package):
+  By not providing "FindQt5Widgets.cmake" in CMAKE_MODULE_PATH this project
+  has asked CMake to find a package configuration file provided by
+  "Qt5Widgets", but CMake did not find one.
+
+  Could not find a package configuration file provided by "Qt5Widgets" with
+  any of the following names:
+
+    Qt5WidgetsConfig.cmake
+    qt5widgets-config.cmake
+
+  Add the installation prefix of "Qt5Widgets" to CMAKE_PREFIX_PATH or set
+  "Qt5Widgets_DIR" to a directory containing one of the above files.  If
+  "Qt5Widgets" provides a separate development package or SDK, be sure it has
+  been installed.
+
+
+CMake Warning at CMakeLists.txt:94 (find_package):
+  By not providing "FindQt5Xml.cmake" in CMAKE_MODULE_PATH this project has
+  asked CMake to find a package configuration file provided by "Qt5Xml", but
+  CMake did not find one.
+
+  Could not find a package configuration file provided by "Qt5Xml" with any
+  of the following names:
+
+    Qt5XmlConfig.cmake
+    qt5xml-config.cmake
+
+  Add the installation prefix of "Qt5Xml" to CMAKE_PREFIX_PATH or set
+  "Qt5Xml_DIR" to a directory containing one of the above files.  If "Qt5Xml"
+  provides a separate development package or SDK, be sure it has been
+  installed.
+
+
+CMake Warning at CMakeLists.txt:95 (find_package):
+  By not providing "FindQt5LinguistTools.cmake" in CMAKE_MODULE_PATH this
+  project has asked CMake to find a package configuration file provided by
+  "Qt5LinguistTools", but CMake did not find one.
+
+  Could not find a package configuration file provided by "Qt5LinguistTools"
+  with any of the following names:
+
+    Qt5LinguistToolsConfig.cmake
+    qt5linguisttools-config.cmake
+
+  Add the installation prefix of "Qt5LinguistTools" to CMAKE_PREFIX_PATH or
+  set "Qt5LinguistTools_DIR" to a directory containing one of the above
+  files.  If "Qt5LinguistTools" provides a separate development package or
+  SDK, be sure it has been installed.
+
+
+CMake Warning at CMakeLists.txt:96 (find_package):
+  By not providing "FindQt5PrintSupport.cmake" in CMAKE_MODULE_PATH this
+  project has asked CMake to find a package configuration file provided by
+  "Qt5PrintSupport", but CMake did not find one.
+
+  Could not find a package configuration file provided by "Qt5PrintSupport"
+  with any of the following names:
+
+    Qt5PrintSupportConfig.cmake
+    qt5printsupport-config.cmake
+
+  Add the installation prefix of "Qt5PrintSupport" to CMAKE_PREFIX_PATH or
+  set "Qt5PrintSupport_DIR" to a directory containing one of the above files.
+  If "Qt5PrintSupport" provides a separate development package or SDK, be
+  sure it has been installed.
+
+
+CMake Warning at CMakeLists.txt:97 (find_package):
+  By not providing "FindQt5Multimedia.cmake" in CMAKE_MODULE_PATH this
+  project has asked CMake to find a package configuration file provided by
+  "Qt5Multimedia", but CMake did not find one.
+
+  Could not find a package configuration file provided by "Qt5Multimedia"
+  with any of the following names:
+
+    Qt5MultimediaConfig.cmake
+    qt5multimedia-config.cmake
+
+  Add the installation prefix of "Qt5Multimedia" to CMAKE_PREFIX_PATH or set
+  "Qt5Multimedia_DIR" to a directory containing one of the above files.  If
+  "Qt5Multimedia" provides a separate development package or SDK, be sure it
+  has been installed.
+
+
+CMake Warning at CMakeLists.txt:98 (find_package):
+  By not providing "FindQt5Svg.cmake" in CMAKE_MODULE_PATH this project has
+  asked CMake to find a package configuration file provided by "Qt5Svg", but
+  CMake did not find one.
+
+  Could not find a package configuration file provided by "Qt5Svg" with any
+  of the following names:
+
+    Qt5SvgConfig.cmake
+    qt5svg-config.cmake
+
+  Add the installation prefix of "Qt5Svg" to CMAKE_PREFIX_PATH or set
+  "Qt5Svg_DIR" to a directory containing one of the above files.  If "Qt5Svg"
+  provides a separate development package or SDK, be sure it has been
+  installed.
+
+
+CMake Warning at CMakeLists.txt:149 (message):
+  Qt not found! Companion and Simulator builds disabled.
+
+
+CMake Warning (dev) at /usr/share/cmake-3.22/Modules/FindPackageHandleStandardArgs.cmake:438 (message):
+  The package name passed to `find_package_handle_standard_args` (FOX) does
+  not match the name of the calling package (Fox).  This can lead to problems
+  in calling code that expects `find_package` result variables (e.g.,
+  `_FOUND`) to follow a certain pattern.
+Call Stack (most recent call first):
+  cmake/FindFox.cmake:59 (find_package_handle_standard_args)
+  CMakeLists.txt:153 (find_package)
+This warning is for project developers.  Use -Wno-dev to suppress it.
+
+-- Could NOT find FOX (missing: FOX_INCLUDE_DIR FOX_LIBRARY) 
+Libfox not found, simu target will not be available
+TARGET simu/libsimulator: cpp compiler /home/dyh/.local/opt/arm-gnu-toolchain-15.3.rel1-x86_64-arm-none-eabi/bin/arm-none-eabi-g++ v15.3.1
+CMake Warning at radio/src/tests/CMakeLists.txt:45 (message):
+  WARNING: gtests target will not be available (check that GTEST_INCDIR,
+  GTEST_SRCDIR, and Qt5Widgets are configured).
+
+
+TARGET firmware: cpp compiler arm-none-eabi-g++ v15.3.1
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/OpenI6X/FS-I6X/opentx/build-mower-ok-gcc15
+[  0%] Built target 9x_xbm_1bit
+[  4%] Built target firmware_translations
+[ 27%] Built target 9x_fonts_1bit
+[ 29%] Built target 9x_bitmaps
+Scanning dependencies of target firmware
+Consolidate compiler generated dependencies of target firmware
+[ 30%] Building C object radio/src/CMakeFiles/firmware.dir/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/experiments/ticket03/exp3_probe.c.obj
+[ 30%] Building C object radio/src/CMakeFiles/firmware.dir/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/experiments/ticket03/exp3_auto_session.c.obj
+[ 30%] Building C object radio/src/CMakeFiles/firmware.dir/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/experiments/ticket03/openi6x_adapter.c.obj
+[ 30%] Building C object radio/src/CMakeFiles/firmware.dir/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/experiments/ticket03/exp3_hil.c.obj
+[ 32%] Building C object radio/src/CMakeFiles/firmware.dir/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/experiments/ticket03/exp3.c.obj
+[ 32%] Building C object radio/src/CMakeFiles/firmware.dir/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/experiments/ticket03/exp3_link.c.obj
+[ 32%] Building CXX object radio/src/CMakeFiles/firmware.dir/targets/flysky/AFHDS2A_a7105.cpp.obj
+[ 32%] Building CXX object radio/src/CMakeFiles/firmware.dir/telemetry/telemetry.cpp.obj
+[ 32%] Building CXX object radio/src/CMakeFiles/firmware.dir/debug.cpp.obj
+[ 32%] Building CXX object radio/src/CMakeFiles/firmware.dir/stamp.cpp.obj
+[ 33%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/128x64/view_about.cpp.obj
+[ 33%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/128x64/view_main.cpp.obj
+[ 33%] Building CXX object radio/src/CMakeFiles/firmware.dir/targets/common/arm/stm32/usbd_storage_msd.cpp.obj
+[ 33%] Linking CXX executable ../../firmware.elf
+/home/dyh/.local/opt/arm-gnu-toolchain-15.3.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/bin/ld: warning: ../../firmware.elf has a LOAD segment with RWX permissions
+Flash used: 130872 / 131072 (99%), left: 200
+RAM used: 15836 / 16384 (96%), left: 548
+[100%] Built target firmware
+   text	   data	    bss	    dec	    hex	filename
+ 130796	     76	  15760	 146632	  23cc8	/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/OpenI6X/FS-I6X/opentx/build-mower-ok-gcc15/firmware.elf
+  85464	    504	  53720	 139688	  221a8	/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/build/gcc15/mower-ok-release/control_chassis.elf
+98b326a240a215f6d8fb0128d568a808a9bc2fb974dfa6f096e680f1c5137d99  /media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/OpenI6X/FS-I6X/opentx/build-mower-ok-gcc15/firmware.bin
+47d222f74b84837f2f1fd1335b22020fd78d724a160723b260dc5f19fd2f363c  /media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/build/gcc15/mower-ok-release/control_chassis.bin
+c4ed74c1764d7dfe57d5f9f13865bd2b337958d5a075842308fe556e2dee9cad  /media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/build/gcc15/mower-ok-release/control_chassis.hex

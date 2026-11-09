@@ -4,13 +4,10 @@
 
 - 遥控器：`openi6x-exp3-pwm-fast-result.bin`，129160 B。
 - 底盘：`control-chassis-exp3-pwm-fast-result.hex`，229215 B。
-- 本目录执行 `sha256sum -c SHA256SUMS` 核对固定副本。
 
-底盘烧录：
+底盘烧录（在本目录执行）：
 
 ```bash
-cd "/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/experiments/ticket03/releases/20260930-fast-result"
-sha256sum -c SHA256SUMS
 openocd -f interface/stlink.cfg -f target/stm32f4x.cfg -c "adapter speed 1000" -c "program control-chassis-exp3-pwm-fast-result.hex verify reset exit"
 ```
 

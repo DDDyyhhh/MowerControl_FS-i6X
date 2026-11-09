@@ -1,0 +1,11 @@
+The unchanged r109 remote_rx_queue fixture triggers Clang -Wunused-function for three unused static inline fake helpers.
+CC=validation/macos-host-cc.py appends -Wno-unused-function only when compiling that queue.c fixture.
+Other host compilations retain all flags; ASan/UBSan remain enabled. ARM target warnings/options are unchanged.
+The original strict-run failure is retained in host-and-debug-build-initial.log.
+Apple ld does not implement GNU --wrap. For the snapshot fixture only, the adapter redirects the three remote_backend.c cross-TU calls to existing __wrap_ functions and binds harness __real_ references to unchanged production definitions. No assertions or function bodies are removed.
+The adapter rejects unknown wrap symbols/source lists. Both 100/300ms and O0/O2 matrices are executed.
+The system Bash 3.2 rejects an empty timeout_defs array under set -u. tools/verify.sh now uses the portable ${timeout_defs[@]+"${timeout_defs[@]}"} expansion at its two existing call sites. Timeout options and test matrices are unchanged.
+The initial canonical dual build exited 0 after this earlier host stage stopped; it is retained as dual-build-before-shell-fix.log and is not treated as a full host pass.
+Darwin empty objects contain local ltmp0 assembly labels. Disabled-feature checks now inspect defined global symbols (nm -g --defined-only), retaining checks for unintended exported code.
+verify.sh all now explicitly propagates a failing host phase. Full host completion is additionally checked via its completion marker.
+The trim-key fixture defines trims_input as constant zero. A temporary PATH c++ adapter disables only Clang -Wconstant-logical-operand for mower-trim-lock-*/keys.cpp. Other C++ and ARM builds retain flags.

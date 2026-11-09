@@ -1,0 +1,32 @@
+Using CMake: cmake version 3.22.1
+Using Toolchain: /home/dyh/.local/opt/arm-gnu-toolchain-15.3.rel1-x86_64-arm-none-eabi/bin/arm-none-eabi-gcc
+Preset CMake variables:
+
+  CMAKE_BUILD_TYPE="Debug"
+  CMAKE_TOOLCHAIN_FILE="/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/cmake/arm-none-eabi-gcc.cmake"
+  MOWER_IBUS_TIMEOUT_MS="300"
+
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/build/gcc15/debug
+[1/3] Building C object CMakeFiles/control_chassis.dir/Core/Src/tim.c.obj
+[2/3] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/lifter.c.obj
+[3/3] Linking C executable control_chassis.elf
+/home/dyh/.local/opt/arm-gnu-toolchain-15.3.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/bin/ld: /home/dyh/.local/opt/arm-gnu-toolchain-15.3.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard/libg_nano.a(libc_a-closer.o): in function `_close_r':
+closer.c:(.text._close_r+0xc): warning: _close is not implemented and will always fail
+/home/dyh/.local/opt/arm-gnu-toolchain-15.3.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/bin/ld: /home/dyh/.local/opt/arm-gnu-toolchain-15.3.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard/libg_nano.a(libc_a-closer.o): note: the message above does not take linker garbage collection into account
+/home/dyh/.local/opt/arm-gnu-toolchain-15.3.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/bin/ld: /home/dyh/.local/opt/arm-gnu-toolchain-15.3.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard/libg_nano.a(libc_a-lseekr.o): in function `_lseek_r':
+lseekr.c:(.text._lseek_r+0x10): warning: _lseek is not implemented and will always fail
+/home/dyh/.local/opt/arm-gnu-toolchain-15.3.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/bin/ld: /home/dyh/.local/opt/arm-gnu-toolchain-15.3.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard/libg_nano.a(libc_a-lseekr.o): note: the message above does not take linker garbage collection into account
+/home/dyh/.local/opt/arm-gnu-toolchain-15.3.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/bin/ld: /home/dyh/.local/opt/arm-gnu-toolchain-15.3.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard/libg_nano.a(libc_a-readr.o): in function `_read_r':
+readr.c:(.text._read_r+0x10): warning: _read is not implemented and will always fail
+/home/dyh/.local/opt/arm-gnu-toolchain-15.3.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/bin/ld: /home/dyh/.local/opt/arm-gnu-toolchain-15.3.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard/libg_nano.a(libc_a-readr.o): note: the message above does not take linker garbage collection into account
+/home/dyh/.local/opt/arm-gnu-toolchain-15.3.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/bin/ld: /home/dyh/.local/opt/arm-gnu-toolchain-15.3.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard/libg_nano.a(libc_a-writer.o): in function `_write_r':
+writer.c:(.text._write_r+0x10): warning: _write is not implemented and will always fail
+/home/dyh/.local/opt/arm-gnu-toolchain-15.3.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/bin/ld: /home/dyh/.local/opt/arm-gnu-toolchain-15.3.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard/libg_nano.a(libc_a-writer.o): note: the message above does not take linker garbage collection into account
+Memory region         Used Size  Region Size  %age Used
+             RAM:       52704 B       128 KB     40.21%
+          CCMRAM:           0 B        64 KB      0.00%
+           FLASH:       90060 B       512 KB     17.18%
+   text	   data	    bss	    dec	    hex	filename
+  89284	    768	  51936	 141988	  22aa4	/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/build/gcc15/debug/control_chassis.elf

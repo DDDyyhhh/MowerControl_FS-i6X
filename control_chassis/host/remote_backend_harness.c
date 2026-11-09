@@ -291,7 +291,11 @@ static void TestStableOnlineRequiresFrameCountAndDuration(void)
     assert(!command.stable_online);
 
     g_now_ms = 150U;
+    RemoteBackend_Process(); /* Waiting alone cannot satisfy reception duration. */
     RemoteBackend_Advance(g_now_ms, (RemoteSafetyInput_t){false, false, false, false});
+    command = ReadCommand();
+    assert(!command.stable_online);
+    SendIbusFrameAt(150U, channels); /* A real frame spans the required interval. */
     command = ReadCommand();
     assert(command.stable_online);
     assert(command.connected);
@@ -354,22 +358,25 @@ static void TestTimeoutNeutralizesAndWraparoundIsSafe(void)
     command = ReadCommand();
     assert(command.stable_online);
 
-    g_now_ms = 0xFFFFFFFBU;
+    g_now_ms = 0xFFFFFF98U + config.timeout_ms - 1U;
     RemoteBackend_Advance(g_now_ms, (RemoteSafetyInput_t){false, false, false, false});
     assert(RemoteBackend_GetCommand(&command));
     assert(command.link_fresh);
 
-    g_now_ms = 0xFFFFFFFCU;
+    g_now_ms = 0xFFFFFF98U + config.timeout_ms;
     RemoteBackend_Advance(g_now_ms, (RemoteSafetyInput_t){false, false, false, false});
     assert(!RemoteBackend_GetCommand(&command));
     assert(!RemoteBackend_IsConnected());
     assert(command.timeout_latched);
+    assert(command.timeout_sequence == 0U); /* Comm has not run yet. */
+    RemoteBackend_Process();
+    assert(!RemoteBackend_GetCommand(&command));
     assert(command.timeout_sequence == 1U);
     assert(command.steering == 2048U);
     assert(command.throttle == 2048U);
     assert(command.travel_speed_raw == 0U);
 
-    SendIbusFrameAt(5U, channels);
+    SendIbusFrameAt(g_now_ms + 9U, channels);
     command = ReadCommand();
     assert(!command.stable_online);
     assert(command.timeout_latched);
@@ -382,6 +389,7 @@ static void TestProductionDefaultConfig(void)
     uint16_t channels[REMOTE_IBUS_CHANNEL_COUNT];
     RemoteCommand_t command;
 
+    assert(config.timeout_ms == REMOTE_IBUS_TIMEOUT_MS);
     InitFlySky(&config);
     SetNormalIbusChannels(channels);
     SendIbusFrameAt(10U, channels);
@@ -537,6 +545,12 @@ static void TestJoystickOutputMapping(void)
         RemoteBackend_Advance(t, (RemoteSafetyInput_t){false, false, false, false});
     }
 
+#if MOWER_BLADE_OK_ENABLED
+    channels[3] = 1000U;
+    SendIbusFrameAt(560U, channels);
+    RemoteBackend_Advance(560U, (RemoteSafetyInput_t){0});
+    assert(RemoteBackend_ConfirmUnlock());
+#endif
     channels[0] = 1200U;
     channels[1] = 2012U;
     SendIbusFrameAt(570U, channels);
@@ -748,11 +762,18 @@ static void TestGrassBagCh6Release(void)
         command = ReadCommand();
         assert(!RemoteBackend_AdvanceGrassBag(true, &target));
     }
+#if MOWER_BLADE_OK_ENABLED
+    channels[3] = 1000U;
+    for (uint32_t t = 260U; t <= 530U; t += 10U) { SendIbusFrameAt(t, channels); (void)ReadCommand(); }
+    assert(RemoteBackend_ConfirmUnlock());
+    SendIbusFrameAt(540U, channels); (void)ReadCommand();
+#else
     /* Real authorization sequence: CH8 high -> low -> high, sticks centered. */
     channels[7] = 1000U;
     for (uint32_t t = 260U; t <= 280U; t += 10U) { SendIbusFrameAt(t, channels); (void)ReadCommand(); }
     channels[7] = 2000U;
     for (uint32_t t = 290U; t <= 540U; t += 10U) { SendIbusFrameAt(t, channels); (void)ReadCommand(); }
+#endif
     assert(ReadCommand().run_permitted);
     /* Baseline requires three NEW frames even after authorization. */
     for (uint32_t t = 550U; t <= 570U; t += 10U) {
@@ -788,7 +809,8 @@ static void TestGrassBagCh6Release(void)
     channels[5] = 899U;
     SendIbusFrameAt(690U, channels);
     assert(ReadCommand().frame_sequence == command.frame_sequence);
-    g_now_ms = 780U;
+    uint32_t reconnect_ms = command.last_valid_ms + config.timeout_ms + 20U;
+    g_now_ms = command.last_valid_ms + config.timeout_ms;
     RemoteBackend_Advance(g_now_ms, (RemoteSafetyInput_t){false, false, false, false});
     (void)RemoteBackend_GetCommand(&command);
     assert(!command.link_fresh);
@@ -796,30 +818,37 @@ static void TestGrassBagCh6Release(void)
     (void)RemoteBackend_GetCommand(&command);
     assert(command.grass_bag_target == GRASS_BAG_TARGET_UNKNOWN);
     channels[5] = 1000U;
-    for (uint32_t t = 800U; t <= 1040U; t += 10U) {
+    channels[3] = 1500U;
+    for (uint32_t t = reconnect_ms; t <= reconnect_ms + 240U; t += 10U) {
         SendIbusFrameAt(t, channels); (void)ReadCommand();
         assert(!RemoteBackend_AdvanceGrassBag(true, &target));
     }
     assert(!ReadCommand().run_permitted); /* reconnect alone does not unlock */
     channels[7] = 1000U;
-    for (uint32_t t = 1050U; t <= 1070U; t += 10U) {
+    for (uint32_t t = reconnect_ms + 250U; t <= reconnect_ms + 270U; t += 10U) {
         SendIbusFrameAt(t, channels); (void)ReadCommand();
         assert(!RemoteBackend_AdvanceGrassBag(true, &target));
     }
     channels[7] = 2000U;
-    for (uint32_t t = 1080U; t <= 1340U; t += 10U) {
+#if MOWER_BLADE_OK_ENABLED
+    channels[3] = 1000U;
+#endif
+    for (uint32_t t = reconnect_ms + 280U; t <= reconnect_ms + 540U; t += 10U) {
         SendIbusFrameAt(t, channels); (void)ReadCommand();
+#if MOWER_BLADE_OK_ENABLED
+        if (t == reconnect_ms + 480U) assert(RemoteBackend_ConfirmUnlock());
+#endif
         assert(!RemoteBackend_AdvanceGrassBag(true, &target));
     }
     assert(ReadCommand().run_permitted);
     assert(ReadCommand().grass_bag_target == GRASS_BAG_TARGET_OPEN);
     channels[5] = 2000U;
-    for (uint32_t t = 1350U; t <= 1370U; t += 10U) {
+    for (uint32_t t = reconnect_ms + 550U; t <= reconnect_ms + 570U; t += 10U) {
         SendIbusFrameAt(t, channels); (void)ReadCommand();
-        assert(RemoteBackend_AdvanceGrassBag(true, &target) == (t == 1370U));
+        assert(RemoteBackend_AdvanceGrassBag(true, &target) == (t == reconnect_ms + 570U));
     }
     /* A real safety input overrides the caller's permission and resets baseline. */
-    RemoteBackend_Advance(1370U, (RemoteSafetyInput_t){false, true, false, false});
+    RemoteBackend_Advance(reconnect_ms + 570U, (RemoteSafetyInput_t){false, true, false, false});
     assert(!ReadCommand().run_permitted);
     assert(!RemoteBackend_AdvanceGrassBag(true, &target));
     assert(ReadCommand().grass_bag_target == GRASS_BAG_TARGET_UNKNOWN);

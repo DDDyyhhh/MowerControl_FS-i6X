@@ -1,0 +1,397 @@
+--- a/control_chassis/CONTEXT.md
++++ b/control_chassis/CONTEXT.md
+@@ -187,4 +187,4 @@
+ 
+ ## 11. 推杆占空比与发布
+ 
+-`Core/UserDev/lifter.c`中刀盘升降和草袋开合运行占空比均为40%，正反转及升降归位共用该值，停止0%。草袋使用TIM2 CH3/CH4，升降使用TIM3 CH3/CH4，两定时器均为15kHz：84MHz输入、PSC=0、ARR=5599，40%比较值2240。CubeMX `concrol.ioc`保持一致。48V母线下理想平均输出约19.2V；机械计时、高度时间表及上升补偿沿用原值，需按15kHz/40%实测标定。有效i-BUS帧超时仍默认300ms。当前双端交付见[15kHz/40%推杆发布说明](../docs/releases/actuator-15khz-40pct-ibus300ms-dual.md)。
++`Core/UserDev/lifter.c`中刀盘升降和草袋开合运行占空比均为60%，正反转及升降归位共用该值，停止0%。草袋使用TIM2 CH3/CH4，升降使用TIM3 CH3/CH4，两定时器均为10kHz：84MHz输入、PSC=0、ARR=8399，60%比较值5040。CubeMX `concrol.ioc`保持一致。48V母线下理想平均输出约28.8V；机械计时、高度时间表及上升补偿沿用原值，实际速度和行程需现场确认。有效i-BUS帧超时仍默认300ms。当前双端交付见[10kHz/60%推杆发布说明](../docs/releases/actuator-10khz-60pct-ibus300ms-dual.md)。
+--- a/control_chassis/Core/Src/tim.c
++++ b/control_chassis/Core/Src/tim.c
+@@ -108,13 +108,13 @@
+   TIM_OC_InitTypeDef sConfigOC = {0};
+ 
+   /* USER CODE BEGIN TIM2_Init 1 */
+-  /* 84MHz / (PSC + 1) / (ARR + 1) = 84MHz / 5600 = 15kHz. */
++  /* 84MHz / (PSC + 1) / (ARR + 1) = 84MHz / 8400 = 10kHz. */
+ 
+   /* USER CODE END TIM2_Init 1 */
+   htim2.Instance = TIM2;
+   htim2.Init.Prescaler = 0;
+   htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
+-  htim2.Init.Period = 5599;
++  htim2.Init.Period = 8399;
+   htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+   htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+   if (HAL_TIM_PWM_Init(&htim2) != HAL_OK)
+@@ -165,13 +165,13 @@
+   TIM_OC_InitTypeDef sConfigOC = {0};
+ 
+   /* USER CODE BEGIN TIM3_Init 1 */
+-  /* 84MHz / (PSC + 1) / (ARR + 1) = 84MHz / 5600 = 15kHz. */
++  /* 84MHz / (PSC + 1) / (ARR + 1) = 84MHz / 8400 = 10kHz. */
+ 
+   /* USER CODE END TIM3_Init 1 */
+   htim3.Instance = TIM3;
+   htim3.Init.Prescaler = 0;
+   htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
+-  htim3.Init.Period = 5599;
++  htim3.Init.Period = 8399;
+   htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+   htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+   if (HAL_TIM_PWM_Init(&htim3) != HAL_OK)
+--- a/control_chassis/Core/UserDev/lifter.c
++++ b/control_chassis/Core/UserDev/lifter.c
+@@ -47,10 +47,10 @@
+ // =================================================================
+ // 2. 核心参数与数据表
+ // =================================================================
+-// 推杆15kHz/40%PWM版：48V母线下约为19.2V平均输出，脉冲幅度仍接近母线电压。
+-// 高度时间表、归位时间与草袋动作时长暂沿用旧值，待15kHz/40%PWM运行实测后重新标定。
++// 推杆10kHz/60%PWM版：48V母线下约为28.8V平均输出，脉冲幅度仍接近母线电压。
++// 高度时间表、归位时间与草袋动作时长暂沿用旧值，待10kHz/60%PWM运行实测后重新标定。
+ // --- 刀盘高度参数 ---
+-#define LIFTER_SPEED 40.0f      // 刀盘升降PWM占空比 (%)
++#define LIFTER_SPEED 60.0f      // 刀盘升降PWM占空比 (%)
+ #define HOMING_TIMEOUT_MS 10000U // 每次最高档归位完整上升10秒
+ #define DEAD_BAND_MS 100        // 死区：误差小于100ms(约2mm)认为到位
+ 
+@@ -60,7 +60,7 @@
+ #define UP_SPEED_FACTOR 0.80f
+ 
+ // --- 草袋开合参数 ---
+-#define GRASS_BAG_SPEED 40.0f      // 草袋开合PWM占空比 (%)
++#define GRASS_BAG_SPEED 60.0f      // 草袋开合PWM占空比 (%)
+ /* Run time is shared with the deterministic grass bag actuator model. */
+ 
+ // --- 【核心】实测数据点 (时间 ms -> 高度 cm) ---
+--- a/control_chassis/concrol.ioc
++++ b/control_chassis/concrol.ioc
+@@ -553,11 +553,11 @@
+ TIM2.Channel-PWM\ Generation3\ CH3=TIM_CHANNEL_3
+ TIM2.Channel-PWM\ Generation4\ CH4=TIM_CHANNEL_4
+ TIM2.IPParameters=Channel-PWM Generation1 CH1,Channel-PWM Generation2 CH2,Channel-PWM Generation3 CH3,Channel-PWM Generation4 CH4,Period
+-TIM2.Period=5599
++TIM2.Period=8399
+ TIM3.Channel-PWM\ Generation3\ CH3=TIM_CHANNEL_3
+ TIM3.Channel-PWM\ Generation4\ CH4=TIM_CHANNEL_4
+ TIM3.IPParameters=Channel-PWM Generation3 CH3,Channel-PWM Generation4 CH4,Period
+-TIM3.Period=5599
++TIM3.Period=8399
+ TIM4.Channel-PWM\ Generation1\ CH1=TIM_CHANNEL_1
+ TIM4.IPParameters=Channel-PWM Generation1 CH1,Prescaler,Period,Pulse-PWM Generation1 CH1
+ TIM4.Period=999
+--- a/control_chassis/host/grass_bag_lifter_harness.c
++++ b/control_chassis/host/grass_bag_lifter_harness.c
+@@ -61,24 +61,24 @@
+     Lifter_SetGrassBagTarget(1); assert(bag_speed == 0.0f); /* default fail closed */
+     Lifter_SetGrassBagPermission(true);
+     now_ms = 100;
+-    Lifter_SetGrassBagTarget(1); assert(bag_speed == 40.0f && bag_starts == 1);
++    Lifter_SetGrassBagTarget(1); assert(bag_speed == 60.0f && bag_starts == 1);
+     now_ms = 200;
+     Lifter_SetGrassBagTarget(1); assert(bag_starts == 1);
+     now_ms = 20099;
+-    Lifter_Task_Update(); assert(!g_app.grass_bag_status && bag_speed == 40.0f);
++    Lifter_Task_Update(); assert(!g_app.grass_bag_status && bag_speed == 60.0f);
+     now_ms = 20100;
+     Lifter_Task_Update(); assert(g_app.grass_bag_status && bag_speed == 0.0f);
+-    Lifter_SetGrassBagTarget(0); assert(bag_speed == -40.0f);
++    Lifter_SetGrassBagTarget(0); assert(bag_speed == -60.0f);
+     Lifter_SetGrassBagPermission(false); assert(bag_speed == 0.0f);
+     now_ms = 60000;
+     Lifter_Task_Update(); assert(g_app.grass_bag_status); /* no false completion */
+     Lifter_SetGrassBagTarget(0); assert(bag_speed == 0.0f);
+     Lifter_SetGrassBagPermission(true);
+-    Lifter_SetGrassBagTarget(0); assert(bag_speed == -40.0f);
++    Lifter_SetGrassBagTarget(0); assert(bag_speed == -60.0f);
+     now_ms = 80000;
+     Lifter_Task_Update(); assert(!g_app.grass_bag_status && bag_speed == 0.0f);
+-    Lifter_SetGrassBagTarget(1); assert(bag_speed == 40.0f);
+-    Lifter_SetGrassBagTarget(0); assert(bag_speed == -40.0f);
++    Lifter_SetGrassBagTarget(1); assert(bag_speed == 60.0f);
++    Lifter_SetGrassBagTarget(0); assert(bag_speed == -60.0f);
+     Lifter_StopGrassBag(); assert(bag_speed == 0.0f);
+     now_ms = 110000;
+     Lifter_Task_Update(); assert(!g_app.grass_bag_status);
+@@ -90,7 +90,7 @@
+     now_ms += 10000;
+     inject_target = true;
+     Lifter_Task_Update();
+-    assert(bag_speed == 40.0f && !g_app.grass_bag_status);
++    assert(bag_speed == 60.0f && !g_app.grass_bag_status);
+     assert(!inject_target && lock_depth == 0);
+     Lifter_StopGrassBag();
+     initialized = false; fail_mutex = true;
+--- a/control_chassis/host/lifter_height_harness.c
++++ b/control_chassis/host/lifter_height_harness.c
+@@ -62,12 +62,12 @@
+     if (bridge->left_timer == &htim3) {
+         /* Every start/reversal must first clear both bridge legs. */
+         assert(lift_speed == 0.0f);
+-        assert(speed == -40.0f || speed == 40.0f);
++        assert(speed == -60.0f || speed == 60.0f);
+         lift_speed = speed;
+         ++lift_starts;
+     } else {
+         assert(bridge->left_timer == &htim2 && bag_speed == 0.0f);
+-        assert(speed == 40.0f || speed == -40.0f);
++        assert(speed == 60.0f || speed == -60.0f);
+         bag_speed = speed;
+     }
+     return HAL_OK;
+@@ -120,11 +120,11 @@
+ {
+     Reset(7.0f, true, 0);
+     Lifter_SetTargetLevel(5); Tick(0);
+-    assert(lift_speed == -40.0f);
++    assert(lift_speed == -60.0f);
+     Lifter_SetTargetLevel(3); Tick(1000);
+     /* After 1s upward, the estimate is above 7cm: change to downward now. */
+     assert(Lifter_GetState() == LIFTER_STATE_AUTO_ADJUST);
+-    assert(lift_speed == 40.0f);
++    assert(lift_speed == 60.0f);
+     assert(g_app.g_system_report_state == REPORT_NONE);
+     assert(Lifter_GetCurrentHeight_cm() > 7.0f && Lifter_GetCurrentHeight_cm() < 11.0f);
+     puts("[PASS] New height target interrupts homing on the next lifter update");
+@@ -138,16 +138,16 @@
+         Lifter_SetTargetLevel(5);
+         assert(lift_speed == 0.0f && Lifter_GetState() == LIFTER_STATE_IDLE);
+         Tick(1200U); /* Count from actual PWM start, not request or boot. */
+-        assert(lift_speed == -40.0f && lift_starts == 1);
++        assert(lift_speed == -60.0f && lift_starts == 1);
+         assert((Lifter_GetHeightFeedback() & MOWER_HEIGHT_VALUE_MASK) == (uint16_t)(heights[i]*10.0f));
+         assert(g_app.g_system_report_state == REPORT_BLADE_INITIALIZING);
+         for (uint32_t t = 1250U; t < 11200U; t += 50U) {
+             Lifter_SetTargetLevel(5);
+             Tick(t);
+-            assert(lift_speed == -40.0f && lift_starts == 1 && !flash_saves);
++            assert(lift_speed == -60.0f && lift_starts == 1 && !flash_saves);
+         }
+         Tick(11199U);
+-        assert(lift_speed == -40.0f);
++        assert(lift_speed == -60.0f);
+         Tick(11200U);
+         assert(lift_speed == 0.0f && Lifter_GetState() == LIFTER_STATE_HOMING_DONE);
+         assert(Lifter_GetCurrentHeight_cm() == 11.0f);
+@@ -169,14 +169,14 @@
+     Lifter_SetTargetLevel(1);
+     Lifter_SetTargetLevel(2); /* Latest target cancels the unconsumed home edge. */
+     Tick(0);
+-    assert(lift_speed == 40.0f && Lifter_GetState() == LIFTER_STATE_AUTO_ADJUST);
++    assert(lift_speed == 60.0f && Lifter_GetState() == LIFTER_STATE_AUTO_ADJUST);
+     assert(lift_starts == 1);
+     Tick(2000); assert(lift_speed == 0.0f && Lifter_GetCurrentHeight_cm() == 5.0f);
+     Lifter_SetTargetLevel(5); Tick(2020);
+-    assert(lift_speed == -40.0f);
++    assert(lift_speed == -60.0f);
+     Lifter_SetTargetLevel(4); Lifter_SetTargetLevel(3); Lifter_SetTargetLevel(1);
+     Tick(3020); /* pos 6500 - 1000*0.8 = 5700: descend to level 1 now. */
+-    assert(lift_speed == 40.0f && Lifter_GetState() == LIFTER_STATE_AUTO_ADJUST);
++    assert(lift_speed == 60.0f && Lifter_GetState() == LIFTER_STATE_AUTO_ADJUST);
+     Tick(6820); assert(lift_speed == 0.0f && Lifter_GetCurrentHeight_cm() == 2.0f);
+     Tick(12020); /* Original homing deadline must not force a false top reset. */
+     assert(lift_speed == 0.0f && Lifter_GetCurrentHeight_cm() == 2.0f && !flash_saves);
+@@ -190,18 +190,18 @@
+     Reset(7.0f, true, 0);
+     Lifter_SetTargetLevel(5); Tick(0);
+     Lifter_SetTargetLevel(3); Tick(1000);
+-    assert(lift_speed == 40.0f);
++    assert(lift_speed == 60.0f);
+     Lifter_SetTargetLevel(5); Tick(1100); /* A new home starts with a fresh 10s. */
+-    assert(lift_speed == -40.0f);
++    assert(lift_speed == -60.0f);
+     Lifter_SetTargetLevel(5); Tick(3000);
+     Lifter_User_Init(); Tick(5000); /* No restart during active homing. */
+-    Tick(10000); assert(lift_speed == -40.0f); /* Original deadline is obsolete. */
+-    Tick(11099); assert(lift_speed == -40.0f);
++    Tick(10000); assert(lift_speed == -60.0f); /* Original deadline is obsolete. */
++    Tick(11099); assert(lift_speed == -60.0f);
+     Tick(11100); assert(lift_speed == 0.0f);
+     Tick(11120); Tick(11140); assert(lift_speed == 0.0f && lift_starts == 3);
+     /* Leaving and returning between task cycles still records a fresh edge. */
+     Lifter_SetTargetLevel(4); Lifter_SetTargetLevel(5); Tick(11200);
+-    assert(lift_speed == -40.0f && lift_starts == 4);
++    assert(lift_speed == -60.0f && lift_starts == 4);
+     puts("[PASS] Level-5 reentry and repeated/manual requests during active homing");
+ }
+ 
+@@ -209,10 +209,10 @@
+ {
+     Reset(11.0f, true, 0);
+     Lifter_SetTargetLevel(1); Tick(0);
+-    assert(lift_speed == 40.0f);
++    assert(lift_speed == 60.0f);
+     Tick(9500); assert(lift_speed == 0.0f && Lifter_GetCurrentHeight_cm() == 2.0f);
+     Lifter_SetTargetLevel(2); Tick(9500);
+-    assert(lift_speed == -40.0f);
++    assert(lift_speed == -60.0f);
+     Tick(13250); assert(lift_speed == 0.0f && Lifter_GetCurrentHeight_cm() == 5.0f);
+     Lifter_SetTargetLevel(3); Tick(13250);
+     Tick(15750); assert(lift_speed == 0.0f && Lifter_GetCurrentHeight_cm() == 7.0f);
+@@ -221,8 +221,8 @@
+     /* Reverse while still moving: mock requires an intervening bridge stop. */
+     Lifter_SetTargetLevel(1); Tick(17875); Tick(18075);
+     Lifter_SetTargetLevel(4); Tick(18175);
+-    assert(lift_speed == -40.0f);
+-    puts("[PASS] Levels 1-4 unchanged, reversed +/-40% PWM and stop before reversal");
++    assert(lift_speed == -60.0f);
++    puts("[PASS] Levels 1-4 unchanged, reversed +/-60% PWM and stop before reversal");
+ }
+ 
+ static void TestWrapAndBootHoming(void)
+@@ -230,12 +230,12 @@
+     uint32_t start = UINT32_MAX - 4000U;
+     Reset(7.0f, true, start);
+     Lifter_SetTargetLevel(5); Tick(start);
+-    Tick(start + 9999U); assert(lift_speed == -40.0f);
++    Tick(start + 9999U); assert(lift_speed == -60.0f);
+     Tick(start + 10000U); assert(lift_speed == 0.0f);
+     Reset(0.0f, false, 100);
+-    Tick(300); assert(lift_speed == -40.0f);
++    Tick(300); assert(lift_speed == -60.0f);
+     Lifter_SetTargetLevel(3); Tick(1300);
+-    assert(lift_speed == 40.0f && Lifter_GetState() == LIFTER_STATE_AUTO_ADJUST);
++    assert(lift_speed == 60.0f && Lifter_GetState() == LIFTER_STATE_AUTO_ADJUST);
+     Tick(5800); assert(lift_speed == 0.0f && Lifter_GetCurrentHeight_cm() == 7.0f);
+     Tick(10300); assert(lift_speed == 0.0f && Lifter_GetCurrentHeight_cm() == 7.0f);
+     puts("[PASS] Tick rollover and interruptible invalid-Flash boot homing");
+@@ -246,19 +246,19 @@
+     Reset(7.0f, true, 0);
+     Lifter_User_Init();
+     assert(lift_speed == 0.0f && g_app.g_system_report_state == REPORT_NONE);
+-    Tick(0); assert(lift_speed == -40.0f);
++    Tick(0); assert(lift_speed == -60.0f);
+     /* Arrival just after the consumer snapshot must survive for the next update. */
+     inject_level_on_exit = 4;
+     g_app.g_system_report_state = REPORT_DUMPING_START;
+-    Tick(1000); assert(lift_speed == -40.0f);
++    Tick(1000); assert(lift_speed == -60.0f);
+     Tick(1020); /* Late request is consumed on the following update. */
+-    assert(lift_speed == -40.0f && Lifter_GetState() == LIFTER_STATE_AUTO_ADJUST);
++    assert(lift_speed == -60.0f && Lifter_GetState() == LIFTER_STATE_AUTO_ADJUST);
+     assert(g_app.g_system_report_state == REPORT_DUMPING_START);
+     Tick(2125); assert(lift_speed == 0.0f && Lifter_GetCurrentHeight_cm() == 9.0f);
+     Tick(10000); assert(lift_speed == 0.0f && Lifter_GetCurrentHeight_cm() == 9.0f);
+-    Lifter_User_Init(); Tick(10020); assert(lift_speed == -40.0f);
++    Lifter_User_Init(); Tick(10020); assert(lift_speed == -60.0f);
+     Lifter_SetTargetLevel(2); Tick(11020);
+-    assert(lift_speed == 40.0f && Lifter_GetState() == LIFTER_STATE_AUTO_ADJUST);
++    assert(lift_speed == 60.0f && Lifter_GetState() == LIFTER_STATE_AUTO_ADJUST);
+     puts("[PASS] Manual homing interruption, continued upward target, late request/fault report");
+ }
+ 
+@@ -279,15 +279,15 @@
+     Reset(2.0f, true, 0);
+     Lifter_SetTargetLevel(5); Tick(0);
+     Lifter_SetTargetLevel(3); Tick(9999); /* Last millisecond still interrupts. */
+-    assert(lift_speed == 40.0f && Lifter_GetCurrentHeight_cm() < 11.0f);
++    assert(lift_speed == 60.0f && Lifter_GetCurrentHeight_cm() < 11.0f);
+     Tick(10000);
+-    assert(lift_speed == 40.0f && Lifter_GetState() == LIFTER_STATE_AUTO_ADJUST);
++    assert(lift_speed == 60.0f && Lifter_GetState() == LIFTER_STATE_AUTO_ADJUST);
+     assert(Lifter_GetCurrentHeight_cm() < 11.0f);
+ 
+     Reset(2.0f, true, 0);
+     Lifter_SetTargetLevel(5); Tick(0);
+     Lifter_SetTargetLevel(3); Tick(10000); /* PWM already ran the full 10s. */
+-    assert(lift_speed == 40.0f && Lifter_GetState() == LIFTER_STATE_AUTO_ADJUST);
++    assert(lift_speed == 60.0f && Lifter_GetState() == LIFTER_STATE_AUTO_ADJUST);
+     assert(Lifter_GetCurrentHeight_cm() == 11.0f);
+     Tick(14500); assert(lift_speed == 0.0f && Lifter_GetCurrentHeight_cm() == 7.0f);
+ 
+@@ -295,7 +295,7 @@
+     Reset(7.0f, true, start);
+     Lifter_SetTargetLevel(5); Tick(start);
+     Lifter_SetTargetLevel(3); Tick(start + 1000U);
+-    assert(lift_speed == 40.0f);
++    assert(lift_speed == 60.0f);
+     Tick(start + 1800U);
+     assert(lift_speed == 0.0f && Lifter_GetCurrentHeight_cm() == 7.0f);
+     Tick(start + 10000U); assert(Lifter_GetCurrentHeight_cm() == 7.0f);
+@@ -306,13 +306,13 @@
+ {
+     Reset(7.0f, true, 0);
+     Lifter_SetGrassBagPermission(true);
+-    Lifter_SetGrassBagTarget(1); assert(bag_speed == 40.0f);
+-    Lifter_SetTargetLevel(5); Tick(0);
+-    assert(lift_speed == -40.0f && bag_speed == 40.0f);
+-    Tick(10000); assert(lift_speed == 0.0f && bag_speed == 40.0f);
+-    Tick(19999); assert(bag_speed == 40.0f);
++    Lifter_SetGrassBagTarget(1); assert(bag_speed == 60.0f);
++    Lifter_SetTargetLevel(5); Tick(0);
++    assert(lift_speed == -60.0f && bag_speed == 60.0f);
++    Tick(10000); assert(lift_speed == 0.0f && bag_speed == 60.0f);
++    Tick(19999); assert(bag_speed == 60.0f);
+     Tick(20000); assert(bag_speed == 0.0f && g_app.grass_bag_status);
+-    Lifter_SetGrassBagTarget(0); assert(bag_speed == -40.0f);
++    Lifter_SetGrassBagTarget(0); assert(bag_speed == -60.0f);
+     Lifter_SetGrassBagPermission(false); assert(bag_speed == 0.0f);
+     puts("[PASS] Concurrent grass-bag direction, 20s timing and permission stop unchanged");
+ }
+--- /dev/null
++++ b/docs/releases/actuator-10khz-60pct-ibus300ms-dual.md
+@@ -0,0 +1,17 @@
++# 恢复两路推杆10kHz／60%：300ms主程序及FS-i6X双端固件
++
++2026-11-05按用户要求，将草袋和升降PWM从15kHz／40%恢复为10kHz／60%。正反转及升降归位均60%，停止0%。48V母线下理想平均输出约28.8V，PWM瞬时幅度仍接近母线电压；声音和实际运行效果需现场短程复测。
++
++TIM2和TIM3均保持84MHz输入、PSC=0，将ARR从5599恢复为8399；84MHz/8400=10kHz，60%比较值5040，周期100µs、有效高电平60µs。同步更新CubeMX concrol.ioc。保留实际时钟、定时器和EG2104驱动的O0/O2回归。
++
++300ms有效i-BUS帧超时、协议、授权、安全逻辑及原升降归位10秒、草袋20秒、高度时间表、上升补偿0.8和关门检测屏蔽14秒不变。本轮不新增500ns死区或限流，也不声称已经完成机械标定或尖啸改善验收。
++
++当前割刀为FTESC CAN。旧PWM割刀配置的TIM2 CH2与草袋通道共用周期，恢复后同为10kHz；本轮不切换割刀驱动。
++
++完整双端构建入口（Unicorn 2.1.4位于临时依赖目录）：
++
++```bash
++PYTHONPATH=/tmp/mower-60pct-test-deps ASAN_OPTIONS=detect_leaks=0 ./tools/build_blade_ok.sh
++```
++
++发布目录`releases/20261105-actuator-10khz-60pct-ibus300ms-dual/`包含STM32F407底盘及FS-i6X遥控器BIN/HEX/ELF/MAP、15kHz／40%双端回退镜像、校验、刷写/独立读回和ST-Link只读诊断说明。底盘BIN须与原已验证的10kHz／60%发布逐字节一致。历史包保持不变，本轮不实际刷写。
+--- a/tools/test_actuator_pwm.py
++++ b/tools/test_actuator_pwm.py
+@@ -134,12 +134,12 @@
+     assert(bridge->left_timer->compare[bridge->left_in_channel / 4U] == 0U);
+     assert(bridge->right_timer->compare[bridge->right_in_channel / 4U] == 0U);
+     assert(EG2104_HBridge_SetSpeed(bridge, duty) == HAL_OK);
+-    assert(bridge->left_timer->compare[bridge->left_in_channel / 4U] == 2240U);
++    assert(bridge->left_timer->compare[bridge->left_in_channel / 4U] == 5040U);
+     assert(bridge->right_timer->compare[bridge->right_in_channel / 4U] == 0U);
+     EG2104_HBridge_Stop(bridge);
+     assert(EG2104_HBridge_SetSpeed(bridge, -duty) == HAL_OK);
+     assert(bridge->left_timer->compare[bridge->left_in_channel / 4U] == 0U);
+-    assert(bridge->right_timer->compare[bridge->right_in_channel / 4U] == 2240U);
++    assert(bridge->right_timer->compare[bridge->right_in_channel / 4U] == 5040U);
+     EG2104_HBridge_Stop(bridge);
+     assert(bridge->left_timer->compare[bridge->left_in_channel / 4U] == 0U);
+     assert(bridge->right_timer->compare[bridge->right_in_channel / 4U] == 0U);
+@@ -156,7 +156,7 @@
+     for (unsigned i = 0; i < 2U; ++i) {
+         assert(timers[i]->Init.CounterMode == TIM_COUNTERMODE_UP);
+         uint32_t divider = (timers[i]->Init.Prescaler + 1U) * (timers[i]->Init.Period + 1U);
+-        assert(timer_clock == 15000U * divider);
++        assert(timer_clock == 10000U * divider);
+         assert(timers[i]->Init.Period == ioc_period[i]);
+     }
+     assert(blade_height_bridge.left_timer == &htim3 && blade_height_bridge.right_timer == &htim3);
+@@ -165,7 +165,7 @@
+     check_bridge(&grass_bag_bridge, GRASS_BAG_SPEED);
+     assert(htim2.started == 12U && htim3.started == 12U);
+     assert(htim2.compare[0] == 0U && htim2.compare[1] == 0U);
+-    puts("PASS actual RCC/TIM2/TIM3/EG2104: 84MHz -> 15kHz, IOC agrees, both +/-40% -> CCR2240/5600, startup/stop zero");
++    puts("PASS actual RCC/TIM2/TIM3/EG2104: 84MHz -> 10kHz, IOC agrees, both +/-60% -> CCR5040/8400, startup/stop zero");
+ }
+ '''
+ 
+--- a/tools/verify.sh
++++ b/tools/verify.sh
+@@ -417,7 +417,7 @@
+         cat "${LOG_DIR}/host_actuator_pwm.log" >&2
+         return 1
+     }
+-    pass "Actuator PWM (actual RCC/TIM/EG2104, 15kHz, +/-40%, startup and stop zero)"
++    pass "Actuator PWM (actual RCC/TIM/EG2104, 10kHz, +/-60%, startup and stop zero)"
+ 
+     info "=== Running Lifter Height Homing Harness (both remote backends) ==="
+     log="${LOG_DIR}/host_lifter_height.log"

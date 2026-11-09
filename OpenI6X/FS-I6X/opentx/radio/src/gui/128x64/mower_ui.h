@@ -15,7 +15,11 @@ enum MowerUiField : uint16_t {
   MOWER_UI_WORK_MODE = 1U << 8,
   MOWER_UI_RUN_PERMISSION = 1U << 9,
   MOWER_UI_FAULT = 1U << 10,
-  MOWER_UI_BAG_CONNECTION = 1U << 11
+  MOWER_UI_BAG_CONNECTION = 1U << 11,
+  MOWER_UI_HEIGHT_FEEDBACK = 1U << 12,
+  MOWER_UI_BATTERY_MIN = 1U << 13,
+  MOWER_UI_BATTERY_REASON = 1U << 14,
+  MOWER_UI_BAG_FULL = 1U << 15
 };
 
 // Read-only presentation snapshot. Each bit says that its value was observed;
@@ -24,6 +28,7 @@ struct MowerUiSnapshot {
   uint16_t valid;
   uint16_t soc_percent;
   uint16_t voltage_centivolts;
+  uint16_t battery_min_mv, battery_reasons;
   uint16_t walk_set_cms;
   uint16_t walk_actual_cms;
   uint16_t blade_set_rpm;
@@ -33,13 +38,16 @@ struct MowerUiSnapshot {
   uint16_t work_mode;
   uint16_t run_permission;
   uint16_t fault_bits;
+  uint16_t fast_status;
+  bool fast_status_known;
   uint16_t radio_battery_100mv;
   uint8_t radio_quality;
   bool telemetry_online;
   bool mock;
   bool bag_connected;    // PD10 feedback, guarded by MOWER_UI_BAG_CONNECTION
-  // Local transmitted settings only; these do not imply controller acceptance.
-  uint8_t height_setting; // 1..5, zero is unknown
+  bool bag_full;         // Chassis-confirmed state, guarded by MOWER_UI_BAG_FULL
+  uint16_t height_deci_cm; // Controller estimate, valid only with HEIGHT_FEEDBACK
+  // Local transmitted CH6 target; this does not imply controller acceptance.
   uint8_t bag_command;    // 1=open, 2=close, zero is unknown
 };
 

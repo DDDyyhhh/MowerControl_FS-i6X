@@ -1,0 +1,28 @@
+failure=1 partial=0 calls=1 budget=2 rc=1
+failure=1 partial=1 calls=1 budget=2 rc=1
+failure=2 partial=0 calls=1 budget=2 rc=2
+failure=2 partial=1 calls=1 budget=2 rc=2
+failure=3 partial=0 calls=1 budget=2 rc=3
+failure=3 partial=1 calls=1 budget=2 rc=3
+PASS IMU SPI transaction, error propagation, output commit, invalid data, initialization
+failure=1 partial=0 calls=1 budget=2 rc=1
+failure=1 partial=1 calls=1 budget=2 rc=1
+failure=2 partial=0 calls=1 budget=2 rc=2
+failure=2 partial=1 calls=1 budget=2 rc=2
+failure=3 partial=0 calls=1 budget=2 rc=3
+failure=3 partial=1 calls=1 budget=2 rc=3
+PASS IMU SPI transaction, error propagation, output commit, invalid data, initialization
+failure=1 partial=0 calls=1 budget=2 rc=1
+failure=1 partial=1 calls=1 budget=2 rc=1
+failure=2 partial=0 calls=1 budget=2 rc=2
+failure=2 partial=1 calls=1 budget=2 rc=2
+failure=3 partial=0 calls=1 budget=2 rc=3
+failure=3 partial=1 calls=1 budget=2 rc=3
+PASS IMU SPI transaction, error propagation, output commit, invalid data, initialization
+failure=1 partial=0 calls=1 budget=2 rc=1
+failure=1 partial=1 calls=1 budget=2 rc=1
+failure=2 partial=0 calls=1 budget=2 rc=2
+failure=2 partial=1 calls=1 budget=2 rc=2
+failure=3 partial=0 calls=1 budget=2 rc=3
+failure=3 partial=1 calls=1 budget=2 rc=3
+PASS IMU SPI transaction, error propagation, output commit, invalid data, initialization

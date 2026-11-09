@@ -13,7 +13,6 @@
 进入既有DFU模式，在本目录执行：
 
 ```bash
-sha256sum -c SHA256SUMS
 dfu-util -a 0 -s 0x08000000:leave -D openi6x-blade-ok-rc2.bin
 ```
 

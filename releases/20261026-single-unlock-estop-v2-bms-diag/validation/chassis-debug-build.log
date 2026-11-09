@@ -1,0 +1,172 @@
+Using CMake: cmake version 3.22.1
+Using Toolchain: /home/dyh/.local/opt/arm-gnu-toolchain-15.3.rel1-x86_64-arm-none-eabi/bin/arm-none-eabi-gcc
+Preset CMake variables:
+
+  CMAKE_BUILD_TYPE="Debug"
+  CMAKE_TOOLCHAIN_FILE="/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/cmake/arm-none-eabi-gcc.cmake"
+
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/build/gcc15/debug
+[1/23] Building C object CMakeFiles/control_chassis.dir/Core/UserApp/battery_monitor.c.obj
+[2/23] Building C object CMakeFiles/control_chassis.dir/Core/UserApp/blade_manual_control.c.obj
+[3/23] Building C object CMakeFiles/control_chassis.dir/Core/UserApp/telemetry_snapshot.c.obj
+[4/23] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/flysky_ibus_servo.c.obj
+[5/23] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/remote_authorization.c.obj
+[6/23] Building C object CMakeFiles/control_chassis.dir/Core/UserApp/app_context.c.obj
+[7/23] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/connet_check.c.obj
+[8/23] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/sens_ibus_responder.c.obj
+[9/23] Building C object CMakeFiles/control_chassis.dir/Core/UserApp/app_Comm.c.obj
+[10/23] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/cruise_control.c.obj
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/UserDev/cruise_control.c:73:14: warning: 'Yaw_PID_Compute' defined but not used [-Wunused-function]
+   73 | static float Yaw_PID_Compute(float target, float current)
+      |              ^~~~~~~~~~~~~~~
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/UserDev/cruise_control.c:62:14: warning: 'Get_Angle_Diff' defined but not used [-Wunused-function]
+   62 | static float Get_Angle_Diff(float start_angle, float current_angle)
+      |              ^~~~~~~~~~~~~~
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/UserDev/cruise_control.c:42:14: warning: 'Normalize_Angle' defined but not used [-Wunused-function]
+   42 | static float Normalize_Angle(float angle)
+      |              ^~~~~~~~~~~~~~~
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/UserDev/cruise_control.c:33:16: warning: 'obstacle_filter_count' defined but not used [-Wunused-variable]
+   33 | static uint8_t obstacle_filter_count = 0;
+      |                ^~~~~~~~~~~~~~~~~~~~~
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/UserDev/cruise_control.c:30:14: warning: 'g_u_turn_start_yaw' defined but not used [-Wunused-variable]
+   30 | static float g_u_turn_start_yaw = 0.0f;  // 掉头起始航向
+      |              ^~~~~~~~~~~~~~~~~~
+[11/23] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/car_Control.c.obj
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/UserDev/car_Control.c: In function 'v_ctl_uart':
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/UserDev/car_Control.c:448:17: warning: unused variable 'current_sign' [-Wunused-variable]
+  448 |     const char *current_sign = (current_int < 0) ? "-" : "";
+      |                 ^~~~~~~~~~~~
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/UserDev/car_Control.c:447:9: warning: unused variable 'current_abs' [-Wunused-variable]
+  447 |     int current_abs = (current_int < 0) ? -current_int : current_int;
+      |         ^~~~~~~~~~~
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/UserDev/car_Control.c:444:17: warning: unused variable 'speed_sign' [-Wunused-variable]
+  444 |     const char *speed_sign = (speed_int < 0) ? "-" : "";
+      |                 ^~~~~~~~~~
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/UserDev/car_Control.c:443:9: warning: unused variable 'speed_abs' [-Wunused-variable]
+  443 |     int speed_abs = (speed_int < 0) ? -speed_int : speed_int;
+      |         ^~~~~~~~~
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/UserDev/car_Control.c:422:20: warning: unused variable 'reset_counter' [-Wunused-variable]
+  422 |     static uint8_t reset_counter[4] = {0, 0, 0, 0};
+      |                    ^~~~~~~~~~~~~
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/UserDev/car_Control.c:420:18: warning: variable 'last_speed' set but not used [-Wunused-but-set-variable]
+  420 |     static float last_speed[4] = {0.0f, 0.0f, 0.0f, 0.0f};
+      |                  ^~~~~~~~~~
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/UserDev/car_Control.c:416:13: warning: variable 'motor_axis_id' set but not used [-Wunused-but-set-variable]
+  416 |     uint8_t motor_axis_id;
+      |             ^~~~~~~~~~~~~
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/UserDev/car_Control.c: In function 'MotionControl_Parking':
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/UserDev/car_Control.c:529:11: warning: unused variable 'hold_rpm' [-Wunused-variable]
+  529 |     float hold_rpm = 0.0f;
+      |           ^~~~~~~~
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/UserDev/car_Control.c: In function 'Send_Motor_Command':
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/UserDev/car_Control.c:585:17: warning: unused variable 'current_sign' [-Wunused-variable]
+  585 |     const char *current_sign = (current_int < 0) ? "-" : "";
+      |                 ^~~~~~~~~~~~
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/UserDev/car_Control.c:584:9: warning: unused variable 'current_abs' [-Wunused-variable]
+  584 |     int current_abs = (current_int < 0) ? -current_int : current_int;
+      |         ^~~~~~~~~~~
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/UserDev/car_Control.c:581:17: warning: unused variable 'speed_sign' [-Wunused-variable]
+  581 |     const char *speed_sign = (speed_int < 0) ? "-" : "";
+      |                 ^~~~~~~~~~
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/UserDev/car_Control.c:580:9: warning: unused variable 'speed_abs' [-Wunused-variable]
+  580 |     int speed_abs = (speed_int < 0) ? -speed_int : speed_int;
+      |         ^~~~~~~~~
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/UserDev/car_Control.c:561:13: warning: variable 'motor_axis_id' set but not used [-Wunused-but-set-variable]
+  561 |     uint8_t motor_axis_id;
+      |             ^~~~~~~~~~~~~
+[12/23] Building C object CMakeFiles/control_chassis.dir/Core/UserApp/app_Report.c.obj
+[13/23] Building C object CMakeFiles/control_chassis.dir/Core/UserApp/app_SerialTX.c.obj
+[14/23] Building C object CMakeFiles/control_chassis.dir/Core/UserApp/app_BMS_Sensor.c.obj
+[15/23] Building C object CMakeFiles/control_chassis.dir/Core/Src/freertos.c.obj
+In file included from /media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/Src/freertos.c:34:
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/Inc/rs485.h:46:13: warning: 'RS485_Start_Receive' declared 'static' but never defined [-Wunused-function]
+   46 | static void RS485_Start_Receive(void);
+      |             ^~~~~~~~~~~~~~~~~~~
+[16/23] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/pairing_receiver.c.obj
+[17/23] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/lifter.c.obj
+[18/23] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/chassis_control.c.obj
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/UserDev/chassis_control.c: In function 'chassis_control_parse_host_frame':
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/UserDev/chassis_control.c:149:12: warning: unused variable 'vy_raw' [-Wunused-variable]
+  149 |     int8_t vy_raw = (int8_t)payload[2];
+      |            ^~~~~~
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/UserDev/chassis_control.c: At top level:
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/UserDev/chassis_control.c:375:13: warning: 'chassis_control_send_oid_wheel_speed_feedback' defined but not used [-Wunused-function]
+  375 | static void chassis_control_send_oid_wheel_speed_feedback(void)
+      |             ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+[19/23] Building C object CMakeFiles/control_chassis.dir/Core/Src/main.c.obj
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/Src/main.c: In function 'main':
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/Src/main.c:201:9: warning: unused variable 'angles' [-Wunused-variable]
+  201 |   float angles[3];
+      |         ^~~~~~
+In file included from /media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/Src/main.c:57:
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/Inc/rs485.h: At top level:
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/Inc/rs485.h:46:13: warning: 'RS485_Start_Receive' declared 'static' but never defined [-Wunused-function]
+   46 | static void RS485_Start_Receive(void);
+      |             ^~~~~~~~~~~~~~~~~~~
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/Src/main.c:170:17: warning: 'obstacle_clear_timestamp' defined but not used [-Wunused-variable]
+  170 | static uint32_t obstacle_clear_timestamp = 0; // 鐢ㄤ簬寤惰繜娓呴櫎鐨勮鏃跺櫒
+      |                 ^~~~~~~~~~~~~~~~~~~~~~~~
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/Src/main.c:168:17: warning: 'g_key_press_time' defined but not used [-Wunused-variable]
+  168 | static uint32_t g_key_press_time[8] = {0}; // 淇濆瓨8涓寜閿殑鎸変笅璧峰鏃堕棿
+      |                 ^~~~~~~~~~~~~~~~
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/Src/main.c:165:16: warning: 'key1_was_pressed' defined but not used [-Wunused-variable]
+  165 | static uint8_t key1_was_pressed = 0;
+      |                ^~~~~~~~~~~~~~~~
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/Src/main.c:164:16: warning: 'key0_was_pressed' defined but not used [-Wunused-variable]
+  164 | static uint8_t key0_was_pressed = 0;
+      |                ^~~~~~~~~~~~~~~~
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/Src/main.c:159:16: warning: 'g_stopwatch_running' defined but not used [-Wunused-variable]
+  159 | static uint8_t g_stopwatch_running = 0;
+      |                ^~~~~~~~~~~~~~~~~~~
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/Src/main.c:158:17: warning: 'g_stopwatch_start_time' defined but not used [-Wunused-variable]
+  158 | static uint32_t g_stopwatch_start_time = 0;
+      |                 ^~~~~~~~~~~~~~~~~~~~~~
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/Src/main.c:106:14: warning: 'g_ultrasonic_distance_cm' defined but not used [-Wunused-variable]
+  106 | static float g_ultrasonic_distance_cm = -1.0f; // 鐢ㄤ簬淇濆瓨鏈€鏂扮殑鏈夋晥璺濈
+      |              ^~~~~~~~~~~~~~~~~~~~~~~~
+[20/23] Building C object CMakeFiles/control_chassis.dir/Core/UserApp/app_Motion.c.obj
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/UserApp/app_Motion.c: In function 'StartTask_Motion':
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/UserApp/app_Motion.c:397:12: warning: unused variable 'is_joystick_active' [-Wunused-variable]
+  397 |       bool is_joystick_active = (abs((int)mapped_throttle - 2048) > 200) ||
+      |            ^~~~~~~~~~~~~~~~~~
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/UserApp/app_Motion.c:175:19: warning: unused variable 'cruise_toggle_tick' [-Wunused-variable]
+  175 |   static uint32_t cruise_toggle_tick = 0;
+      |                   ^~~~~~~~~~~~~~~~~~
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/UserApp/app_Motion.c:173:18: warning: unused variable 'cruise_key_lock' [-Wunused-variable]
+  173 |   static uint8_t cruise_key_lock = 0;
+      |                  ^~~~~~~~~~~~~~~
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/UserApp/app_Motion.c:171:18: warning: unused variable 'us_toggle_lock' [-Wunused-variable]
+  171 |   static uint8_t us_toggle_lock = 0;
+      |                  ^~~~~~~~~~~~~~
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/UserApp/app_Motion.c:159:16: warning: unused variable 'last_blade_command' [-Wunused-variable]
+  159 |   static float last_blade_command = -1.0f;
+      |                ^~~~~~~~~~~~~~~~~~
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/UserApp/app_Motion.c:158:18: warning: unused variable 'last_blade_knob' [-Wunused-variable]
+  158 |   static uint8_t last_blade_knob = 0xFF;
+      |                  ^~~~~~~~~~~~~~~
+/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/Core/UserApp/app_Motion.c:155:15: warning: variable 'last_key_state' set but not used [-Wunused-but-set-variable]
+  155 |   static bool last_key_state[8] = {0};
+      |               ^~~~~~~~~~~~~~
+[21/23] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/remote_backend.c.obj
+[22/23] Building C object CMakeFiles/control_chassis.dir/Core/UserDev/sens_ibus_usart2.c.obj
+[23/23] Linking C executable control_chassis.elf
+/home/dyh/.local/opt/arm-gnu-toolchain-15.3.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/bin/ld: /home/dyh/.local/opt/arm-gnu-toolchain-15.3.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard/libg_nano.a(libc_a-closer.o): in function `_close_r':
+closer.c:(.text._close_r+0xc): warning: _close is not implemented and will always fail
+/home/dyh/.local/opt/arm-gnu-toolchain-15.3.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/bin/ld: /home/dyh/.local/opt/arm-gnu-toolchain-15.3.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard/libg_nano.a(libc_a-closer.o): note: the message above does not take linker garbage collection into account
+/home/dyh/.local/opt/arm-gnu-toolchain-15.3.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/bin/ld: /home/dyh/.local/opt/arm-gnu-toolchain-15.3.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard/libg_nano.a(libc_a-lseekr.o): in function `_lseek_r':
+lseekr.c:(.text._lseek_r+0x10): warning: _lseek is not implemented and will always fail
+/home/dyh/.local/opt/arm-gnu-toolchain-15.3.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/bin/ld: /home/dyh/.local/opt/arm-gnu-toolchain-15.3.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard/libg_nano.a(libc_a-lseekr.o): note: the message above does not take linker garbage collection into account
+/home/dyh/.local/opt/arm-gnu-toolchain-15.3.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/bin/ld: /home/dyh/.local/opt/arm-gnu-toolchain-15.3.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard/libg_nano.a(libc_a-readr.o): in function `_read_r':
+readr.c:(.text._read_r+0x10): warning: _read is not implemented and will always fail
+/home/dyh/.local/opt/arm-gnu-toolchain-15.3.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/bin/ld: /home/dyh/.local/opt/arm-gnu-toolchain-15.3.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard/libg_nano.a(libc_a-readr.o): note: the message above does not take linker garbage collection into account
+/home/dyh/.local/opt/arm-gnu-toolchain-15.3.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/bin/ld: /home/dyh/.local/opt/arm-gnu-toolchain-15.3.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard/libg_nano.a(libc_a-writer.o): in function `_write_r':
+writer.c:(.text._write_r+0x10): warning: _write is not implemented and will always fail
+/home/dyh/.local/opt/arm-gnu-toolchain-15.3.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/bin/ld: /home/dyh/.local/opt/arm-gnu-toolchain-15.3.rel1-x86_64-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard/libg_nano.a(libc_a-writer.o): note: the message above does not take linker garbage collection into account
+Memory region         Used Size  Region Size  %age Used
+             RAM:       52056 B       128 KB     39.72%
+          CCMRAM:           0 B        64 KB      0.00%
+           FLASH:       85924 B       512 KB     16.39%
+   text	   data	    bss	    dec	    hex	filename
+  85412	    504	  51552	 137468	  218fc	/media/dyh/工作/STM32/HAL_STM32Project/phld/MowerControl_FS-i6X/control_chassis/build/gcc15/debug/control_chassis.elf

@@ -1,66 +1,66 @@
 
-/Users/dyh/Documents/Codex/MowerControl/releases/20261106-lifter-15khz/control-chassis-lifter-15khz.elf:     file format elf32-littlearm
+/Users/dyh/phld/MowerControl_FS-i6X/releases/20261106-lifter-15khz/control-chassis-lifter-15khz60pct.elf:     file format elf32-littlearm
 
 
 Disassembly of section .text:
 
-08001c80 <MX_TIM2_Init>:
- 8001c80:	b510      	push	{r4, lr}
- 8001c82:	2400      	movs	r4, #0
- 8001c84:	b08a      	sub	sp, #40	@ 0x28
- 8001c86:	221c      	movs	r2, #28
- 8001c88:	4621      	mov	r1, r4
- 8001c8a:	a803      	add	r0, sp, #12
- 8001c8c:	e9cd 4401 	strd	r4, r4, [sp, #4]
- 8001c90:	f011 f8a1 	bl	8012dd6 <memset>
- 8001c94:	4a22      	ldr	r2, [pc, #136]	@ (8001d20 <MX_TIM2_Init+0xa0>)
- 8001c96:	f04f 4380 	mov.w	r3, #1073741824	@ 0x40000000
- 8001c9a:	e9c2 3400 	strd	r3, r4, [r2]
- 8001c9e:	4610      	mov	r0, r2
- 8001ca0:	f242 03cf 	movw	r3, #8399	@ 0x20cf
- 8001ca4:	e9c2 3403 	strd	r3, r4, [r2, #12]
- 8001ca8:	6094      	str	r4, [r2, #8]
- 8001caa:	6194      	str	r4, [r2, #24]
- 8001cac:	f009 fbd4 	bl	800b458 <HAL_TIM_PWM_Init>
- 8001cb0:	b108      	cbz	r0, 8001cb6 <MX_TIM2_Init+0x36>
- 8001cb2:	f7ff fc3d 	bl	8001530 <Error_Handler>
- 8001cb6:	481a      	ldr	r0, [pc, #104]	@ (8001d20 <MX_TIM2_Init+0xa0>)
- 8001cb8:	a901      	add	r1, sp, #4
- 8001cba:	e9cd 4401 	strd	r4, r4, [sp, #4]
- 8001cbe:	f009 fe81 	bl	800b9c4 <HAL_TIMEx_MasterConfigSynchronization>
- 8001cc2:	b108      	cbz	r0, 8001cc8 <MX_TIM2_Init+0x48>
- 8001cc4:	f7ff fc34 	bl	8001530 <Error_Handler>
- 8001cc8:	2200      	movs	r2, #0
- 8001cca:	2360      	movs	r3, #96	@ 0x60
- 8001ccc:	4814      	ldr	r0, [pc, #80]	@ (8001d20 <MX_TIM2_Init+0xa0>)
- 8001cce:	9205      	str	r2, [sp, #20]
- 8001cd0:	a903      	add	r1, sp, #12
- 8001cd2:	e9cd 3203 	strd	r3, r2, [sp, #12]
- 8001cd6:	9207      	str	r2, [sp, #28]
- 8001cd8:	f009 fc4c 	bl	800b574 <HAL_TIM_PWM_ConfigChannel>
- 8001cdc:	b108      	cbz	r0, 8001ce2 <MX_TIM2_Init+0x62>
- 8001cde:	f7ff fc27 	bl	8001530 <Error_Handler>
- 8001ce2:	480f      	ldr	r0, [pc, #60]	@ (8001d20 <MX_TIM2_Init+0xa0>)
- 8001ce4:	2204      	movs	r2, #4
- 8001ce6:	a903      	add	r1, sp, #12
- 8001ce8:	f009 fc44 	bl	800b574 <HAL_TIM_PWM_ConfigChannel>
- 8001cec:	b108      	cbz	r0, 8001cf2 <MX_TIM2_Init+0x72>
- 8001cee:	f7ff fc1f 	bl	8001530 <Error_Handler>
- 8001cf2:	480b      	ldr	r0, [pc, #44]	@ (8001d20 <MX_TIM2_Init+0xa0>)
- 8001cf4:	2208      	movs	r2, #8
- 8001cf6:	a903      	add	r1, sp, #12
- 8001cf8:	f009 fc3c 	bl	800b574 <HAL_TIM_PWM_ConfigChannel>
- 8001cfc:	b108      	cbz	r0, 8001d02 <MX_TIM2_Init+0x82>
- 8001cfe:	f7ff fc17 	bl	8001530 <Error_Handler>
- 8001d02:	220c      	movs	r2, #12
- 8001d04:	4806      	ldr	r0, [pc, #24]	@ (8001d20 <MX_TIM2_Init+0xa0>)
- 8001d06:	eb0d 0102 	add.w	r1, sp, r2
- 8001d0a:	f009 fc33 	bl	800b574 <HAL_TIM_PWM_ConfigChannel>
- 8001d0e:	b108      	cbz	r0, 8001d14 <MX_TIM2_Init+0x94>
- 8001d10:	f7ff fc0e 	bl	8001530 <Error_Handler>
- 8001d14:	4802      	ldr	r0, [pc, #8]	@ (8001d20 <MX_TIM2_Init+0xa0>)
- 8001d16:	f7ff ff53 	bl	8001bc0 <HAL_TIM_MspPostInit>
- 8001d1a:	b00a      	add	sp, #40	@ 0x28
- 8001d1c:	bd10      	pop	{r4, pc}
- 8001d1e:	bf00      	nop
- 8001d20:	20000654 	.word	0x20000654
+08001c8c <MX_TIM2_Init>:
+ 8001c8c:	b510      	push	{r4, lr}
+ 8001c8e:	2400      	movs	r4, #0
+ 8001c90:	b08a      	sub	sp, #40	@ 0x28
+ 8001c92:	221c      	movs	r2, #28
+ 8001c94:	4621      	mov	r1, r4
+ 8001c96:	a803      	add	r0, sp, #12
+ 8001c98:	e9cd 4401 	strd	r4, r4, [sp, #4]
+ 8001c9c:	f012 fe3b 	bl	8014916 <memset>
+ 8001ca0:	4a22      	ldr	r2, [pc, #136]	@ (8001d2c <MX_TIM2_Init+0xa0>)
+ 8001ca2:	f04f 4380 	mov.w	r3, #1073741824	@ 0x40000000
+ 8001ca6:	e9c2 3400 	strd	r3, r4, [r2]
+ 8001caa:	4610      	mov	r0, r2
+ 8001cac:	f242 03cf 	movw	r3, #8399	@ 0x20cf
+ 8001cb0:	e9c2 3403 	strd	r3, r4, [r2, #12]
+ 8001cb4:	6094      	str	r4, [r2, #8]
+ 8001cb6:	6194      	str	r4, [r2, #24]
+ 8001cb8:	f00a ff36 	bl	800cb28 <HAL_TIM_PWM_Init>
+ 8001cbc:	b108      	cbz	r0, 8001cc2 <MX_TIM2_Init+0x36>
+ 8001cbe:	f7ff fc3d 	bl	800153c <Error_Handler>
+ 8001cc2:	481a      	ldr	r0, [pc, #104]	@ (8001d2c <MX_TIM2_Init+0xa0>)
+ 8001cc4:	a901      	add	r1, sp, #4
+ 8001cc6:	e9cd 4401 	strd	r4, r4, [sp, #4]
+ 8001cca:	f00b f9e3 	bl	800d094 <HAL_TIMEx_MasterConfigSynchronization>
+ 8001cce:	b108      	cbz	r0, 8001cd4 <MX_TIM2_Init+0x48>
+ 8001cd0:	f7ff fc34 	bl	800153c <Error_Handler>
+ 8001cd4:	2200      	movs	r2, #0
+ 8001cd6:	2360      	movs	r3, #96	@ 0x60
+ 8001cd8:	4814      	ldr	r0, [pc, #80]	@ (8001d2c <MX_TIM2_Init+0xa0>)
+ 8001cda:	9205      	str	r2, [sp, #20]
+ 8001cdc:	a903      	add	r1, sp, #12
+ 8001cde:	e9cd 3203 	strd	r3, r2, [sp, #12]
+ 8001ce2:	9207      	str	r2, [sp, #28]
+ 8001ce4:	f00a ffae 	bl	800cc44 <HAL_TIM_PWM_ConfigChannel>
+ 8001ce8:	b108      	cbz	r0, 8001cee <MX_TIM2_Init+0x62>
+ 8001cea:	f7ff fc27 	bl	800153c <Error_Handler>
+ 8001cee:	480f      	ldr	r0, [pc, #60]	@ (8001d2c <MX_TIM2_Init+0xa0>)
+ 8001cf0:	2204      	movs	r2, #4
+ 8001cf2:	a903      	add	r1, sp, #12
+ 8001cf4:	f00a ffa6 	bl	800cc44 <HAL_TIM_PWM_ConfigChannel>
+ 8001cf8:	b108      	cbz	r0, 8001cfe <MX_TIM2_Init+0x72>
+ 8001cfa:	f7ff fc1f 	bl	800153c <Error_Handler>
+ 8001cfe:	480b      	ldr	r0, [pc, #44]	@ (8001d2c <MX_TIM2_Init+0xa0>)
+ 8001d00:	2208      	movs	r2, #8
+ 8001d02:	a903      	add	r1, sp, #12
+ 8001d04:	f00a ff9e 	bl	800cc44 <HAL_TIM_PWM_ConfigChannel>
+ 8001d08:	b108      	cbz	r0, 8001d0e <MX_TIM2_Init+0x82>
+ 8001d0a:	f7ff fc17 	bl	800153c <Error_Handler>
+ 8001d0e:	220c      	movs	r2, #12
+ 8001d10:	4806      	ldr	r0, [pc, #24]	@ (8001d2c <MX_TIM2_Init+0xa0>)
+ 8001d12:	eb0d 0102 	add.w	r1, sp, r2
+ 8001d16:	f00a ff95 	bl	800cc44 <HAL_TIM_PWM_ConfigChannel>
+ 8001d1a:	b108      	cbz	r0, 8001d20 <MX_TIM2_Init+0x94>
+ 8001d1c:	f7ff fc0e 	bl	800153c <Error_Handler>
+ 8001d20:	4802      	ldr	r0, [pc, #8]	@ (8001d2c <MX_TIM2_Init+0xa0>)
+ 8001d22:	f7ff ff53 	bl	8001bcc <HAL_TIM_MspPostInit>
+ 8001d26:	b00a      	add	sp, #40	@ 0x28
+ 8001d28:	bd10      	pop	{r4, pc}
+ 8001d2a:	bf00      	nop
+ 8001d2c:	200007a4 	.word	0x200007a4

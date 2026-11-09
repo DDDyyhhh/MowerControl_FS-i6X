@@ -108,6 +108,7 @@ void MX_TIM2_Init(void)
   TIM_OC_InitTypeDef sConfigOC = {0};
 
   /* USER CODE BEGIN TIM2_Init 1 */
+  /* 84MHz / (PSC + 1) / (ARR + 1) = 84MHz / 8400 = 10kHz. */
 
   /* USER CODE END TIM2_Init 1 */
   htim2.Instance = TIM2;
@@ -164,12 +165,13 @@ void MX_TIM3_Init(void)
   TIM_OC_InitTypeDef sConfigOC = {0};
 
   /* USER CODE BEGIN TIM3_Init 1 */
+  /* 84MHz / (PSC + 1) / (ARR + 1) = 84MHz / 8400 = 10kHz. */
 
   /* USER CODE END TIM3_Init 1 */
   htim3.Instance = TIM3;
   htim3.Init.Prescaler = 0;
   htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim3.Init.Period = 5599;
+  htim3.Init.Period = 8399;
   htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_PWM_Init(&htim3) != HAL_OK)

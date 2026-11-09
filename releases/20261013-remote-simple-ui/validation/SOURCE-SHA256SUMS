@@ -1,9 +1,0 @@
-1cef192c9f4e389ce79807d9688b657539d4ed7811eb944623708e8caef7fd29  OpenI6X/FS-I6X/opentx/radio/src/gui/128x64/view_main.cpp
-1df71f3453068b7b27be1ce39fe90877c5e86b94b13779a578ae119cf10a05a0  OpenI6X/FS-I6X/opentx/radio/src/gui/128x64/mower_ui.h
-c90277594fd0af454e3050e876b3682e1dcf1f6a91c28f3f0b477dffd8baff02  OpenI6X/FS-I6X/opentx/radio/src/gui/128x64/mower_user_ui.h
-0a30709ae393d3effccb0b3485096ca500215e3a17ac4eb599f701b9a78a5ab5  OpenI6X/FS-I6X/opentx/radio/src/gui/128x64/mower_zh_font.h
-ed06d0345bb486b5a12d7b1550868931acc22344b854c68bfefa2fb18c12a897  OpenI6X/FS-I6X/opentx/radio/src/gui/128x64/mower_zh_font.md
-6a73f9541c2de74158c0e7cf6b0a58ef774f5a780bf191f2d7ec9cc53efe2bf2  OpenI6X/FS-I6X/opentx/radio/src/gui/128x64/mower_zh_font.LICENSE
-09123887f21f256c5491c69f3b82181038e022ec00ae1d01e9e8f0b469814771  tools/test_blade_ok_ui.py
-3626e7b1fe11750179bcbedb3f67002b220d7803f91c2464114f7424b45cf8f5  tools/build_mower_user_ui.sh
-57c0d520431c5a234a1e8fd4ebddea72316ae8c19930476c9e1afe8af7f15a75  tools/generate_mower_zh_font.py

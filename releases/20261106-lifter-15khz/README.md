@@ -1,47 +1,46 @@
-# 刀盘升降推杆 15 kHz 固件
+# FS-i6X 双端固件：刀盘升降 15 kHz／60%
 
-基于当前 CH8 模式切换／独立底盘 OK 工作区生成，仅将刀盘升降推杆 PWM 从 10 kHz 改为 15 kHz。通信协议仍为 **0x33**，沿用配套 FS-i6X 遥控器固件，本包只需更新底盘。
+基于 `/Users/dyh/phld/MowerControl_FS-i6X` 的 SVN r109 重新构建底盘和 FS-i6X 遥控器。刀盘升降 TIM3 改为 15 kHz，沿用新项目现有 60% 占空比；草袋 TIM2 保持 10 kHz／60%。两端正式协议均为 **0x36**。
 
-**软件验证通过；尚未刷机，硬件验收未执行。现有配置 `VEHICLE_ESTOP_ENABLED=0` 继续保留，PD1 实体急停仍被软件旁路；现场操作不能依赖该输入切断输出。**
+## 镜像与配置
 
-## 固件与配置
+| 设备 | 文件前缀 | BIN 起始地址 | BIN 字节数 |
+|---|---|---|---:|
+| STM32F407 底盘 | `control-chassis-lifter-15khz60pct` | `0x08000000` | 90396 |
+| FS-i6X 遥控器 | `fs-i6x-lifter15khz-paired` | `0x08000000` | 130864 |
 
-| 项目 | 本包配置 |
-|---|---|
-| 目标 | STM32F407 底盘控制板，工程型号 STM32F407VETx |
-| 构建 | `mower-ok-release`，Release，`MOWER_BLADE_OK=ON`，两项独立 HIL 选项关闭 |
-| 升降推杆 | TIM3_CH3/PB0、TIM3_CH4/PB1；84 MHz，PSC=0，ARR=5599，15 kHz |
-| 升降占空比 | 20%，活动通道 CCR=1120，另一通道为 0 |
-| 草袋与割刀 | TIM2 保持 PSC=0、ARR=8399、10 kHz |
-| 通信与行为 | 0x33；沿用现有 CH8、独立 OK、升降权限与行程估算 |
+两端均提供 `.bin`、`.hex`、`.elf`、`.map`。HEX／ELF 自带地址，BIN 需要手动指定地址；ELF／MAP 与同名前缀的 BIN 配套。
 
-- `control-chassis-lifter-15khz.elf`：首选 OpenOCD 刷写文件，自带地址与调试信息。
-- `control-chassis-lifter-15khz.hex`：自带地址的 HEX 镜像。
-- `control-chassis-lifter-15khz.bin`：原始镜像，写入起始地址 **0x08000000**。
-- [刷写与复测说明](刷写与复测说明.md)：接线、烧录、校验、回退及待执行的实测记录。
-- `rollback/`：11 月 5 日底盘 BIN/HEX 候选回退镜像，已按原发布元数据核验；不是从当前设备读取的备份。
-- `SHA256SUMS`、`artifacts.json`：包内校验值、镜像大小、构建与验证状态。
-- `MowerControl-Lifter-15kHz.zip`：完整交付包；压缩包自身校验值在同目录 `ZIP-SHA256SUMS`。
+- 升降：TIM3_CH3/PB0、TIM3_CH4/PB1，84 MHz、PSC=0、ARR=5599；15 kHz、60%，活动 CCR=3360。
+- 草袋：TIM2_CH3/PA2、TIM2_CH4/PA3，PSC=0、ARR=8399；10 kHz、60%，活动 CCR=5040。
+- 沿用 r109 的升降方向、换向先停止、机械时间表、300 ms i-BUS 超时和授权逻辑。
+- 割刀继续使用 FTESC CAN；保留的 TIM2 PWM 配置为 10 kHz。实体急停配置保持 `VEHICLE_ESTOP_ENABLED=1`。
+- 遥控器功能源码未修改，提供的是当前版本的重新构建镜像。已经使用匹配 0x36 遥控器时，可只更新底盘；本包支持完整双端刷写。
 
-## 已完成的软件验证
+[双端刷写与复测说明](刷写与复测说明.md)包含接线、目标识别、下载、独立读回、回退与硬件验收。`artifacts.json` 记录大小、SHA256 和配置。
 
-- 仅改动 `tim.c` 的 TIM3 周期值与 `concrol.ioc` 的 `TIM3.Period`，原有 CRLF／混合换行保持不变。TIM2 初始化完整保留。
-- 修改前重新构建的发布版 BIN 与 11 月 5 日底盘 BIN 完全一致；基线包含已有工作区改动，不等同于 SVN r104 原版。
-- `./tools/verify.sh all` 通过：全部现有 host harness 与 ARM Debug 构建，含升降权限撤销、停止、模式切换和草袋回归。
-- Debug、`mower-ok-release` 均重新完整构建成功。与修改前同配置完整构建对比，编译／链接警告分别为 56→56、57→57，**新增 0 项**。
-- SVN preflight 通过并保留两项提示；详见 `validation/svn-preflight.log`，不是无提示通过。
-- `validation/pwm-configuration.log`、`validation/firmware-images.log` 记录频率、占空比、最终 ELF 配置及镜像一致性检查。
-- `validation/lifter-15khz.patch` 为本次两处修改；`validation/SOURCE-SHA256SUMS` 记录本次构建输入的校验值。
+## 软件验证与边界
+
+全套软件验证已通过；实机刷写和硬件测量尚未执行。
+
+最终验证记录见 `validation/`：全套 host 回归、底盘 Debug／发布版、FS-i6X 正式构建、真实 ARM Thumb 遥测路径和双端镜像一致性检查。PWM 回归执行实际时钟、定时器初始化和 EG2104 驱动，在 O0/O2 下验证两种频率、正反转 60% 和启动／停止清零。
+
+macOS 主机验证使用包内 `validation/macos-host-cc.py` 和 `validation/macos-bin/c++`，仅适配队列替身未使用函数、快照测试的 GNU `--wrap` 链接语义和按键替身的常量告警；原测试断言保留。`tools/verify.sh` 的两处空数组展开兼容系统 Bash 3.2，统一入口显式传播 host 失败；禁用功能检查使用 `nm -g --defined-only` 排除本地汇编标签。适配与首次失败记录均保留在 `validation/macos-host-compatibility.log` 及相邻日志中，ARM 生产编译参数不受影响。
+
+底盘新旧同机完整构建警告对比见 `validation/warning-comparison.log`；遥控器完整构建告警保存在日志中。修改前 r109 由本机工具链重新生成的底盘镜像保存在 `rollback/`，它与历史发布包的构建产物不保证逐字节一致，来源见 `validation/baseline-image.json`。
+
+本次没有实机刷写、波形测量或机械标定，也未执行 SVN 提交。`rollback/` 中的文件是候选回退镜像，不是从当前设备读取的备份。
 
 ## 重现构建
 
-在包含当前 CH8／独立底盘 OK 改动和本次 PWM 修改的仓库根目录执行：
+在新项目根目录、已安装相同版本临时依赖的环境中执行（工具链路径按本机实际安装位置设置）：
 
 ```sh
-./tools/verify.sh all
-cmake --preset mower-ok-release -S control_chassis
-cmake --build control_chassis/build/mower-ok-release
-./tools/svn_preflight.sh
+export ARM_GNU_TOOLCHAIN_ROOT=/Applications/ArmGNUToolchain/15.3.rel2/arm-none-eabi
+export PYTHONPATH=/private/tmp/mower-r109-dual-deps
+export CC="$PWD/releases/20261106-lifter-15khz/validation/macos-host-cc.py"
+export PATH="$PWD/releases/20261106-lifter-15khz/validation/macos-bin:$PATH"
+ASAN_OPTIONS=detect_leaks=0 ./tools/build_blade_ok.sh
 ```
 
-输出位于 `control_chassis/build/mower-ok-release/`。工具版本、完整构建记录和警告对比见 `validation/`。此次未执行实机刷写或 SVN 提交。
+本轮临时依赖为 Unicorn 2.1.4、Pillow 11.3.0，可用 `python3 -m pip install --target /private/tmp/mower-r109-dual-deps unicorn==2.1.4 Pillow==11.3.0` 准备；工具版本与配置缓存见 `validation/`。上述命令只构建和验证，不刷写。Linux 可使用原生 GCC／GNU 链接器，省略 macOS 专用 `CC` 和 PATH 设置。

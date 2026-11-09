@@ -1,81 +1,166 @@
 #include "exp3_board.h"
 #include "bag_connection.h"
+#include "height_feedback.h"
+#include "battery_status.h"
 #if EXP3_ENABLED
 Exp3Hil g_exp3_hil;
 #if MOWER_BLADE_OK_ENABLED
 bool exp3_board_defer_result(const Exp3Message *result) { (void)result; return false; }
-static uint16_t control_word, control_generation;
-static uint32_t control_at, generation_at;
-static uint8_t control_seen, control_valid;
-bool exp3_board_control(uint32_t now, uint16_t *generation, uint16_t *status) {
-    if (!generation || !status || !g_exp3_hil.bound || !control_valid || !control_generation ||
-        (uint32_t)(now-control_at)>=1000U || (uint32_t)(now-generation_at)>=1000U) return false;
-    *generation=control_generation; *status=control_word; return true;
+static uint16_t authority_word;
+static struct {
+    uint32_t minimum_at, received_at;
+    uint16_t minimum, reasons, pending_minimum;
+    uint8_t sequence, pending, seen, valid;
+} battery;
+bool exp3_board_battery(uint32_t now, uint16_t *minimum_mv, uint16_t *reasons) {
+    if (!minimum_mv || !reasons || !g_exp3_hil.bound || !battery.valid ||
+        (uint32_t)(now-battery.received_at) >= MOWER_BATTERY_DIAG_FRESH_MS) return false;
+    *minimum_mv = battery.minimum;
+    *reasons = battery.reasons;
+    return true;
 }
-static void receive_control(uint8_t address, uint16_t value, uint32_t now) {
+static void receive_battery(uint16_t word, uint32_t now) {
     if (!g_exp3_hil.bound) return;
-    if (address==MOWER_UNLOCK_ADDRESS) { control_generation=value; generation_at=now; return; }
-    if (!(value&MOWER_CONTROL_VALID) || ((value>>3)&3U)>2U ||
-        ((value&MOWER_CONTROL_ARMED) && (value&MOWER_CONTROL_READY))) {
-        control_seen=control_valid=0U; return;
+    if ((word & MOWER_BATTERY_DIAG_KIND) == MOWER_BATTERY_DIAG_MIN) {
+        uint16_t minimum = word & 0x1FFFU;
+        if (minimum > 5000U) { battery.pending=0U; return; }
+        /* Do not expose a half-received pair to the GUI. */
+        battery.minimum_at = now;
+        battery.pending = 1U;
+        battery.pending_minimum = minimum;
+    } else {
+        uint8_t sequence = (uint8_t)((word >> 8U) & 31U);
+        uint8_t delta = (uint8_t)((sequence-battery.sequence) & 31U);
+        if (!battery.pending || (uint32_t)(now-battery.minimum_at) >= 1000U) return;
+        if (!battery.seen || (uint32_t)(now-battery.received_at) >= MOWER_BATTERY_DIAG_FRESH_MS)
+            battery.valid = 0U; /* First pair establishes a heartbeat baseline. */
+        else {
+            if (!delta || delta >= 16U) return;
+            battery.valid = 1U;
+        }
+        battery.sequence = sequence;
+        battery.minimum = battery.pending_minimum;
+        battery.reasons = word & 0xFFU;
+        battery.received_at = now;
+        battery.pending = 0U;
+        battery.seen = 1U;
     }
-    if (!control_seen || (uint32_t)(now-control_at)>=1000U) {
-        control_seen=1U; control_valid=0U; control_at=now; control_word=value; return;
-    }
-    uint16_t delta=(uint16_t)(((value>>6)-(control_word>>6))&MOWER_CONTROL_HEARTBEAT_MASK);
-    if (delta && delta<512U) { control_valid=1U; control_at=now; control_word=value; }
-    else if (!delta && !(value&MOWER_CONTROL_ARMED) &&
-        (!(value&MOWER_CONTROL_READY) || (control_word&MOWER_CONTROL_READY))) control_word=value;
 }
-static uint16_t runtime_word;
-static uint32_t runtime_at;
-static uint8_t runtime_seen, runtime_valid;
-static uint16_t bag_word;
-static uint32_t bag_at;
-static uint8_t bag_seen, bag_valid;
+static Exp3CompletionRx completion_rx;
+static void receive_completion(unsigned part, uint32_t word, uint32_t now) {
+    Exp3Message result;
+    /* A receipt cannot cut the outgoing command frame short. Repeated sensor
+     * samples will complete the result after the last word has left the link. */
+    if (!g_exp3_hil.bound || !g_exp3_hil.waiting || g_exp3_mailbox.command ||
+        g_exp3_hil.link.tx_active) return;
+    if (exp3_completion_receive(&completion_rx, part, word, now,
+        g_exp3_hil.controller, g_exp3_hil.hmi, &result) == EXP3_COMPLETE)
+        (void)exp3_hil_apply_result(&g_exp3_hil, &result, now);
+}
+/* Each sensor retains its independent producer clock and validity.
+ * Share only the replay/freshness algorithm to fit the 128KiB radio Flash. */
+#if MOWER_HEIGHT_FRESHNESS_MS != MOWER_BAG_FRESHNESS_MS || MOWER_FAST_FRESHNESS_MS != MOWER_BAG_FRESHNESS_MS
+#error "Shared sample cache requires equal sensor freshness"
+#endif
+typedef struct {
+    uint32_t at;
+    uint16_t value, heartbeat;
+    uint8_t state; /* 0=empty, 1=baseline, 2=progress confirmed */
+} SensorSample;
+static SensorSample bag, bag_full, height, runtime;
+static bool sample_fresh(const SensorSample *sample, uint32_t now) {
+    return g_exp3_hil.bound && sample->state == 2U &&
+        (uint32_t)(now-sample->at) < MOWER_BAG_FRESHNESS_MS;
+}
+/* 1 accepts a new baseline/progress; 0 repeats; -1 rejects reverse order. */
+static __attribute__((noinline)) int sample_observe(SensorSample *sample, uint32_t now,
+                                                   uint16_t heartbeat, uint16_t mask) {
+    if (!sample->state || (uint32_t)(now-sample->at) >= MOWER_BAG_FRESHNESS_MS)
+        sample->state=1U;
+    else {
+        uint16_t delta=(uint16_t)((heartbeat-sample->heartbeat) & mask);
+        if (!delta) return 0;
+        if (delta > (mask>>1)) return -1;
+        sample->state=2U;
+    }
+    sample->heartbeat=heartbeat; sample->at=now;
+    return 1;
+}
+bool exp3_board_height(uint32_t now, uint16_t *mm) {
+    if (!mm || !sample_fresh(&height, now)) return false;
+    *mm=height.value & MOWER_HEIGHT_VALUE_MASK;
+    return true;
+}
+static void receive_height(uint16_t word, uint32_t now) {
+    if (!g_exp3_hil.bound) return;
+    if (!mower_height_word_valid(word)) height.state=0U;
+    else if (sample_observe(&height, now, word>>8, MOWER_HEIGHT_HEARTBEAT_MASK) > 0)
+        height.value=word;
+}
 bool exp3_board_bag_connection(uint32_t now, bool *connected) {
-    if (!connected || !g_exp3_hil.bound || !bag_valid ||
-        (uint32_t)(now-bag_at) >= MOWER_BAG_FRESHNESS_MS) return false;
-    *connected = (bag_word & MOWER_BAG_CONNECTED) != 0U;
+    if (!connected || !sample_fresh(&bag, now)) return false;
+    *connected=(bag.value & MOWER_BAG_CONNECTED) != 0U;
+    return true;
+}
+bool exp3_board_bag_full(uint32_t now, bool *full) {
+    bool connected;
+    if (!full || !exp3_board_bag_connection(now, &connected) || !connected ||
+        !sample_fresh(&bag_full, now)) return false;
+    *full=(bag_full.value & MOWER_BAG_FULL) != 0U;
     return true;
 }
 static void receive_bag_connection(uint16_t word, uint32_t now) {
-    uint16_t delta;
     if (!g_exp3_hil.bound) return;
     if (!(word & MOWER_BAG_SAMPLE_VALID)) {
-        bag_seen=bag_valid=0U;
+        bag.state=bag_full.state=0U;
         return;
     }
-    if (!bag_seen || (uint32_t)(now-bag_at) >= MOWER_BAG_FRESHNESS_MS) {
-        bag_word=word; bag_at=now; bag_seen=1U; bag_valid=0U;
+    int step=sample_observe(&bag, now, word>>2, MOWER_BAG_HEARTBEAT_MASK);
+    if (step > 0 || (!step && !(word & MOWER_BAG_CONNECTED)))
+        bag.value=word; /* Disconnect wins within a heartbeat. */
+    if (bag.state == 1U || !(bag.value & MOWER_BAG_CONNECTED)) bag_full.state=0U;
+}
+static void receive_bag_full(uint16_t connection, uint16_t flags, uint32_t now) {
+    if (!g_exp3_hil.bound || !bag.state || connection != bag.value) return;
+    if (!(connection & MOWER_BAG_CONNECTED) || !(flags & MOWER_BAG_FULL_VALID)) {
+        bag_full.state=0U;
         return;
     }
-    delta=(uint16_t)(((word>>2)-(bag_word>>2)) & MOWER_BAG_HEARTBEAT_MASK);
-    if (delta && delta < 8192U) {
-        bag_word=word; bag_at=now; bag_valid=1U;
-    } else if (!delta && !(word & MOWER_BAG_CONNECTED)) {
-        /* Disconnect wins within one heartbeat; delayed connected cannot undo it. */
-        bag_word=word;
-    }
+    int step=sample_observe(&bag_full, now, connection>>2, MOWER_BAG_HEARTBEAT_MASK);
+    if (step > 0) bag_full.value=flags;
+    else if (!step) bag_full.value |= flags & MOWER_BAG_FULL;
 }
 bool exp3_board_runtime(uint32_t now, uint16_t *word) {
-    if (!word || !g_exp3_hil.bound || !runtime_valid ||
-        (uint32_t)(now-runtime_at) >= 1000U) return false;
-    *word = runtime_word;
+    if (!word || !sample_fresh(&runtime, now)) return false;
+    *word = runtime.value;
     return true;
 }
-static void receive_runtime(uint16_t word, uint32_t now) {
-    uint16_t delta;
+bool exp3_board_authority(uint32_t now, uint16_t *word) {
+    uint16_t ignored;
+    if (!word || !exp3_board_runtime(now, &ignored)) return false;
+    *word = authority_word;
+    return true;
+}
+static void receive_runtime(uint32_t snapshot, uint32_t now) {
+    uint16_t word = (uint16_t)snapshot;
+    uint16_t authority = (uint16_t)(snapshot >> 16);
     if (!g_exp3_hil.bound || !(word&8U) ||
-        ((word&1U) && !(word&6U)) || (!(word&1U) && (word&6U))) return;
-    if (!runtime_seen || (uint32_t)(now-runtime_at)>=1000U) {
-        runtime_word=word; runtime_at=now; runtime_seen=1U; runtime_valid=0U; return;
-    }
-    delta=(uint16_t)(((word>>4)-(runtime_word>>4))&0xFFFU);
-    if (delta && delta<2048U) {
-        runtime_at=now; runtime_valid=1U; runtime_word=word;
-    } else if (!delta && ((runtime_word&1U) || !(word&1U))) {
-        runtime_word=word; /* Stop is visible immediately; frozen data never renews freshness. */
+        ((word&1U) && !(word&6U)) || (!(word&1U) && (word&6U)) ||
+        ((word & MOWER_FAST_STOP_MASK) && (word & (MOWER_FAST_RUN | 7U))) ||
+        ((word & MOWER_FAST_EMERGENCY) && !(word & MOWER_FAST_LOCKED)) ||
+        ((word & 7U) && !(word & MOWER_FAST_RUN))) return;
+    int step=sample_observe(&runtime, now, word>>MOWER_FAST_HEARTBEAT_SHIFT, MOWER_FAST_HEARTBEAT_MASK);
+    if (step > 0) {
+        runtime.value=word; authority_word=authority;
+    } else if (!step) {
+        /* Accumulate restrictive flags; a delayed old "enabled/unlocked" packet
+         * cannot undo a stop. Only a forward heartbeat may relax restrictions. */
+        const uint16_t restrictive = MOWER_FAST_STOP_MASK | MOWER_FAST_FAULT | MOWER_FAST_WHEEL_STALE;
+        uint16_t flags = (runtime.value | word) & restrictive;
+        uint16_t run = (runtime.value & word) & MOWER_FAST_RUN;
+        uint16_t blade = ((runtime.value & 1U) && (word & 1U)) ? word & 7U : 0U;
+        if (!run || (flags & MOWER_FAST_STOP_MASK)) blade=run=0U;
+        runtime.value = (uint16_t)((runtime.value & MOWER_FAST_HEARTBEAT_WORD_MASK) | MOWER_FAST_VALID | flags | run | blade);
     }
 }
 #endif
@@ -85,6 +170,7 @@ volatile uint32_t g_exp3_capture_overflow;
 #if EXP3_AUTO_SESSION_ENABLED
 static Exp3AutoSession auto_session;
 static uint8_t auto_started;
+static Exp3AutoPace auto_pace;
 static volatile uint32_t auto_seed, auto_seed_at;
 void exp3_board_auto_start(uint32_t seed, uint32_t now) {
     if (auto_started) return;
@@ -92,13 +178,22 @@ void exp3_board_auto_start(uint32_t seed, uint32_t now) {
     auto_seed_at = now;
 }
 static void receive_word(uint16_t word, uint32_t now) {
+#if MOWER_BLADE_OK_ENABLED
+    if ((word & MOWER_BATTERY_DIAG_KIND) == MOWER_BATTERY_DIAG_MIN ||
+        (word & MOWER_BATTERY_DIAG_KIND) == MOWER_BATTERY_DIAG_REASON) {
+        receive_battery(word, now);
+        return;
+    }
+#endif
     if (auto_started && exp3_auto_is_word(word)) {
         if (exp3_auto_receive(&auto_session, word, now, 5000U) == 1) {
+            exp3_auto_hmi_settled(&auto_pace);
             g_exp3_mailbox.command = 0U;
 #if MOWER_BLADE_OK_ENABLED
-            runtime_seen=runtime_valid=0U;
-            control_seen=control_valid=0U; control_generation=0U;
-            bag_seen=bag_valid=0U;
+            runtime.state=0U;
+            bag.state=bag_full.state=height.state=0U;
+            completion_rx = (Exp3CompletionRx){0};
+            battery.seen=battery.pending=battery.valid=0U;
 #endif
             exp3_hil_bind_session(&g_exp3_hil, NULL, auto_session.peer,
                                   auto_session.self, now);
@@ -108,6 +203,13 @@ static void receive_word(uint16_t word, uint32_t now) {
 }
 #else
 static void receive_word(uint16_t word, uint32_t now) {
+#if MOWER_BLADE_OK_ENABLED
+    if ((word & MOWER_BATTERY_DIAG_KIND) == MOWER_BATTERY_DIAG_MIN ||
+        (word & MOWER_BATTERY_DIAG_KIND) == MOWER_BATTERY_DIAG_REASON) {
+        receive_battery(word, now);
+        return;
+    }
+#endif
     exp3_hil_receive(&g_exp3_hil, NULL, word, now);
 }
 #endif
@@ -157,6 +259,9 @@ bool exp3_board_submit(const Exp3Message *message) {
     }
 #endif
     if (g_exp3_hil.waiting || g_exp3_hil.link.tx_active) return false;
+#if MOWER_BLADE_OK_ENABLED
+    completion_rx = (Exp3CompletionRx){0};
+#endif
     g_exp3_mailbox.message = *message;
     g_exp3_mailbox.command = EXP3_SEND;
     return true;
@@ -175,7 +280,37 @@ void exp3_board_capture_rf(const uint8_t *p, unsigned n, uint32_t now) {
         capture[slot].bytes[i] = p[i];
     ++capture_write;
 }
+#if MOWER_BLADE_OK_ENABLED
+void exp3_board_restart_session(uint32_t now) {
+    (void)now;
+    g_exp3_hil.bound = 0U;
+    g_exp3_hil.cancel_failed = g_exp3_hil.restart_requested = 1U;
+}
+static void restart_session_now(uint32_t now) {
+    g_exp3_hil.restart_requested = 0U;
+    uint32_t identity = g_exp3_hil.hmi + 1U;
+    if (!identity) identity = 1U;
+    g_exp3_hil.bound = g_exp3_hil.waiting = 0U;
+    g_exp3_mailbox.command = 0U;
+    exp3_link_init(&g_exp3_hil.link);
+    runtime.state = 0U;
+    completion_rx = (Exp3CompletionRx){0};
+    g_exp3_hil.cancel_failed = 1U;
+#if EXP3_AUTO_SESSION_ENABLED
+    exp3_auto_init(&auto_session, EXP3_AUTO_HMI, identity, now);
+    auto_started = 1U;
+#else
+    (void)now;
+#endif
+}
+#endif
 void exp3_board_poll(uint32_t now) {
+#if MOWER_BLADE_OK_ENABLED
+    if (g_exp3_hil.restart_requested) restart_session_now(now);
+    if (g_exp3_hil.bound && g_exp3_hil.waiting &&
+        (uint32_t)(now-g_exp3_hil.request_started) >= MOWER_AUTH_LIFETIME_MS)
+        restart_session_now(now);
+#endif
     uint16_t a, b;
 #if EXP3_AUTO_SESSION_ENABLED
     if (!auto_started && auto_seed) {
@@ -202,8 +337,16 @@ void exp3_board_poll(uint32_t now) {
     {
         uint16_t word = g_exp3_hil.published_word;
 #if EXP3_AUTO_SESSION_ENABLED
-        if (auto_started && !g_exp3_hil.link.tx_active)
-            word = exp3_auto_word(&auto_session, now, 20U, 2000U);
+        if (auto_started && !g_exp3_hil.link.tx_active) {
+#if MOWER_BLADE_OK_ENABLED
+            uint16_t runtime_word;
+            uint32_t interval = exp3_auto_hmi_interval(&auto_pace, g_exp3_hil.bound,
+                                                       exp3_board_runtime(now, &runtime_word));
+#else
+            uint32_t interval = EXP3_AUTO_ROUND_MS;
+#endif
+            word = exp3_auto_word(&auto_session, now, 20U, interval);
+        }
         if (word) {
             exp3_channels(word, &a, &b);
             g_exp3_uplink_channels = (uint32_t)a | ((uint32_t)b << 16);
@@ -218,42 +361,47 @@ void exp3_board_poll(uint32_t now) {
     }
 }
 /* Called only after RF CRC and both binding IDs have passed. */
+/* Keep slot dispatch separate from the session poller's register allocation. */
+__attribute__((noinline))
 void exp3_board_rf(const uint8_t *p, unsigned n, uint32_t now) {
     unsigned i;
-    if (n < 10)
-        return;
-    if (p[0] == 0xaa) {
-        for (i = 9; i + 4 <= n && i < 37 && p[i] != 0xff; i += 4) {
+    if (n < 10U || (p[0] != 0xaa && p[0] != 0xac)) return;
+    const unsigned header=p[0] == 0xac ? 3U : 2U;
+    /* AA and AC share slot validation and dispatch; only the header differs. */
+    for (i=9U; i+header<=n && i<37U && p[i]!=0xff;) {
+        const unsigned size=header == 3U ? p[i+2] : 2U;
+        if (size > n-i-header) break;
+        const uint8_t *value=p+i+header;
+        if (size == 2U) {
+            uint16_t word=(uint16_t)(value[0] | ((uint16_t)value[1]<<8));
 #if MOWER_BLADE_OK_ENABLED
-            if ((p[i]==MOWER_UNLOCK_TYPE && p[i+1]==MOWER_UNLOCK_ADDRESS) ||
-                (p[i]==MOWER_CONTROL_TYPE && p[i+1]==MOWER_CONTROL_ADDRESS))
-                receive_control(p[i+1],(uint16_t)(p[i+2] | ((uint16_t)p[i+3]<<8)),now);
-            if (p[i] == 0xe2 && p[i+1] == 10U)
-                receive_runtime((uint16_t)(p[i+2] | ((uint16_t)p[i+3]<<8)), now);
+            /* A legacy two-byte E9 cannot establish profile-3 authority. */
+            if (p[i] == MOWER_HEIGHT_SENS_TYPE && p[i+1] == MOWER_HEIGHT_SENS_ADDRESS)
+                receive_height(word, now);
             if (p[i] == MOWER_BAG_SENS_TYPE && p[i+1] == MOWER_BAG_SENS_ADDRESS)
-                receive_bag_connection((uint16_t)(p[i+2] | ((uint16_t)p[i+3]<<8)), now);
+                receive_bag_connection(word, now);
 #endif
-            if (p[i] == 0xe1 && p[i + 1] == 9)
-                receive_word((uint16_t)(p[i + 2] | ((uint16_t)p[i + 3] << 8)), now);
+            if (p[i] == 0xe1 && p[i+1] == 9U) receive_word(word, now);
         }
-    } else if (p[0] == 0xac) {
-        for (i = 9; i + 3 <= n && p[i] != 0xff;) {
-            unsigned size = p[i + 2];
-            if (size > n - i - 3)
-                break;
 #if MOWER_BLADE_OK_ENABLED
-            if (size==2U && ((p[i]==MOWER_UNLOCK_TYPE && p[i+1]==MOWER_UNLOCK_ADDRESS) ||
-                (p[i]==MOWER_CONTROL_TYPE && p[i+1]==MOWER_CONTROL_ADDRESS)))
-                receive_control(p[i+1],(uint16_t)(p[i+3] | ((uint16_t)p[i+4]<<8)),now);
-            if (p[i] == 0xe2 && p[i+1] == 10U && size == 2U)
-                receive_runtime((uint16_t)(p[i+3] | ((uint16_t)p[i+4]<<8)), now);
-            if (p[i] == MOWER_BAG_SENS_TYPE && p[i+1] == MOWER_BAG_SENS_ADDRESS && size == 2U)
-                receive_bag_connection((uint16_t)(p[i+3] | ((uint16_t)p[i+4]<<8)), now);
-#endif
-            if (p[i] == 0xe1 && p[i + 1] == 9 && size == 2)
-                receive_word((uint16_t)(p[i + 3] | ((uint16_t)p[i + 4] << 8)), now);
-            i += 3 + size;
+        else if (size == 4U) {
+            uint32_t word=(uint32_t)value[0] | ((uint32_t)value[1]<<8) |
+                ((uint32_t)value[2]<<16) | ((uint32_t)value[3]<<24);
+            if (p[i] >= EXP3_COMPLETION_TYPE && p[i] < EXP3_COMPLETION_TYPE+EXP3_COMPLETION_PARTS &&
+                p[i+1] == EXP3_COMPLETION_ADDRESS+p[i]-EXP3_COMPLETION_TYPE)
+                receive_completion(p[i]-EXP3_COMPLETION_TYPE, word, now);
+            if (p[i] == MOWER_FAST_STATUS_TYPE && p[i+1] == 10U)
+                receive_runtime(word, now);
+            if (p[i] == MOWER_BAG_SENS_TYPE && p[i+1] == MOWER_BAG_SENS_ADDRESS) {
+                uint16_t connection=(uint16_t)word, flags=(uint16_t)(word>>16);
+                if (!(flags & (uint16_t)~MOWER_BAG_FULL_FLAGS_MASK)) {
+                    receive_bag_connection(connection, now);
+                    receive_bag_full(connection, flags, now);
+                }
+            }
         }
+#endif
+        i+=header+size;
     }
 }
 #endif

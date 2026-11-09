@@ -1,74 +1,130 @@
 {
+  "release": "20261106-lifter-15khz",
   "date": "2026-11-06",
-  "target": "STM32F407VETx",
-  "preset": "mower-ok-release",
-  "protocol": "0x33",
-  "baseline": {
-    "svn_working_copy_revision": "104",
-    "includes_existing_uncommitted_changes": true,
-    "release": "20261105-ch8-mode-ok",
-    "fresh_baseline_bin_matches_release": true
+  "project": "/Users/dyh/phld/MowerControl_FS-i6X",
+  "svn_baseline": "r109",
+  "protocol": "0x36",
+  "configuration": {
+    "lifter_hz": 15000,
+    "lifter_duty_percent": 60,
+    "lifter_arr": 5599,
+    "lifter_ccr": 3360,
+    "grass_bag_hz": 10000,
+    "grass_bag_duty_percent": 60,
+    "grass_bag_arr": 8399,
+    "grass_bag_ccr": 5040,
+    "ibus_timeout_ms": 300,
+    "blade_driver": "FTESC CAN",
+    "vehicle_estop_enabled": true
   },
-  "pwm": {
-    "height": {
-      "timer": "TIM3",
-      "pins": [
-        "PB0",
-        "PB1"
-      ],
-      "clock_hz": 84000000,
-      "psc": 0,
-      "arr": 5599,
-      "frequency_hz": 15000,
-      "duty_percent": 20,
-      "active_ccr": 1120
-    },
-    "grass_bag_and_blade": {
-      "timer": "TIM2",
-      "psc": 0,
-      "arr": 8399,
-      "frequency_hz": 10000
-    }
-  },
-  "vehicle_estop_enabled": false,
-  "software_validation": "passed",
+  "software_validation": "passed; documented macOS host adapters",
   "hardware_validation": "not performed",
   "flashed": false,
   "svn_committed": false,
-  "warning_comparison": {
-    "debug": {
-      "baseline": 56,
-      "current": 56,
-      "added": 0
+  "images": {
+    "chassis": {
+      "prefix": "control-chassis-lifter-15khz60pct",
+      "bytes": 90396,
+      "base_address": "0x08000000",
+      "capacity": 524288,
+      "sp": "0x20020000",
+      "reset": "0x8010465",
+      "sha256": "e5b6f8b8589e79f889c5d06e862df91a3ea39b7de52c0d70ae273af8bc25450a"
     },
-    "mower-ok-release": {
-      "baseline": 57,
-      "current": 57,
-      "added": 0
+    "radio": {
+      "prefix": "fs-i6x-lifter15khz-paired",
+      "bytes": 130864,
+      "base_address": "0x08000000",
+      "capacity": 131072,
+      "sp": "0x20004000",
+      "reset": "0x801c1bd",
+      "sha256": "f8807075337d99642a845fbb7c3bbc245ef5ff6625eada83a1255c98724bd66c"
     }
   },
-  "firmware": {
-    "control-chassis-lifter-15khz.elf": {
-      "bytes": 156124,
-      "sha256": "bec197b5f1cace5c4876b9b10ca9dc45b8de47d6d77927d8d558199ef8e7a9ba"
+  "files": {
+    "control-chassis-lifter-15khz60pct.bin": {
+      "bytes": 90396,
+      "sha256": "e5b6f8b8589e79f889c5d06e862df91a3ea39b7de52c0d70ae273af8bc25450a"
     },
-    "control-chassis-lifter-15khz.hex": {
-      "bytes": 233768,
-      "sha256": "0e5087a7c59bff044647e78c1c8ee3bccc75280252771db33dfb24b92e0f93ad"
+    "control-chassis-lifter-15khz60pct.elf": {
+      "bytes": 2267468,
+      "sha256": "8ff16c96544c4cde759ad53b558433a194f0cf32399a94a435f48f101c8f4e8b"
     },
-    "control-chassis-lifter-15khz.bin": {
-      "bytes": 83084,
-      "sha256": "68b5aeda6afe65a596c79deea8a9df0da889def72c3cd69d671131dad7c7a22d"
+    "control-chassis-lifter-15khz60pct.hex": {
+      "bytes": 254333,
+      "sha256": "5633a6f13e79db34f7021afab7de93300e5aa1afc4555c5446b12d0b74dcc559"
+    },
+    "control-chassis-lifter-15khz60pct.map": {
+      "bytes": 1767775,
+      "sha256": "6223972dd92a16456e4c919019fdebcbda2f08619393bba87c373d10c8adcb3d"
+    },
+    "fs-i6x-lifter15khz-paired.bin": {
+      "bytes": 130864,
+      "sha256": "f8807075337d99642a845fbb7c3bbc245ef5ff6625eada83a1255c98724bd66c"
+    },
+    "fs-i6x-lifter15khz-paired.elf": {
+      "bytes": 2094128,
+      "sha256": "7c2261a482084789546d4cb8f89c89629887a95d04b1839b8b9741d42df0ea16"
+    },
+    "fs-i6x-lifter15khz-paired.hex": {
+      "bytes": 368162,
+      "sha256": "45cbeb4566bf6ba0a4e5cf982e16e684a4bf1a142c3ef27fb40967cf53a456a3"
+    },
+    "fs-i6x-lifter15khz-paired.map": {
+      "bytes": 1223205,
+      "sha256": "8c2e5c1514efe341e8eba63b88028c5522e9c8ea997fb22ea1997ae75415caf4"
+    },
+    "rollback/control-chassis-r109-10khz60pct.bin": {
+      "bytes": 90396,
+      "sha256": "cde45be6f1b599e3f5c708c73367799fde00b492c0677700a6053c72ed7ffc2c"
+    },
+    "rollback/control-chassis-r109-10khz60pct.elf": {
+      "bytes": 2267468,
+      "sha256": "fe9a9919f204370991a24eeedfef39f03b48bccddae4acc45559d2a76fc55a00"
+    },
+    "rollback/control-chassis-r109-10khz60pct.hex": {
+      "bytes": 254333,
+      "sha256": "a098b0ce049ed6c798349cbcfc3b32ef5fec2de23ea78679671c1221c47dec92"
+    },
+    "rollback/fs-i6x-r109-paired.bin": {
+      "bytes": 130872,
+      "sha256": "a50063c822cccd9f0018e774742d207b58d4d0e03cdde09e9e372eb34338b4b4"
+    },
+    "rollback/fs-i6x-r109-paired.elf": {
+      "bytes": 2130060,
+      "sha256": "c31022b18cf01d0d52e1e063a44c783e0c5db0fba5a7a9355ef5f616dd52688d"
+    },
+    "rollback/fs-i6x-r109-paired.hex": {
+      "bytes": 368191,
+      "sha256": "3623163977651eae7cfef9e8b02150cf5a31d13f54390c18f4ae9c2e3da401b1"
     }
   },
-  "rollback": {
-    "rollback/control-chassis-ch8-ok.bin": {
-      "bytes": 83084,
-      "sha256": "e09bee86d7659823a7d2988e99d6a4109d37ac0e2a4098bc23b985f157701d79"
+  "rollback_sources": {
+    "chassis": "fresh unmodified r109 build on this machine; not device backup",
+    "radio": "releases/20261105-actuator-10khz-60pct-ibus300ms-dual; hashes checked against original release.json; not device backup"
+  },
+  "validation": {
+    "full_host_suite": "PASS; completion marker checked",
+    "chassis_debug": "PASS",
+    "chassis_release": "PASS",
+    "radio_release": "PASS",
+    "radio_thumb_values": [
+      0,
+      1234,
+      65535
+    ],
+    "same_machine_chassis_warnings": {
+      "debug": {
+        "before": 51,
+        "after": 51
+      },
+      "release": {
+        "before": 51,
+        "after": 51
+      }
     },
-    "rollback/control-chassis-ch8-ok.hex": {
-      "bytes": 233768,
-      "sha256": "1301cf1a39863775ef409515bb106932d75edab23840858b13714606217f7f51"
-    }
+    "svn_preflight": "PASS with one advisory for deliberate IOC change",
+    "macos_adapters_documented": true,
+    "dual_image_conversion_and_vectors": "PASS"
   }
 }

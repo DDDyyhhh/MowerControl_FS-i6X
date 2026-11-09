@@ -1,0 +1,71 @@
+{
+  "view_prefix": "e21e7f46b4f1cba6d409da63f8c783c8ef3e0fd16503278b9d96d0020572fa5d",
+  "view_suffix": "32357f73e45d08007c61d1bda44e9d04cf0b6b33b87da4e5cc525ce7c48d661c",
+  "functions": [
+    {
+      "signature": "static uint16_t mowerZhNext(",
+      "normalize_literals": false,
+      "sha256": "3064f5858ffa9c19baa68d07ba997bc37102e95eda6b7cdd604a425d6d21f02f"
+    },
+    {
+      "signature": "static coord_t mowerZhTextWidth(",
+      "normalize_literals": false,
+      "sha256": "373f2b30152aa5d6ae140daffb3ff3f86621c5553793dee8bb57d17f7ec7dbed"
+    },
+    {
+      "signature": "static coord_t mowerZhText(",
+      "normalize_literals": false,
+      "sha256": "abce2558e4fa6f8e8ba2fbc13caea3000a282aebd2aaf9e1b20c48f7081f0679"
+    },
+    {
+      "signature": "static void mowerZhCenteredText(",
+      "normalize_literals": false,
+      "sha256": "231ae23e0488d7dbf36520c6775f6c6cd02d944037156b9e08fe974eed8153d2"
+    },
+    {
+      "signature": "static const char *mowerConnection(",
+      "normalize_literals": true,
+      "sha256": "165485fc3fae7867dfa115da3d1c1a56ea0a84f11e00ff1c70f9375d0e785579"
+    },
+    {
+      "signature": "static void mowerUserValue(",
+      "normalize_literals": false,
+      "sha256": "ee1fb4bddb7a2813bd10ee181bd897e9e3778dd59616670d34fbae06b718e57d"
+    },
+    {
+      "signature": "static const char *mowerBladeGear(",
+      "normalize_literals": true,
+      "sha256": "78ec84525ed68596478a0ebe1cbfdc5468ce519cbd3d4bb574eeeee3d06eb726"
+    },
+    {
+      "signature": "static const char *mowerBagCommandName(",
+      "normalize_literals": true,
+      "sha256": "7d75135f2681909ce374e3750c577b2d86df8a34e815231184f4a376c3dc2951"
+    },
+    {
+      "signature": "static const char *mowerBagDisplay(",
+      "normalize_literals": true,
+      "sha256": "0284b925105b822e507334cc33ff2216a47b160ef4b298358b282e2181122e81"
+    },
+    {
+      "signature": "static bool mowerBagFullKnown(",
+      "normalize_literals": false,
+      "sha256": "efb2c24fa615a8c0efe9c4777244fb4d90ca433faf6f50a8a7f9450aee4084ca"
+    },
+    {
+      "signature": "static const char *mowerTransactionName(",
+      "normalize_literals": true,
+      "sha256": "ba856f3336dcd6ac1321be766695c2f423d279576312420ab4b471f8333318a4"
+    },
+    {
+      "signature": "static void mowerUserRender(",
+      "normalize_literals": true,
+      "sha256": "5d44e26b7666d6349d1d121706bd3f67c45bbc56a3513dffa485b831655c401a"
+    },
+    {
+      "signature": "static void mowerUserMain(",
+      "normalize_literals": false,
+      "sha256": "36d0fcaff2c64a248ab7e260fd88425073dc7ff496cc607c88c1364737e2f8cc"
+    }
+  ]
+}

@@ -1,6 +1,8 @@
---- a/control_chassis/Core/Src/tim.c
-+++ b/control_chassis/Core/Src/tim.c
-@@ -169,7 +169,7 @@
+Index: control_chassis/Core/Src/tim.c
+===================================================================
+--- control_chassis/Core/Src/tim.c	(revision 109)
++++ control_chassis/Core/Src/tim.c	(working copy)
+@@ -171,7 +171,7 @@
    htim3.Instance = TIM3;
    htim3.Init.Prescaler = 0;
    htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
@@ -9,8 +11,10 @@
    htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
    htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
    if (HAL_TIM_PWM_Init(&htim3) != HAL_OK)
---- a/control_chassis/concrol.ioc
-+++ b/control_chassis/concrol.ioc
+Index: control_chassis/concrol.ioc
+===================================================================
+--- control_chassis/concrol.ioc	(revision 109)
++++ control_chassis/concrol.ioc	(working copy)
 @@ -557,7 +557,7 @@
  TIM3.Channel-PWM\ Generation3\ CH3=TIM_CHANNEL_3
  TIM3.Channel-PWM\ Generation4\ CH4=TIM_CHANNEL_4
@@ -20,3 +24,124 @@
  TIM4.Channel-PWM\ Generation1\ CH1=TIM_CHANNEL_1
  TIM4.IPParameters=Channel-PWM Generation1 CH1,Prescaler,Period,Pulse-PWM Generation1 CH1
  TIM4.Period=999
+Index: control_chassis/CONTEXT.md
+===================================================================
+--- control_chassis/CONTEXT.md	(revision 109)
++++ control_chassis/CONTEXT.md	(working copy)
+@@ -187,4 +187,4 @@
+ 
+ ## 11. 推杆占空比与发布
+ 
+-`Core/UserDev/lifter.c`中刀盘升降和草袋开合运行占空比均为60%，正反转及升降归位共用该值，停止0%。草袋使用TIM2 CH3/CH4，升降使用TIM3 CH3/CH4，两定时器均为10kHz：84MHz输入、PSC=0、ARR=8399，60%比较值5040。CubeMX `concrol.ioc`保持一致。48V母线下理想平均输出约28.8V；机械计时、高度时间表及上升补偿沿用原值，实际速度和行程需现场确认。有效i-BUS帧超时仍默认300ms。当前双端交付见[10kHz/60%推杆发布说明](../docs/releases/actuator-10khz-60pct-ibus300ms-dual.md)。
++`Core/UserDev/lifter.c`中刀盘升降和草袋开合运行占空比均为60%，正反转及升降归位共用该值，停止0%。草袋使用TIM2 CH3/CH4，保持10kHz（84MHz输入、PSC=0、ARR=8399，60%比较值5040）；升降使用TIM3 CH3/CH4，改为15kHz（84MHz输入、PSC=0、ARR=5599，60%比较值3360）。CubeMX `concrol.ioc`保持一致。48V母线下理想平均输出约28.8V；机械计时、高度时间表及上升补偿沿用原值，实际速度和行程需现场确认。有效i-BUS帧超时仍默认300ms。当前升降15kHz交付见[升降15kHz／60%发布说明](../docs/releases/lifter-15khz-r109.md)；原双端10kHz版本见[10kHz/60%推杆发布说明](../docs/releases/actuator-10khz-60pct-ibus300ms-dual.md)。
+Index: tools/test_actuator_pwm.py
+===================================================================
+--- tools/test_actuator_pwm.py	(revision 109)
++++ tools/test_actuator_pwm.py	(working copy)
+@@ -128,18 +128,18 @@
+ '''
+ 
+ TEST = r'''
+-static void check_bridge(EG2104_HBridge_t *bridge, float duty) {
++static void check_bridge(EG2104_HBridge_t *bridge, float duty, uint32_t expected_compare) {
+     EG2104_HBridge_Init(bridge);
+     assert(bridge->current_speed == 0.0f && bridge->direction == 0U);
+     assert(bridge->left_timer->compare[bridge->left_in_channel / 4U] == 0U);
+     assert(bridge->right_timer->compare[bridge->right_in_channel / 4U] == 0U);
+     assert(EG2104_HBridge_SetSpeed(bridge, duty) == HAL_OK);
+-    assert(bridge->left_timer->compare[bridge->left_in_channel / 4U] == 5040U);
++    assert(bridge->left_timer->compare[bridge->left_in_channel / 4U] == expected_compare);
+     assert(bridge->right_timer->compare[bridge->right_in_channel / 4U] == 0U);
+     EG2104_HBridge_Stop(bridge);
+     assert(EG2104_HBridge_SetSpeed(bridge, -duty) == HAL_OK);
+     assert(bridge->left_timer->compare[bridge->left_in_channel / 4U] == 0U);
+-    assert(bridge->right_timer->compare[bridge->right_in_channel / 4U] == 5040U);
++    assert(bridge->right_timer->compare[bridge->right_in_channel / 4U] == expected_compare);
+     EG2104_HBridge_Stop(bridge);
+     assert(bridge->left_timer->compare[bridge->left_in_channel / 4U] == 0U);
+     assert(bridge->right_timer->compare[bridge->right_in_channel / 4U] == 0U);
+@@ -153,19 +153,20 @@
+     assert(timer_clock == 84000000U && post_init_calls == 2U);
+     TIM_HandleTypeDef *timers[] = { &htim2, &htim3 };
+     const uint32_t ioc_period[] = { IOC_TIM2_PERIOD, IOC_TIM3_PERIOD };
++    const uint32_t expected_hz[] = { 10000U, 15000U };
+     for (unsigned i = 0; i < 2U; ++i) {
+         assert(timers[i]->Init.CounterMode == TIM_COUNTERMODE_UP);
+         uint32_t divider = (timers[i]->Init.Prescaler + 1U) * (timers[i]->Init.Period + 1U);
+-        assert(timer_clock == 10000U * divider);
++        assert(timer_clock == expected_hz[i] * divider);
+         assert(timers[i]->Init.Period == ioc_period[i]);
+     }
+     assert(blade_height_bridge.left_timer == &htim3 && blade_height_bridge.right_timer == &htim3);
+     assert(grass_bag_bridge.left_timer == &htim2 && grass_bag_bridge.right_timer == &htim2);
+-    check_bridge(&blade_height_bridge, LIFTER_SPEED);
+-    check_bridge(&grass_bag_bridge, GRASS_BAG_SPEED);
++    check_bridge(&blade_height_bridge, LIFTER_SPEED, 3360U);
++    check_bridge(&grass_bag_bridge, GRASS_BAG_SPEED, 5040U);
+     assert(htim2.started == 12U && htim3.started == 12U);
+     assert(htim2.compare[0] == 0U && htim2.compare[1] == 0U);
+-    puts("PASS actual RCC/TIM2/TIM3/EG2104: 84MHz -> 10kHz, IOC agrees, both +/-60% -> CCR5040/8400, startup/stop zero");
++    puts("PASS actual RCC/TIM2/TIM3/EG2104: 84MHz -> bag 10kHz / height 15kHz, IOC agrees, +/-60% -> CCR5040/8400 and CCR3360/5600, startup/stop zero");
+ }
+ '''
+ 
+Index: tools/verify.sh
+===================================================================
+--- tools/verify.sh	(revision 109)
++++ tools/verify.sh	(working copy)
+@@ -347,7 +347,7 @@
+             fi
+             # FlySky i-BUS Backend Test
+             "$cc" -std=c99 -Wall -Wextra -Werror \
+-                -DREMOTE_BACKEND_HOST "${timeout_defs[@]}" \
++                -DREMOTE_BACKEND_HOST ${timeout_defs[@]+"${timeout_defs[@]}"} \
+                 -DREMOTE_BACKEND_A28_E34=0 -DREMOTE_BACKEND_FLYSKY_IBUS=1 \
+                 -I"${REPO_ROOT}/control_chassis/Core/Inc" \
+                 "${REPO_ROOT}/control_chassis/host/remote_backend_harness.c" \
+@@ -360,7 +360,7 @@
+             "${WORK_DIR}/remote_backend_flysky_${timeout_ms}" || return 1
+             # Exercise the production CH6 bag + explicit OK blade configuration.
+             "$cc" -std=c99 -Wall -Wextra -Werror \
+-                -DREMOTE_BACKEND_HOST "${timeout_defs[@]}" -DMOWER_BLADE_OK_ENABLED=1 -DMOWER_GRASS_BAG_CH6_ENABLED=1 \
++                -DREMOTE_BACKEND_HOST ${timeout_defs[@]+"${timeout_defs[@]}"} -DMOWER_BLADE_OK_ENABLED=1 -DMOWER_GRASS_BAG_CH6_ENABLED=1 \
+                 -DREMOTE_BACKEND_A28_E34=0 -DREMOTE_BACKEND_FLYSKY_IBUS=1 \
+                 -I"${REPO_ROOT}/control_chassis/Core/Inc" \
+                 "${REPO_ROOT}/control_chassis/host/remote_backend_harness.c" \
+@@ -417,7 +417,7 @@
+         cat "${LOG_DIR}/host_actuator_pwm.log" >&2
+         return 1
+     }
+-    pass "Actuator PWM (actual RCC/TIM/EG2104, 10kHz, +/-60%, startup and stop zero)"
++    pass "Actuator PWM (actual RCC/TIM/EG2104, bag 10kHz / height 15kHz, +/-60%, startup and stop zero)"
+ 
+     info "=== Running Lifter Height Homing Harness (both remote backends) ==="
+     log="${LOG_DIR}/host_lifter_height.log"
+@@ -585,7 +585,7 @@
+             run_chassis_build
+             ;;
+         all)
+-            run_host_harnesses
++            run_host_harnesses || return 1
+             echo ""
+             run_chassis_build
+             ;;
+Index: experiments/ticket03/run_host.sh
+===================================================================
+--- experiments/ticket03/run_host.sh	(revision 109)
++++ experiments/ticket03/run_host.sh	(working copy)
+@@ -38,12 +38,12 @@
+   "$root/../../control_chassis/Core/UserDev/flysky_ibus_servo.c" -o "$work/servo-gate"
+ ASAN_OPTIONS=detect_leaks=0 "$work/servo-gate"
+ "$cc" -std=c99 -Wall -Wextra -Werror -c "$root/exp3.c" -o "$work/disabled.o"
+-test -z "$(nm --defined-only "$work/disabled.o")"
++test -z "$(nm -g --defined-only "$work/disabled.o")"
+ "$cc" -std=c99 -Wall -Wextra -Werror -c "$root/exp3_probe.c" -o "$work/probe-disabled.o"
+ "$cc" -std=c99 -Wall -Wextra -Werror -I"$root" \
+   -c "$root/exp3_blade_adapter.c" -o "$work/blade-disabled.o"
+-test -z "$(nm --defined-only "$work/probe-disabled.o")"
+-test -z "$(nm --defined-only "$work/blade-disabled.o")"
++test -z "$(nm -g --defined-only "$work/probe-disabled.o")"
++test -z "$(nm -g --defined-only "$work/blade-disabled.o")"
+ 
+ "$cc" -std=c99 -Wall -Wextra -Werror -fsanitize=undefined,address -DEXP3_ENABLED=1 \
+   "$root/test_rf.c" "$root/exp3.c" "$root/exp3_link.c" "$root/exp3_hil.c" \

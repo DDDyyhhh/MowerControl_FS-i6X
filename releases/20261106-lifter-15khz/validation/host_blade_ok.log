@@ -1,19 +1,72 @@
 PASS controller decision required before reply; rejected Confirm is not Accepted
-PASS full controller Confirm/Result, fresh-frame PWM 45/50/55, safety zero, duplicate no reauthorization
-PASS end-to-end CHAS Confirm/Cancel/Result, expired generation and independent blade dispatch
-PASS controller request rotates session and clears pending chassis authorization
+PASS full controller Confirm/Result, fresh-frame low/medium/high, safety zero, duplicate no reauthorization (driver=1)
+MEASURE unlock controller acceptance=160ms (120ms downlink sampling model)
+PASS unlock Confirm/real authorization/compact Result, separate blade generation, cached duplicate cannot unlock again
+PASS actual token authority: 9999/10000ms, single consumption, held-left expiry, clock wrap, 4095 exhaustion revokes and queues fresh session
+PASS controller decision required before reply; rejected Confirm is not Accepted
+PASS full controller Confirm/Result, fresh-frame low/medium/high, safety zero, duplicate no reauthorization (driver=2)
+MEASURE unlock controller acceptance=160ms (120ms downlink sampling model)
+PASS unlock Confirm/real authorization/compact Result, separate blade generation, cached duplicate cannot unlock again
+PASS actual token authority: 9999/10000ms, single consumption, held-left expiry, clock wrap, 4095 exhaustion revokes and queues fresh session
 PASS grass bag AA/AC feedback, unplug/reconnect, frozen replay, timeout, heartbeat/time wrap
+PASS bag full four-byte AC, legacy unknown, full-wins, disconnect, replay/timeout/recovery, wraps
+PASS controller height AA/AC, no replay refresh, invalid range, time/heartbeat wrap
+PASS idle E1 battery AA/AC diagnostics: coherent pair, forward heartbeat, stale/replay/truncation, time/wrap; no result parser mutation
 PASS new binding clears fresh grass bag cache and waits for new heartbeat
-PASS chassis SENS AA/AC token/status, truncation, frozen replay, lock priority, freshness and wraps
+PASS actual RF completion: busy frame, wrong session/action/generation/context/command, truncated/lost part, duplicate and non-Cancelled rejection
 PASS OpenI6X RF adapter auto binds and replaces rebooted controller session
-PASS production i-BUS CH8/OK backend, CH7, CH9, CH10, CH6 isolation and timeout
 PASS production backend CH6 cannot create confirmation; CH7 mapping preserved
-PASS release SENS addr11 connection, addr10 output/gear and unchanged addr1-8
-PASS release SENS addr11 connection, addr10 output/gear and unchanged addr1-8
-PASS Chinese production UI, live provider, actual main-view route, CH9/CH6 boundaries, scrolling and pixel bounds: UNKNOWN inhibits OK/prompt; 2s modal limit, deferred Cancel, late matching receipt, no repeat authorization; independent chassis OK, shared actions, retired tokens and API home
+PASS release SENS addr13-15 four-byte completion, addr12 height, addr11 connection, addr10 output and unchanged addr1-8
+PASS release SENS addr13-15 four-byte completion, addr12 height, addr11 connection, addr10 output and unchanged addr1-8
+PASS profile-3 actual GUI: arbitrary controller token, early OK, explicit rejection, ACK+runtime success, independent blade, no 2s hide; home/debug/router/glyph/pixel checks
+PASS Chinese production UI, live provider, actual main-view route, CH9/CH6 boundaries, scrolling and pixel bounds: UNKNOWN inhibits OK; explicit completion, context/token isolation, late matching receipt, runtime home
+PASS non-mower/BOOT: original trim key events, edits, long/repeat and navigation retained
+PASS mower trim key lock: all 8 directions, short/long/600-tick repeat, 3 flight modes, stored trims/calibration/binding and actual RF pulse bytes unchanged; normal keys and raw DFU chord retained
+PASS non-mower/BOOT: original trim key events, edits, long/repeat and navigation retained
+PASS completion codec: full canonical CRC/identity, all contexts/results/orders, corruption, mixed publication, expiry/wrap, wide fallback
+MEASURE actual Motion execution <=170ms (target 250ms)
+MEASURE real adapters/SENS/RF/blade, 15 slots / 150ms cycle + 5ms RF: unlock<=329ms, start/stop/restart<=326ms, 150 phases + 100 continuous cycles, driver=1
+PASS idle battery diagnostics/slow-frame overlap do not block Motion, no duplicate starts, matching Cancel, old-receiver legacy fallback
+MEASURE actual Motion execution <=170ms (target 250ms)
+MEASURE real adapters/SENS/RF/blade, 15 slots / 150ms cycle + 5ms RF: unlock<=329ms, start/stop/restart<=326ms, 150 phases + 100 continuous cycles, driver=2
+PASS idle battery diagnostics/slow-frame overlap do not block Motion, no duplicate starts, matching Cancel, old-receiver legacy fallback
 PASS production PD10 source: low=connected, always sampled while locked/offline/in safety fault
+PASS production bag detector: first sample, 10s full, dumping/clear, 14s blanking, reconnect, timer wrap
+PASS production stop recorder: startup excluded, first edge frozen, fresh unlock rearms, fields/boot flags/current timeout
+......
+----------------------------------------------------------------------
+Ran 6 tests in 0.000s
+
+OK
 PASS independent Python/C Confirm/Cancel/Query/Result golden vectors
-PASS CH8 mode/OK authorization, handoff, API handshake/override/timeout, all locks, epochs and wrap
-PASS production CAN has no receive-time side effects, CH8 gate, fresh two-step entry, AA isolation and expiry
-PASS actual height FSM cancels old targets/homing, blocks locked commands and serializes PWM with permission
-PASS actual production Motion gate, selected source, standby/freshness, safety and complete handoff stop
+PASS production CH4/OK: fresh edge, thresholds, CH8 inert, safety, 200ms hold, no replay/duplicate/same-frame drive
+PASS fast result full CRC/identity, duplicate/loss/corruption/timeout and wide fallback
+PASS compact commands: 9 words/180ms, full identity/CRC32, loss/corruption/order/replay and wide fallback
+MEASURE Motion snapshot -> real RF parser: worst unlock display state=119ms over 120 receiver phases (120ms sampling model)
+MEASURE emergency status: worst=119ms over 120 phases and two AC32 delivery paths
+PASS E9/profile3: old E2/E5 rejection, emergency stop, atomic status, same-heartbeat restrictions, frozen/reversed replay, modulo-64/clock wrap and unbound
+PASS production wheel snapshot: concurrent +1ms, 150/151ms and uint32 wrap
+PASS ISR telemetry read never spins on a preempted writer
+PASS CAN pipeline: busy retention, control/query/telemetry priority, coalescing, failure retry, newer stop, expiry/wrap, actual OID ingress time, coherent wheels, 150/151ms fault capture
+PASS actual 100Hz locked dispatcher + real iBUS/backend: both CH5 endpoints, first-frame stop before/waiting/after OK, no replay, fresh CH4/OK recovery, session/epoch/safety/link/mode rejection, blade isolation
+PASS actual 100Hz locked dispatcher + real iBUS/backend: both CH5 endpoints, first-frame stop before/waiting/after OK, no replay, fresh CH4/OK recovery, session/epoch/safety/link/mode rejection, blade isolation
+PASS actual 100Hz locked dispatcher + real iBUS/backend: both CH5 endpoints, first-frame stop before/waiting/after OK, no replay, fresh CH4/OK recovery, session/epoch/safety/link/mode rejection, blade isolation
+PASS production physical scan -> real iBUS/dispatcher -> Advance/Apply/Get: single recovery, repeated reads, duplicate/held OK, released/sequential causes, new stop
+PASS startup order 0: early missed gestures, three rejected retries, fresh unlock, independent blade, no BMS
+PASS startup order 1: early missed gestures, three rejected retries, fresh unlock, independent blade, no BMS
+PASS startup order 2: early missed gestures, three rejected retries, fresh unlock, independent blade, no BMS
+PASS 10s token expires while held left, center closes warning, next operation recovers
+PASS lost slow/fast receipts cause bounded automatic session renewal, no reboot required
+PASS frozen/missing runtime discards early OK; feedback recovery never authorizes held-left intent
+PASS early OK consumes only that keypress; new token/new OK works; real LOW still denies blade
+PASS controller identity restart during confirmation: stale OK rejected, explicit new operation recovers
+PASS HMI identity restart during confirmation: paired rebind, fresh center and explicit new OK
+PASS 4095 boundary automatically renews real paired session, no truncation or power cycle
+PASS delayed old Confirm and old Cancel cannot execute or cancel a newer physical request
+PASS uplink timeout, released collision latch and ownership change require fresh gesture; no stale automatic execution
+PASS Accepted without progressing runtime cannot wait forever; 10s safe session renewal and explicit retry recover
+PASS completed unlock retires without Cancel; unconfirmed blade hold/expiry/release preserves permission
+PASS real SERVO timeout -> fresh re-unlock -> independent blade prompt/OK, history retained, second timeout still stops
+PASS CH5 first-frame bidirectional stop: both-endpoint unlock, overwritten/burst edges, jitter/CRC/ranges, no OK replay, link/safety recovery, drive gate and blade zero
+PASS CH5 first-frame bidirectional stop: both-endpoint unlock, overwritten/burst edges, jitter/CRC/ranges, no OK replay, link/safety recovery, drive gate and blade zero
+PASS v36 handshake accepts paired version and rejects v35 handshake

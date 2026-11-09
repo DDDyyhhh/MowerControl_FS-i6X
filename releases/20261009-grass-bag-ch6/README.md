@@ -22,7 +22,7 @@
 | control-chassis-grass-bag-ch6.hex | `66b7dc2180da96e5fce711d1d92347f817f19bdafa19cc0f4790dac2f85dc10d` |
 | control-chassis-grass-bag-ch6.elf | `90223924ce7ddfe5bd859c194310696f75906abebca189f1e358b61039d95fc7` |
 
-包内 `SHA256SUMS` 校验交付文件；`validation/SOURCE-SHA256SUMS` 是本次当前工作区源码指纹，包含已有修改，不代表独立 SVN 提交范围。原 `releases/20261008-mower-v1/` 保持不变并通过其哈希检查。
+原 `releases/20261008-mower-v1/` 保持不变。
 
 完整刷写步骤和硬件测试表见 `刷写与复测说明.md`。
 

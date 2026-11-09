@@ -135,8 +135,36 @@ static void paired_sessions_complete_confirm_result(void)
     assert(hmi.matches == 1U && hmi.last_result.status == EXP3_ACCEPTED);
 }
 
+static void handshake_pacing(void)
+{
+    Exp3AutoPace hmi = {0}, controller = {0};
+    /* Cold start: unbound retries fast; a bind settles even before E9 is fresh. */
+    assert(exp3_auto_hmi_interval(&hmi, false, false) == EXP3_AUTO_HMI_FAST_ROUND_MS);
+    exp3_auto_hmi_settled(&hmi);
+    assert(exp3_auto_hmi_interval(&hmi, true, false) == EXP3_AUTO_ROUND_MS);
+    assert(exp3_auto_hmi_interval(&hmi, true, true) == EXP3_AUTO_ROUND_MS);
+    /* Chassis powered off for any duration: stay fast until a new bind. */
+    assert(exp3_auto_hmi_interval(&hmi, true, false) == EXP3_AUTO_HMI_FAST_ROUND_MS);
+    assert(exp3_auto_hmi_interval(&hmi, true, false) == EXP3_AUTO_HMI_FAST_ROUND_MS);
+    exp3_auto_hmi_settled(&hmi);
+    assert(exp3_auto_hmi_interval(&hmi, true, false) == EXP3_AUTO_ROUND_MS);
+    /* A link blip with the same session recovers without a bind. */
+    assert(exp3_auto_hmi_interval(&hmi, true, true) == EXP3_AUTO_ROUND_MS);
+    assert(exp3_auto_hmi_interval(&hmi, true, false) == EXP3_AUTO_HMI_FAST_ROUND_MS);
+    assert(exp3_auto_hmi_interval(&hmi, true, true) == EXP3_AUTO_ROUND_MS);
+    /* Controller repeats fast only for a bounded window, across tick wrap. */
+    assert(exp3_auto_controller_interval(&controller, 100U) == EXP3_AUTO_ROUND_MS);
+    uint32_t bound_at = 0xfffff000U;
+    exp3_auto_controller_bound(&controller, bound_at);
+    assert(exp3_auto_controller_interval(&controller, bound_at + 5999U) ==
+           EXP3_AUTO_CONTROLLER_FAST_ROUND_MS);
+    assert(exp3_auto_controller_interval(&controller, bound_at + 6000U) == EXP3_AUTO_ROUND_MS);
+    assert(exp3_auto_controller_interval(&controller, bound_at + 6001U) == EXP3_AUTO_ROUND_MS);
+}
+
 int main(void)
 {
+    handshake_pacing();
     automatic_pairing_and_reboot();
     loss_static_and_order_never_bind();
     session_change_discards_old_transfer_and_result();

@@ -22,7 +22,8 @@ typedef enum
     SAFETY_GATE_REJECT_LINK,
     SAFETY_GATE_REJECT_RUN_PERMISSION,
     SAFETY_GATE_REJECT_OWNER,
-    SAFETY_GATE_REJECT_STALE_COMMAND
+    SAFETY_GATE_REJECT_STALE_COMMAND,
+    SAFETY_GATE_REJECT_BATTERY
 } SafetyOwnershipGateReason_t;
 
 typedef struct
@@ -39,6 +40,8 @@ typedef struct
 
 void SafetyOwnershipGate_Reset(void);
 void SafetyOwnershipGate_Update(const SafetyOwnershipGateInput_t *input);
+void SafetyOwnershipGate_SetBatteryPolicy(bool stop, bool blade_inhibit);
+bool SafetyOwnershipGate_AuthorizeBlade(ExecutionOwner_t owner, bool nonzero_intent);
 bool SafetyOwnershipGate_Authorize(ExecutionOwner_t intent_owner,
                                    bool nonzero_intent);
 bool SafetyOwnershipGate_IsOwnerPermitted(ExecutionOwner_t owner);

@@ -1,5 +1,5 @@
-PASS: 218 source input hashes still match.
-PASS: packaged firmware and rollback files match artifacts.json.
-PASS: README local links, flash addresses and existing estop configuration documented.
-PASS: tracked SVN status only adds the two planned numeric source edits; existing changes retained.
-PASS: new release artifacts remain local and unversioned; no SVN add/commit or hardware programming performed.
+PASS: full host completion and real Thumb tests verified.
+PASS: both new ELF/BIN/HEX images and both rollback sources verified.
+PASS: source/header hashes, tracked change scope and documentation links verified.
+PASS: TIM3 15kHz/60%, TIM2 10kHz/60%, protocol 0x36, 300ms timeout, FTESC CAN and enabled estop preserved.
+No hardware programming or SVN add/commit performed.

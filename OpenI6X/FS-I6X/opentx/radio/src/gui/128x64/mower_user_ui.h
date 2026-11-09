@@ -8,33 +8,51 @@ enum MowerUserPage { MOWER_USER_HOME, MOWER_USER_MAINTENANCE, MOWER_USER_DEBUG }
 static MowerUserPage mowerUserPage = MOWER_USER_HOME;
 static uint8_t mowerMaintenanceSelection;
 static uint8_t mowerDebugFirstRow;
-static const uint8_t MOWER_DEBUG_ROWS = 25;
+static const uint8_t MOWER_DEBUG_ROWS = 28;
 
-// Font: 12px Chinese, 6px ASCII; fixed subset in flash, no allocation.
+static uint16_t mowerZhNext(const char *&text)
+{
+  const uint8_t first = static_cast<uint8_t>(*text++);
+  uint16_t code = first;
+  if (first >= 0xE0 && first <= 0xEF && text[0] && text[1]) {
+    code = ((first & 15U) << 12) |
+        ((static_cast<uint8_t>(text[0]) & 63U) << 6) |
+        (static_cast<uint8_t>(text[1]) & 63U);
+    text += 2;
+  }
+  return code;
+}
+
+static coord_t mowerZhTextWidth(const char *text)
+{
+  coord_t width=0;
+  while (*text)
+    width += mowerZhNext(text) < 128 ? MOWER_ZH_ASCII_WIDTH : MOWER_ZH_CJK_WIDTH;
+  return width;
+}
+
+// 11px type, 12px rows; the generated metrics also describe bitmap packing.
 static coord_t mowerZhText(coord_t x, coord_t y, const char *text, bool inverse)
 {
   while (*text) {
-    const uint8_t first = static_cast<uint8_t>(*text++);
-    uint16_t code = first;
-    if (first >= 0xE0 && first <= 0xEF && text[0] && text[1]) {
-      code = ((first & 15U) << 12) |
-          ((static_cast<uint8_t>(text[0]) & 63U) << 6) |
-          (static_cast<uint8_t>(text[1]) & 63U);
-      text += 2;
-    }
-    const uint8_t width = code < 128 ? 6 : 12;
-    if (x + width > 128 || y < 0 || y + 12 > 64) break;
+    const uint16_t code = mowerZhNext(text);
+    const uint8_t width = code < 128 ? MOWER_ZH_ASCII_WIDTH : MOWER_ZH_CJK_WIDTH;
+    if (x < 0 || x + width > 128 || y < 0 || y + MOWER_ZH_HEIGHT > 64) break;
     unsigned lo=0, hi=sizeof(mowerZhGlyphs)/sizeof(mowerZhGlyphs[0]);
     while (lo < hi) {
       unsigned mid=(lo+hi)/2;
       if (mowerZhGlyphs[mid].code < code) lo=mid+1;
       else hi=mid;
     }
-    if (inverse) lcdDrawSolidFilledRect(x, y, width, 12, FORCE);
+    if (inverse) lcdDrawSolidFilledRect(x, y, width, MOWER_ZH_HEIGHT, FORCE);
     if (lo < sizeof(mowerZhGlyphs)/sizeof(mowerZhGlyphs[0]) &&
         mowerZhGlyphs[lo].code == code) {
-      const uint8_t *bits = mowerZhBits + mowerZhGlyphs[lo].offset;
-      for (uint8_t row=0; row<12; ++row)
+      const unsigned offset = lo < MOWER_ZH_ASCII_COUNT ? lo * MOWER_ZH_ASCII_BYTES :
+          MOWER_ZH_ASCII_COUNT * MOWER_ZH_ASCII_BYTES +
+          (lo - MOWER_ZH_ASCII_COUNT) * MOWER_ZH_CJK_BYTES;
+      const uint8_t *bits = mowerZhBits + offset;
+      const uint8_t bitmapHeight = code < 128 ? MOWER_ZH_HEIGHT : MOWER_ZH_CJK_BITMAP_HEIGHT;
+      for (uint8_t row=0; row<bitmapHeight; ++row)
         for (uint8_t col=0; col<width; ++col) {
           const uint16_t bit=row*width+col;
           if (bits[bit/8] & (1U << (bit%8)))
@@ -46,11 +64,31 @@ static coord_t mowerZhText(coord_t x, coord_t y, const char *text, bool inverse)
   return x;
 }
 
+static void mowerZhCenteredText(coord_t y, const char *text)
+{
+  mowerZhText((128 - mowerZhTextWidth(text)) / 2, y, text);
+}
+
 static const char *mowerConnection(const MowerUiSnapshot &data)
 {
   if (!data.telemetry_online) return "未连接";
-  if (!(data.valid & MOWER_UI_FAULT)) return "状态未知";
-  return data.fault_bits ? "报错" : "已连接";
+  uint16_t causes = data.fault_bits;
+  if (data.fast_status_known) {
+    causes = ((data.fast_status & MOWER_FAST_COLLISION) >> 5) |
+        ((data.fast_status & MOWER_FAST_EMERGENCY) >> 15) |
+        ((data.fast_status & MOWER_FAST_LOCKED) << 6);
+  }
+  else if (!(data.valid & MOWER_UI_FAULT)) return "状态未知";
+  if (causes & 0x0002U) return "碰撞";
+  if (causes & 0x0001U) return "急停";
+  if (causes & 0x0400U) return "锁定";
+  if ((data.valid & MOWER_UI_FAULT) && !(data.fault_bits & 0x0007U)) {
+    if (data.fault_bits & (MOWER_BATTERY_WARNING | MOWER_BATTERY_BLADE_INHIBIT)) return "请充电";
+  }
+  if (data.fast_status_known) {
+    return (data.fast_status & MOWER_FAST_FAULT) ? "报错" : "已连接";
+  }
+  return (data.fault_bits & MOWER_STATUS_ALARM_MASK) ? "报错" : "已连接";
 }
 
 static void mowerUserValue(coord_t x, coord_t y, unsigned value, bool valid,
@@ -58,6 +96,8 @@ static void mowerUserValue(coord_t x, coord_t y, unsigned value, bool valid,
 {
   char text[20];
   if (!valid) mini_snprintf(text, sizeof(text), "--%s", unit);
+  else if (decimals == 3)
+    mini_snprintf(text, sizeof(text), "%d.%03d%s", int(value/1000), int(value%1000), unit);
   else if (decimals == 2)
     mini_snprintf(text, sizeof(text), "%d.%02d%s", int(value/100), int(value%100), unit);
   else if (decimals == 1)
@@ -86,6 +126,12 @@ static const char *mowerBagDisplay(const MowerUiSnapshot &data)
   return data.bag_command == 1 ? "草袋开" : data.bag_command == 2 ? "草袋关" : "草袋--";
 }
 
+static bool mowerBagFullKnown(const MowerUiSnapshot &data)
+{
+  return data.telemetry_online && (data.valid & MOWER_UI_BAG_CONNECTION) &&
+      data.bag_connected && (data.valid & MOWER_UI_BAG_FULL);
+}
+
 static const char *mowerTransactionName(Exp3UiState state)
 {
   switch (state) {
@@ -103,7 +149,7 @@ static const char *mowerTransactionName(Exp3UiState state)
 static void mowerUserHome(const MowerUiSnapshot &data, bool known, uint16_t runtime)
 {
   mowerZhText(0, 0, mowerConnection(data), data.telemetry_online &&
-      (data.valid & MOWER_UI_FAULT) && data.fault_bits);
+      (data.valid & MOWER_UI_FAULT) && (data.fault_bits & MOWER_STATUS_ALARM_MASK));
   mowerZhText(66, 0, "信");
   mowerUserValue(78, 0, data.radio_quality, data.telemetry_online);
   const unsigned quality = data.radio_quality > 100 ? 100 : data.radio_quality;
@@ -119,57 +165,56 @@ static void mowerUserHome(const MowerUiSnapshot &data, bool known, uint16_t runt
   mowerUserValue(60, 12, data.radio_battery_100mv, true, "V", 1);
   lcdDrawRect(104, 14, 18, 8);
   lcdDrawSolidFilledRect(122, 16, 2, 4, FORCE);
-  // Same battery display range as the existing radio configuration.
   const int low=g_eeGeneral.vBatMin+90;
   const int high=g_eeGeneral.vBatMax+120;
   const int voltage=data.radio_battery_100mv;
   const int fill=high > low ? limit<int>(0, (voltage-low)*14/(high-low), 14) : 0;
   if (fill) lcdDrawSolidFilledRect(106, 16, fill, 4, FORCE);
-  uint16_t generation=0U, control=0U;
-  bool controlKnown=exp3_board_control(static_cast<uint32_t>(get_tmr10ms())*10U,&generation,&control);
-  mowerZhText(0, 24, !controlKnown ? "模式未知" :
-      (control&MOWER_CONTROL_API_SELECTED) ? "API" : "遥控");
-  mowerZhText(84, 24, !controlKnown ? "--" : (control&MOWER_CONTROL_ARMED) ? "解锁" : "锁定");
-  mowerZhText(0, 36, "行走设");
-  mowerUserValue(42, 36, mowerTravelSpeedCms(), true, "m/s", 2);
-  mowerZhText(90,36,"刀");
-  mowerZhText(102, 36, mowerBladeGear(known,runtime));
-  mowerZhText(114,36,known && (runtime&1U) ? "开" : "");
-  mowerZhText(0, 48, "高度设");
-  mowerUserValue(36, 48, data.height_setting, data.height_setting != 0, "/5");
-  mowerZhText(60, 48, mowerBagDisplay(data));
+  mowerZhText(0, 24, "车速度");
+  mowerUserValue(42, 24, mowerTravelSpeedCms(), true, "m/s", 2);
+  mowerZhText(0, 36, "刀速度");
+  mowerZhText(42, 36, mowerBladeGear(known, runtime));
+  const bool fullKnown=mowerBagFullKnown(data);
+  mowerZhText(66, 36, !fullKnown ? "满载未知" :
+      data.bag_full ? "草袋已满" : "草袋未满", fullKnown && data.bag_full);
+  mowerZhText(0, 48, "高度");
+  mowerUserValue(24, 48, data.height_deci_cm,
+      data.telemetry_online && (data.valid & MOWER_UI_HEIGHT_FEEDBACK), "cm", 1);
+  mowerZhText(66, 48, mowerBagDisplay(data));
 }
 
 static void mowerUserDebugRow(uint8_t row, coord_t y, const MowerUiSnapshot &data,
                               bool known, uint16_t runtime)
 {
   static const char *const labels[] = {
-    "整车电量", "整车电压", "行走设定", "实际速度", "割刀转速",
-    "割刀档位", "割刀输出", "高度设定", "草袋指令", "遥控许可",
+    "BMS原始SOC", "整车电压", "行走设定", "实际速度", "割刀转速",
+    "割刀档位", "割刀输出", "高度", "草袋指令", "运行许可",
     "链路状态", "确认事务", "故障字", "停刀回执", "草袋连接"
   };
   static const char *const faults[] = {
     "急停", "碰撞", "倾斜", "遥控超时", "遥控停机锁存",
-    "控制权锁存", "电池反馈异常", "轮速反馈过期", "割刀反馈过期", "割刀校验异常"
+    "控制权锁存", "电池反馈异常", "割刀反馈过期", "割刀校验异常", "系统锁定"
   };
-  if (row >= 15) {
-    const uint8_t bit=row-15;
-    mowerZhText(0, y, faults[bit]);
+  if (row >= 15 && row < 25) {
+    const uint8_t index=row-15;
+    const uint8_t bit=index + (index >= 7U); // skip diagnostic-only wheel expiry
+    mowerZhText(0, y, faults[index]);
     mowerZhText(108, y, !(data.valid & MOWER_UI_FAULT) ? "--" :
         (data.fault_bits & (1U<<bit)) ? "!" : "-");
     return;
   }
-  mowerZhText(0, y, labels[row]);
+  if (row < 15) mowerZhText(0, y, labels[row]);
   const coord_t x=54;
   switch (row) {
-    case 0: mowerUserValue(x, y, data.soc_percent, data.valid & MOWER_UI_SOC, "%"); break;
+    case 0: mowerUserValue(66, y, data.soc_percent, data.valid & MOWER_UI_SOC, "%"); break;
     case 1: mowerUserValue(x, y, data.voltage_centivolts, data.valid & MOWER_UI_VOLTAGE, "V", 2); break;
     case 2: mowerUserValue(x, y, mowerTravelSpeedCms(), true, "m/s", 2); break;
     case 3: mowerUserValue(x, y, data.walk_actual_cms, data.valid & MOWER_UI_WALK_ACTUAL, "m/s", 2); break;
     case 4: mowerUserValue(x, y, data.blade_actual_rpm, data.valid & MOWER_UI_BLADE_RPM); break;
     case 5: mowerZhText(x, y, mowerBladeGear(known, runtime)); break;
     case 6: mowerZhText(x, y, !known ? "--" : (runtime&1U) ? "使能" : "关闭"); break;
-    case 7: mowerUserValue(x, y, data.height_setting, data.height_setting != 0, "/5"); break;
+    case 7: mowerUserValue(x, y, data.height_deci_cm,
+        data.telemetry_online && (data.valid & MOWER_UI_HEIGHT_FEEDBACK), "cm", 1); break;
     case 8: mowerZhText(x, y, mowerBagCommandName(data.bag_command)); break;
     case 9: mowerZhText(x, y, !(data.valid & MOWER_UI_RUN_PERMISSION) ? "--" : data.run_permission ? "允许" : "禁止"); break;
     case 10: mowerZhText(x, y, mowerConnection(data)); break;
@@ -184,6 +229,23 @@ static void mowerUserDebugRow(uint8_t row, coord_t y, const MowerUiSnapshot &dat
     }
     case 13: mowerZhText(x, y, mowerExp3CancelFailed ? "失败" :
         mowerExp3Probe.cancel_pending || mowerExp3Probe.state == EXP3_UI_CANCEL_WAIT ? "等待" : "空闲"); break;
+    case 25:
+      mowerZhText(0, y, "最低单体");
+      mowerUserValue(x, y, data.battery_min_mv, data.valid & MOWER_UI_BATTERY_MIN, "V", 3);
+      break;
+    case 26: {
+      mowerZhText(0, y, "保护原因");
+      const uint16_t reason=data.battery_reasons;
+      const char *label=!(data.valid & MOWER_UI_BATTERY_REASON) ? "未知" :
+          (reason & 1U) ? "数据失效" : (reason & 0x20U) ? "电量过低" :
+          (reason & 4U) ? "电压过低" : "无";
+      mowerZhText(x, y, label);
+      break;
+    }
+    case 27:
+      mowerZhText(0, y, "草袋满载");
+      mowerZhText(x, y, !mowerBagFullKnown(data) ? "未知" : data.bag_full ? "已满" : "未满");
+      break;
     case 14: mowerZhText(x, y, !data.telemetry_online || !(data.valid & MOWER_UI_BAG_CONNECTION) ?
         "未知" : data.bag_connected ? "已连接" : "未连接"); break;
   }
@@ -220,9 +282,8 @@ static void mowerUserMain(event_t event)
 {
   g_eeGeneral.view = VIEW_MOWER; // Never persist debug/maintenance as startup view.
   const bool home=mowerUserPage == MOWER_USER_HOME;
-  mowerExp3DisplayState=mowerControlStep(home ? event : 0);
-  const bool modal=mowerExp3DisplayState != EXP3_UI_IDLE &&
-      mowerExp3DisplayState != EXP3_UI_ACCEPTED;
+  mowerExp3DisplayState=mowerExp3Step(home ? event : 0);
+  const bool modal=mowerExp3DisplayState == EXP3_UI_PROMPT;
   if (event == EVT_KEY_LONG(KEY_MENU) || event == EVT_KEY_LONG(KEY_RIGHT))
     killEvents(event); // MENU aliases ENTER; suppress the long-press release.
   if (modal) {

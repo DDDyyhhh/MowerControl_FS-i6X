@@ -1,0 +1,24 @@
+old frame: received=20 processed=1000 last_valid=10 fresh=0
+PASS target UART callback / 16-slot queue / parser / authorization / safety gate; age, wrap, backlog, fragments and recovery
+PASS -O0 flysky=0 timeout_ms=100
+old frame: received=20 processed=1000 last_valid=10 fresh=0
+PASS target UART callback / 16-slot queue / parser / authorization / safety gate; age, wrap, backlog, fragments and recovery
+PASS -O0 flysky=1 timeout_ms=100
+old frame: received=20 processed=1000 last_valid=10 fresh=0
+PASS target UART callback / 16-slot queue / parser / authorization / safety gate; age, wrap, backlog, fragments and recovery
+PASS -O2 flysky=0 timeout_ms=100
+old frame: received=20 processed=1000 last_valid=10 fresh=0
+PASS target UART callback / 16-slot queue / parser / authorization / safety gate; age, wrap, backlog, fragments and recovery
+PASS -O2 flysky=1 timeout_ms=100
+old frame: received=20 processed=1000 last_valid=10 fresh=0
+PASS target UART callback / 16-slot queue / parser / authorization / safety gate; age, wrap, backlog, fragments and recovery
+PASS -O0 flysky=0 timeout_ms=300
+old frame: received=20 processed=1000 last_valid=10 fresh=0
+PASS target UART callback / 16-slot queue / parser / authorization / safety gate; age, wrap, backlog, fragments and recovery
+PASS -O0 flysky=1 timeout_ms=300
+old frame: received=20 processed=1000 last_valid=10 fresh=0
+PASS target UART callback / 16-slot queue / parser / authorization / safety gate; age, wrap, backlog, fragments and recovery
+PASS -O2 flysky=0 timeout_ms=300
+old frame: received=20 processed=1000 last_valid=10 fresh=0
+PASS target UART callback / 16-slot queue / parser / authorization / safety gate; age, wrap, backlog, fragments and recovery
+PASS -O2 flysky=1 timeout_ms=300

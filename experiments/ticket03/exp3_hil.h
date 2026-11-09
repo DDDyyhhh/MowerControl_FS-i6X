@@ -47,6 +47,10 @@ typedef struct {
     uint8_t bound, waiting;
 #if MOWER_BLADE_OK_ENABLED
     uint32_t request_started;
+    uint32_t token_at, token_request;
+    uint16_t token, authority;
+    uint8_t token_active, token_armed, intent_reason;
+    volatile uint8_t restart_requested;
     uint8_t cancel_retries, cancel_failed;
 #endif
 } Exp3Hil;
@@ -57,6 +61,8 @@ void exp3_hil_poll(Exp3Hil *h, volatile Exp3Mailbox *box, Exp3Endpoint *endpoint
                    uint32_t dwell);
 void exp3_hil_channels(Exp3Hil *h, Exp3Endpoint *endpoint, uint16_t a, uint16_t b, uint32_t now);
 void exp3_hil_receive(Exp3Hil *h, Exp3Endpoint *endpoint, uint16_t word, uint32_t now);
+/* Only decoded, CRC-checked results enter this common matching boundary. */
+bool exp3_hil_apply_result(Exp3Hil *h, const Exp3Message *result, uint32_t now);
 #ifdef __cplusplus
 }
 #endif

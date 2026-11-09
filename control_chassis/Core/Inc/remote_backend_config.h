@@ -4,6 +4,10 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#ifndef MOWER_BLADE_OK_ENABLED
+#define MOWER_BLADE_OK_ENABLED 0
+#endif
+
 /* Build system must define exactly one selector to 1 and the other to 0. */
 #ifndef REMOTE_BACKEND_A28_E34
 #error "Define REMOTE_BACKEND_A28_E34 as 0 or 1"
@@ -43,7 +47,13 @@
 #define REMOTE_TRAVEL_SPEED_MIN_MPS         0.4f
 #define REMOTE_TRAVEL_SPEED_MAX_MPS         1.8f
 #define REMOTE_TRAVEL_REVERSE_FACTOR        0.8f
-#define REMOTE_IBUS_TIMEOUT_MS            100U
+/* Production default; explicit rollback builds can still select 100ms. */
+#ifndef REMOTE_IBUS_TIMEOUT_MS
+#define REMOTE_IBUS_TIMEOUT_MS            300U
+#endif
+#if (REMOTE_IBUS_TIMEOUT_MS != 100U) && (REMOTE_IBUS_TIMEOUT_MS != 300U)
+#error "REMOTE_IBUS_TIMEOUT_MS must be 100 or 300"
+#endif
 #define REMOTE_IBUS_STABLE_MIN_FRAMES     20U
 #define REMOTE_IBUS_STABLE_MIN_MS         150U
 #define REMOTE_LEGACY_TIMEOUT_MS          300U
@@ -59,8 +69,7 @@
 #define REMOTE_IBUS_CHANNEL_RUN_ENABLE    5U
 #define REMOTE_IBUS_CHANNEL_BLADE_CONFIRM 6U
 #define REMOTE_IBUS_CHANNEL_BLADE_GEAR    7U
-#define REMOTE_IBUS_CHANNEL_MODE          8U
-#define REMOTE_IBUS_CHANNEL_UNLOCK        8U /* Legacy / bench profile only. */
+#define REMOTE_IBUS_CHANNEL_UNLOCK        8U
 #define REMOTE_IBUS_CHANNEL_BLADE_HEIGHT  9U
 #define REMOTE_IBUS_CHANNEL_TRAVEL_SPEED  10U
 

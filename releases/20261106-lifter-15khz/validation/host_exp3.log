@@ -10,7 +10,8 @@ PASS CH4 center baseline before prompt
 PASS fast result full CRC/identity, duplicate/loss/corruption/timeout and wide fallback
 PASS i6X OK does not open main context menu during Experiment3 prompt
 PASS automatic paired sessions, reboot, loss, static failsafe and malformed bootstrap
-PASS Experiment3-to-blade gate and CH7 PWM low/medium/high commands
+PASS Experiment3-to-blade gate and CH7 low/medium/high commands (driver=1)
+PASS Experiment3-to-blade gate and CH7 low/medium/high commands (driver=2)
 PASS invalid mapped safety frame cannot advance Experiment3 transport
 PASS actual AA/AC adapter, foreground queue/overflow, truncated RF bounds
 PASS independent Python/C Confirm/Cancel/Query/Result golden vectors

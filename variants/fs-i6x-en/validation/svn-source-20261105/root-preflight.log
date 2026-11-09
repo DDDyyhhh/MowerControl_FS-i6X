@@ -1,0 +1,75 @@
+[1m====================================================[0m
+[1m         SVN Preflight & Hygiene Check              [0m
+[1m====================================================[0m
+
+[1m[1/5] Checking SVN Working Copy Status...[0m
+  [[0;32mPASS[0m] No merge conflicts detected in SVN working copy.
+      Tracked modified files: [0;36m11[0m, Unversioned items: [0;36m586[0m
+
+[1m[2/5] Checking for Temporary and Build Artifacts...[0m
+  [[0;33mWARN[0m] Found 397 build/temporary artifacts in working tree (keilkill.bat or clean recommended before commit):
+        ?       control_chassis/Eide/build/concrol/.obj/__/Core/Src/adc.d
+        ?       control_chassis/Eide/build/concrol/.obj/__/Core/Src/can.d
+        ?       control_chassis/Eide/build/concrol/.obj/__/Core/Src/dma.d
+        ?       control_chassis/Eide/build/concrol/.obj/__/Core/Src/flash_storage.d
+        ?       control_chassis/Eide/build/concrol/.obj/__/Core/Src/freertos.d
+        ?       control_chassis/Eide/build/concrol/.obj/__/Core/Src/gpio.d
+        ?       control_chassis/Eide/build/concrol/.obj/__/Core/Src/main.d
+        ?       control_chassis/Eide/build/concrol/.obj/__/Core/Src/spi.d
+        ?       control_chassis/Eide/build/concrol/.obj/__/Core/Src/stm32f4xx_hal_msp.d
+        ?       control_chassis/Eide/build/concrol/.obj/__/Core/Src/stm32f4xx_hal_timebase_tim.d
+        ... and 387 more items.
+
+[1m[3/5] Checking Line Ending (CRLF/LF) Shifts in Modified Text Files...[0m
+  [[0;32mPASS[0m] No whole-file CRLF/LF line-ending churn detected in modified files.
+
+[1m[4/5] Inspecting Modifications to High-Risk Architecture Files...[0m
+  [[0;33mWARN[0m] Modifications detected in high-risk files (BSP core entry, ISR, pinout, or linker):
+        A       variants/fs-i6x-en/source/OpenI6X/FS-I6X/opentx/radio/src/targets/flysky/STM32F072VB_FLASH.ld
+        A       variants/fs-i6x-en/source/OpenI6X/FS-I6X/opentx/radio/src/targets/flysky/stm32_ramboot.ld
+        A       variants/fs-i6x-en/source/OpenI6X/FS-I6X/opentx/radio/src/targets/horus/stm32_ramboot.ld
+        A       variants/fs-i6x-en/source/OpenI6X/FS-I6X/opentx/radio/src/targets/horus/stm32f4_flash.ld
+        A       variants/fs-i6x-en/source/OpenI6X/FS-I6X/opentx/radio/src/targets/taranis/stm32_ramboot.ld
+        A       variants/fs-i6x-en/source/OpenI6X/FS-I6X/opentx/radio/src/targets/taranis/stm32f2_flash.ld
+        A       variants/fs-i6x-en/source/OpenI6X/FS-I6X/opentx/radio/src/targets/taranis/stm32f4_flash.ld
+        A       variants/fs-i6x-en/source/control_chassis/Core/Src/freertos.c
+        A       variants/fs-i6x-en/source/control_chassis/Core/Src/main.c
+        A       variants/fs-i6x-en/source/control_chassis/Core/Src/stm32f4xx_it.c
+        A       variants/fs-i6x-en/source/control_chassis/Eide/.cmsis/device/ARM/ARMCA5/Source/GCC/ARMCA5.ld
+        A       variants/fs-i6x-en/source/control_chassis/Eide/.cmsis/device/ARM/ARMCA7/Source/GCC/ARMCA7.ld
+        A       variants/fs-i6x-en/source/control_chassis/Eide/.cmsis/device/ARM/ARMCA9/Source/GCC/ARMCA9.ld
+        A       variants/fs-i6x-en/source/control_chassis/Eide/.cmsis/device/ARM/ARMCM0/Source/GCC/gcc_arm.ld
+        A       variants/fs-i6x-en/source/control_chassis/Eide/.cmsis/device/ARM/ARMCM0plus/Source/GCC/gcc_arm.ld
+        A       variants/fs-i6x-en/source/control_chassis/Eide/.cmsis/device/ARM/ARMCM1/Source/GCC/gcc_arm.ld
+        A       variants/fs-i6x-en/source/control_chassis/Eide/.cmsis/device/ARM/ARMCM23/Source/GCC/gcc_arm.ld
+        A       variants/fs-i6x-en/source/control_chassis/Eide/.cmsis/device/ARM/ARMCM3/Source/GCC/gcc_arm.ld
+        A       variants/fs-i6x-en/source/control_chassis/Eide/.cmsis/device/ARM/ARMCM33/Source/GCC/gcc_arm.ld
+        A       variants/fs-i6x-en/source/control_chassis/Eide/.cmsis/device/ARM/ARMCM35P/Source/GCC/gcc_arm.ld
+        A       variants/fs-i6x-en/source/control_chassis/Eide/.cmsis/device/ARM/ARMCM4/Source/GCC/gcc_arm.ld
+        A       variants/fs-i6x-en/source/control_chassis/Eide/.cmsis/device/ARM/ARMCM55/Source/GCC/gcc_arm.ld
+        A       variants/fs-i6x-en/source/control_chassis/Eide/.cmsis/device/ARM/ARMCM7/Source/GCC/gcc_arm.ld
+        A       variants/fs-i6x-en/source/control_chassis/Eide/.cmsis/device/ARM/ARMCM85/Source/GCC/gcc_arm.ld
+        A       variants/fs-i6x-en/source/control_chassis/Eide/.cmsis/device/ARM/ARMSC000/Source/GCC/gcc_arm.ld
+        A       variants/fs-i6x-en/source/control_chassis/Eide/.cmsis/device/ARM/ARMSC300/Source/GCC/gcc_arm.ld
+        A       variants/fs-i6x-en/source/control_chassis/Eide/.cmsis/device/ARM/ARMv81MML/Source/GCC/gcc_arm.ld
+        A       variants/fs-i6x-en/source/control_chassis/Eide/.cmsis/device/ARM/ARMv8MBL/Source/GCC/gcc_arm.ld
+        A       variants/fs-i6x-en/source/control_chassis/Eide/.cmsis/device/ARM/ARMv8MML/Source/GCC/gcc_arm.ld
+        A       variants/fs-i6x-en/source/control_chassis/Eide/.pack/Keil/STM32F4xx_DFP.2.14.0/CMSIS/Flash/STM32F4xx/STM32F4xx.uvprojx
+        A       variants/fs-i6x-en/source/control_chassis/Eide/.pack/Keil/STM32F4xx_DFP.2.14.0/MDK/Boards/Keil/MCBSTM32F400/Blinky/Blinky.uvprojx
+        A       variants/fs-i6x-en/source/control_chassis/Eide/.pack/Keil/STM32F4xx_DFP.2.14.0/MDK/Boards/Keil/MCBSTM32F400/CubeMX/Blinky/Blinky.uvprojx
+        A       variants/fs-i6x-en/source/control_chassis/Eide/.pack/Keil/STM32F4xx_DFP.2.14.0/MDK/Boards/Keil/MCBSTM32F400/CubeMX/Blinky/RTE/Device/STM32F407IGHx/STCubeGenerated/STCubeGenerated.ioc
+        A       variants/fs-i6x-en/source/control_chassis/Eide/.pack/Keil/STM32F4xx_DFP.2.14.0/MDK/Boards/Keil/MCBSTM32F400/CubeMX/emWin/GUI_VNC/GUI_VNC.uvprojx
+        A       variants/fs-i6x-en/source/control_chassis/Eide/.pack/Keil/STM32F4xx_DFP.2.14.0/MDK/Boards/Keil/MCBSTM32F400/CubeMX/emWin/GUI_VNC/RTE/Device/STM32F407IGHx/STCubeGenerated/STCubeGenerated.ioc
+        A       variants/fs-i6x-en/source/control_chassis/Eide/.pack/Keil/STM32F4xx_DFP.2.14.0/MDK/Boards/Keil/MCBSTM32F400/Demo/Demo.uvprojx
+        A       variants/fs-i6x-en/source/control_chassis/Eide/.pack/Keil/STM32F4xx_DFP.2.14.0/MDK/Boards/Keil/MCBSTM32F400/Middleware/CAN/CAN/CAN.uvprojx
+        A       variants/fs-i6x-en/source/control_chassis/Eide/.pack/Keil/STM32F4xx_DFP.2.14.0/MDK/Boards/Keil/MCBSTM32F400/Middleware/CAN/CAN_RTR/CAN_RTR.uvprojx
+        A       variants/fs-i6x-en/source/control_chassis/Eide/.pack/Keil/STM32F4xx_DFP.2.14.0/MDK/Boards/Keil/MCBSTM32F400/Middleware/FileSystem/File_Demo/File_Demo.uvprojx
+        A       variants/fs-i6x-en/source/control_chassis/Eide/.pack/Keil/STM32F4xx_DFP.2.14.0/MDK/Boards/Keil/MCBSTM32F400/Middleware/Network/BSD_Client/BSD_Client.uvprojx
+        A       variants/fs-i6x-en/source/control_chassis/Eide/.pack/Keil/STM32F4xx_DFP.2.14.0/MDK/Boards/Keil/MCBSTM32F400/Middleware/Network/BSD_Server/BSD_Server.uvprojx
+        [0;33m-> Please ensure changes in these files are intentional and peer-reviewed.[0m
+
+[1m[5/5] Verifying Production .c Integration in CMake and Keil Manifests...[0m
+  [[0;32mPASS[0m] All production .c files are properly registered in both CMake and Keil manifests.
+
+[1m====================================================[0m
+[0;33m[1mPREFLIGHT CHECK PASSED WITH WARNINGS: 2 warning item(s).[0m

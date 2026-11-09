@@ -1,0 +1,3 @@
+PASS mower: actual startup/throttle/switch paths, 104976 switch cases, calibration/failsafe retained
+PASS native-i6x: actual startup/throttle/switch paths, 104976 switch cases, calibration/failsafe retained
+PASS other-board: actual startup/throttle/switch paths, 104976 switch cases, calibration/failsafe retained

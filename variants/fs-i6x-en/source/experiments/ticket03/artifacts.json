@@ -1,0 +1,18 @@
+{
+  "OpenI6X/FS-I6X/opentx/build-exp3-hil/firmware.bin": {
+    "bytes": 126772,
+    "sha256": "114b4676febf5c30560e76486efcff8289420c1469f3675897b9611e7c42e9b5"
+  },
+  "OpenI6X/FS-I6X/opentx/build-exp3-pwm-hil/firmware.bin": {
+    "bytes": 129160,
+    "sha256": "c07cbda3be38cba6593e95a07cd7de48cc4dc24718b37c403d46031c6232a9ad"
+  },
+  "control_chassis/build/exp3-hil/control_chassis.hex": {
+    "bytes": 221909,
+    "sha256": "483ac05c86fe893166cc5f0e8c7723c4fb3ef5051debffd51d07f1fe44d53dd9"
+  },
+  "control_chassis/build/exp3-pwm-hil/control_chassis.hex": {
+    "bytes": 229215,
+    "sha256": "b78c00a4b5b044f3a6decc3cf4370bbb48cd7451a48325c2507169326ca8e3b1"
+  }
+}

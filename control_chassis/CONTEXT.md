@@ -10,6 +10,8 @@
 
 - **配置契约**：`control_chassis/Core/Inc/remote_backend_config.h`
   - 必须严格二选一宏定义：`REMOTE_BACKEND_A28_E34` (0 或 1) 与 `REMOTE_BACKEND_FLYSKY_IBUS` (0 或 1)。
+  - 主程序有效i-BUS帧超时默认300ms，Comm、Motion独立看门狗及接收过期判断共用该配置，并使用实际接收时刻。
+  - CMake参数`MOWER_IBUS_TIMEOUT_MS`只接受100或300；`mower-ok-release`默认300，`mower-ok-ibus-100ms`提供显式回退。非CMake构建由头文件默认值300U生效，仍可编译期覆盖。
 - **统一接口**：`control_chassis/Core/Inc/remote_backend.h`
   - 提供 `RemoteBackend_Init`、`RemoteBackend_OnUartRx`、`RemoteBackend_Advance` 与 `RemoteBackend_GetCommand`。
 - **核心实现**：`control_chassis/Core/UserDev/remote_backend.c`
@@ -33,7 +35,9 @@
   - `control_chassis/Core/Inc/usart.h`
 - **关键机制**：
   - 帧长 32 字节，前缀 `0x20 0x40`，小端 16-bit 校验和 (`sum = 0xFFFF - sum(bytes[0..29])`)。
-  - 序列号保护（Sequence Counter），确保读取端获取原子一致通道快照。
+  - **解析状态**：由 Comm 独占的接收流、稳定性及累计事件状态。
+  - **发布快照**：供 Motion 与诊断读取的最后一份完整解析结果，通过短临界区传递，读取不等待发布者。
+  - **当前链路超时**：Motion 根据快照年龄独立判断的运行许可失效条件，即使 Comm 停顿仍生效；与历史超时锁存、Comm 累计超时事件计数分别表达。
 
 ---
 
@@ -44,10 +48,11 @@
 - **模块接口**：`control_chassis/Core/Inc/remote_authorization.h`
 - **模块实现**：`control_chassis/Core/UserDev/remote_authorization.c`
 - **核心行为**：
-  - FlySky 生产配置（`MOWER_BLADE_OK_ENABLED=1`）：CH8 专用于遥控/API 选择；独立 OK 底盘解锁由 `Core/Inc/mower_mode_control.h` / `Core/UserDev/mower_mode_control.c` 管理，运动任务单写。
-  - 共享契约与恢复边界：[CH8 / 底盘 OK 协议](../docs/protocols/ch8-mode-and-chassis-ok.md)。
-  - 既有 CH8 双边沿状态机仅供旧配置与独立台架使用。
-  - 旧配置双边沿防误触机制：必须经历特定跳变，且摇杆持续回中（Deadband + Hold Time）后方可授予运行许可 (`MANUAL_REMOTE run permission`)。
+  - 正式 FS-i6X（`MOWER_BLADE_OK_ENABLED=1`）：锁定后 CH4 回中 1400..1600，再左拨至 900..1100（约1000），保持并按 OK；右拨约2000和CH8不再解锁。解锁后启动割刀需重新回中、左拨并再次按OK。
+  - OK 必须属于当前会话与底盘为实际请求分配的单次令牌，CH5许可、实际安全输入通过且 CH1/CH2 连续回中200ms；拒绝立即消耗请求。清锁后仍需新控制帧才允许输出。
+  - 正式协议0x35，E9/profile3以原子32位快照回传实际授权阶段和底盘令牌，遥控器不累计物理代次；BLAD与UNLK共用单调动作序号，确认授权独立。解锁事件在Motion 100Hz锁定分支外分发；旧Cancel只排空旧事务。
+  - 开机过早操作和失败重试见[授权契约](../docs/protocols/startup-authorization-v35.md)：区分行走/CH4回中、等待同步和安全阻断；10秒令牌/事务期限，超时自动新会话，不重放旧OK。
+  - 非正式/历史测试配置保留CH8双边沿流程，与正式配置分别回归。
   - 故障锁存恢复：链路断开或安全锁存后，必须重新走完整授权序列，拒绝任何旧命令直接重放。
 
 ---
@@ -92,7 +97,7 @@
 
 ## 6. Telemetry Snapshot (遥测快照与数据聚合)
 
-将整车电池（BMS）、轮速里程计、姿态、割刀状态及 8-bit 故障字聚合成原子快照，供回传与诊断。
+将整车电池（BMS）、轮速里程计、姿态、割刀状态及 16-bit 故障字聚合成原子快照，供回传与诊断。
 
 - **模块接口**：`control_chassis/Core/Inc/telemetry_snapshot.h`
 - **模块实现**：`control_chassis/Core/UserApp/telemetry_snapshot.c`
@@ -102,6 +107,10 @@
   - 单位统一（分伏、分安、毫米每秒、极对数 ERPM 换算）。
 
 ---
+
+**系统锁定**：禁止动力输出、等待合法授权的状态；正常开机也属于锁定，不表示已经发生碰撞或急停。
+
+**急停原因锁存 / 碰撞原因锁存**：记录各自物理触发原因，按钮释放、碰撞杆回弹及其它报告状态覆盖均不清除；安全条件满足后一次合法解锁同时清除。首页依次显示未连接/未知、碰撞、急停、锁定、电池提示/其它故障、已连接。详细协议见[快速状态契约](../docs/protocols/ch4-fast-wheel-feedback.md)。
 
 ## 7. SENS Responder / USART2 (遥控回显传感总线)
 
@@ -115,7 +124,7 @@
   - `control_chassis/Core/UserDev/sens_ibus_usart2.c`
 - **外设初始化**：`control_chassis/Core/Src/usart.c` (USART2 半双工/中断驱动)
 - **核心行为**：
-  - 地址 1..8 为基础遥测；生产确认配置还使用地址 9 确认传输、10 割刀状态、11 草袋连接、12 解锁代次、13 控制状态。共享接口见根 `docs/protocols/`。
+  - 处理地址 1..8 传感器发现（Discovery）、类型探测（Type）与数值测量（Measurement）。
   - 固件未完成硬件总线电气调优前，保持被动安全，不意外拉低总线。
 
 ---
@@ -123,6 +132,11 @@
 ## 8. CAN / FTESC (底盘动力与刀盘总线)
 
 底盘电机驱动与割刀驱动的 CAN 通信管理。
+
+- **割刀发送接纳**：发送调度器承担该请求的后续发送责任，不表示电调已执行。
+- **停刀待完成**：零输出请求尚未获得对应 CAN 发送成功结果的状态；期间拒绝新的非零割刀请求。
+- **CAN 停刀发送成功**：匹配停刀请求获得 TXOK；与刀盘实际停止是两个分别验收的结果。
+
 
 - **CAN 底层管理**：
   - `control_chassis/Core/Inc/can.h`
@@ -143,7 +157,6 @@
 脱离真实物理硬件运行的高覆盖度回归验证套件，支持微秒级确定性时间推进与边界异常注入。
 
 - **统一执行入口**：`tools/verify.sh host`（或 `./tools/verify.sh all`）
-- **生产 CH8 / OK 验证**：`host/mower_mode_control_harness.c`、`host/mower_backend_harness.c`、`tools/test_ch8_host_commands.py` 与 `experiments/ticket03/test_release_*.c`；由 `tools/verify.sh host` 执行。
 - **Harness 源码清单**：
   - `control_chassis/host/blade_driver_selection_harness.c`（驱动编译期排他与宏安全守卫）
   - `control_chassis/host/blade_manual_control_harness.c`（手动刀盘安全确认状态机与时序测试）
@@ -171,3 +184,7 @@
 3. **USART3**：
    - 当前用途：仅在 `REMOTE_BACKEND_A28_E34=1` 时作为 433MHz 透传无线串口使用。
 4. **ODrive 本地串口指令集合**：已彻底清退；ODrive 通信统一收敛到 CAN 2.0B 接口 (`odrive_can.c`)。
+
+## 11. 推杆占空比与发布
+
+`Core/UserDev/lifter.c`中刀盘升降和草袋开合运行占空比均为50%，正反转及升降归位共用该值，停止0%。草袋使用TIM2 CH3/CH4，10kHz（84MHz输入、PSC=0、ARR=8399，50%比较值4200）；升降使用TIM3 CH3/CH4，10kHz（84MHz输入、PSC=0、ARR=8399，50%比较值4200）。两路推杆启动时由`lifter.c`软启动：400ms内从10%线性升到目标占空比，升速期间高度积分按实际占空比折算，任何停止立即清零。CubeMX `concrol.ioc`保持一致。48V母线下理想平均输出约24V；机械计时、高度时间表及上升补偿沿用原值，实际速度和行程需现场确认。有效i-BUS帧超时仍默认300ms。当前升降15kHz交付见[升降15kHz／60%发布说明](../docs/releases/lifter-15khz-r109.md)；原双端10kHz版本见[10kHz/60%推杆发布说明](../docs/releases/actuator-10khz-60pct-ibus300ms-dual.md)。

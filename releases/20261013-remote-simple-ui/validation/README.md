@@ -5,7 +5,6 @@
 - `ui-tests.log`：最终源码的界面回归；AddressSanitizer 和 UndefinedBehaviorSanitizer 开启。
 - `blade-ok-tests.log`：生产协议、授权及取消流程的专项验证。
 - `CMakeCache.txt`：交付固件的构建开关及工具路径。
-- `SOURCE-SHA256SUMS`：本次界面相关源码和测试指纹，不是全仓库提交清单。
 
 验证环境为 macOS ARM64、Apple Clang、ARM GNU 15.3.1、CMake 4.4。界面测试读取并执行实际 production 主界面路由、live provider、中文字库、绘制函数及确认状态机。绘制替身检查 128×64 边界并输出 PBM；`preview/` 的 PNG 来自这些输出。
 

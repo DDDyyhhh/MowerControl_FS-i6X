@@ -4,7 +4,6 @@
 
 - 遥控器：`openi6x-blade-ok-rc1.bin`，Flash 127312 B，静态RAM 15668 B（余716 B）。
 - 底盘：`control-chassis-blade-ok-rc1.hex`，另提供同内容BIN。
-- 检查文件：`sha256sum -c SHA256SUMS`。
 - 运行行为、构建入口和现场验收见 [集成说明](../../docs/releases/blade-ok-release-candidate.md)。
 
 ## 底盘 ST-Link / OpenOCD
@@ -12,7 +11,6 @@
 在本目录运行：
 
 ```bash
-sha256sum -c SHA256SUMS
 openocd -f interface/stlink.cfg -f target/stm32f4x.cfg \
   -c "adapter speed 1000" \
   -c "program control-chassis-blade-ok-rc1.hex verify reset exit"

@@ -22,6 +22,8 @@
 #include <stdint.h>
 #include "stm32f4xx_hal.h"
 #include "cmsis_os.h"
+#include "FreeRTOS.h"
+#include "task.h"
 #include "chassis_control.h"
 #include "app_context.h" // 包含全局上下文，获取用户设定的速度
 #include "remote_backend.h"
@@ -35,18 +37,6 @@
 #include <string.h>
 #include "odrive_can.h" // 包含ODrive CAN通信函数
 #include "tricolor_led.h"
-#if MOWER_BLADE_OK_ENABLED
-static volatile uint32_t host_publication, host_received_tick;
-static volatile uint8_t host_payload[8];
-static uint32_t host_consumed, host_applied;
-static bool host_targets_valid;
-uint32_t chassis_control_host_sequence(void) { return host_applied; }
-void chassis_control_discard_host(void) {
-    uint32_t mask=__get_PRIMASK(); __disable_irq();
-    host_consumed=host_publication;
-    if (!mask) __enable_irq();
-}
-#endif
 uint8_t Ctrl_Mode = 0; // 0: 遥控模式, 1: API模式
 float host_vx = 0.0f;
 static float host_vy = 0.0f;
@@ -101,15 +91,6 @@ void chassis_control_parse_host_frame(uint8_t frame_id, const uint8_t *payload, 
         return;
     }
 
-#if MOWER_BLADE_OK_ENABLED
-    if (len != HOST_CMD_PAYLOAD_LEN || payload[0] > 2U) return;
-    uint32_t mask=__get_PRIMASK(); __disable_irq();
-    for (uint8_t i=0U; i<8U; ++i) host_payload[i]=payload[i];
-    host_received_tick=HAL_GetTick();
-    ++host_publication;
-    if (!mask) __enable_irq();
-    return;
-#else
     last_host_cmd_tick = HAL_GetTick();
 
     if ((payload[7] == 0xAA) && (g_app.physical_safety_latched == 0U))
@@ -192,54 +173,14 @@ void chassis_control_parse_host_frame(uint8_t frame_id, const uint8_t *payload, 
     host_vx = (float)vx_raw * 0.1f;       // 假设输入范围 -10 到 +10 对应 -1.0 m/s 到 +1.0 m/s
     host_vy = 0.0f;                       // 差速底盘不支持侧向移动
     host_omega = (float)omega_raw * 0.1f; // 假设输入范围 -10 到 +10 对应 -1.0 rad/s 到 +1.0 rad/s
-#endif
 }
 
-#if MOWER_BLADE_OK_ENABLED
-void chassis_control_apply_host_targets(void)
-{
-    if (!host_targets_valid || Ctrl_Mode!=2U || !SafetyOwnershipGate_IsOwnerPermitted(EXECUTION_OWNER_API)) return;
-    Lifter_SetGrassBagTarget(host_bag_control);
-    g_app.knob_height=host_lifter_gear;
-    g_app.knob_blade=host_blade_speed_pct;
-}
-void chassis_control_advance_host(void)
-{
-    uint8_t data[8];
-    uint32_t tick, sequence;
-    uint32_t mask=__get_PRIMASK(); __disable_irq();
-    sequence=host_publication; tick=host_received_tick;
-    for (uint8_t i=0U; i<8U; ++i) data[i]=host_payload[i];
-    if (!mask) __enable_irq();
-    if (sequence==host_consumed) return;
-    host_consumed=sequence;
-    MowerModeControl_t *mode=RemoteBackend_ModeControl();
-    if ((uint32_t)(HAL_GetTick()-tick)>=API_TIMEOUT_MS) return;
-    uint8_t previous=mode->api_mode;
-    bool active=MowerMode_Host(mode,data[0],tick);
-    Ctrl_Mode=mode->api_mode;
-    if (previous!=Ctrl_Mode) mode->stop_requested=true;
-    if (!active) return;
-    host_targets_valid=true;
-    host_applied=sequence; last_host_cmd_tick=tick;
-    host_vx=(float)(int8_t)data[1]*0.1f;
-    host_vy=0.0f; host_omega=(float)(int8_t)data[3]*0.1f;
-    host_blade_speed_pct=data[4]>3U ? 3U : data[4];
-    host_lifter_gear=data[5]<1U ? 1U : data[5]>5U ? 5U : data[5];
-    host_bag_control=data[6]!=0U;
-    /* Actuator targets are applied by Motion only after its safety gate refresh. */
-}
-#endif
 void chassis_control_clear_cached_intents(void)
 {
     host_vx = 0.0f;
     host_vy = 0.0f;
     host_omega = 0.0f;
     host_blade_speed_pct = 0U;
-    host_bag_control = 0U;
-#if MOWER_BLADE_OK_ENABLED
-    host_targets_valid=false;
-#endif
 }
 
 /**
@@ -258,7 +199,7 @@ void chassis_control_send_status_feedback(void)
     uint8_t tx_data[6];
     tx_data[0] = Ctrl_Mode;
     tx_data[1] = g_app.bms_temp;
-    tx_data[2] = (g_app.voltage_int > 100) ? 100 : g_app.voltage_int;
+    tx_data[2] = g_app.voltage_int; /* 0xFF = unavailable; never convert to 100%. */
 
     uint8_t bag_status = 0;
     if (g_app.grass_bag_status)
@@ -463,24 +404,20 @@ bool chassis_control_read_wheel_feedback(ChassisWheelFeedback_t wheels[4])
     }
 
 #if MOTOR_DRIVER_USED == DRIVER_TYPE_OID
-    wheels[0].valid = g_oid_drives[OID_NODE_FL].actual_speed_valid;
-    wheels[0].last_good_tick = g_oid_drives[OID_NODE_FL].actual_speed_update_tick;
-    wheels[0].speed_mm_per_s = chassis_erpm_to_speed_mmps(
-        g_oid_drives[OID_NODE_FL].actual_speed_erpm, 1);
-    wheels[1].valid = g_oid_drives[OID_NODE_FR].actual_speed_valid;
-    wheels[1].last_good_tick = g_oid_drives[OID_NODE_FR].actual_speed_update_tick;
-    wheels[1].speed_mm_per_s = chassis_erpm_to_speed_mmps(
-        g_oid_drives[OID_NODE_FR].actual_speed_erpm, -1);
-    wheels[2].valid = g_oid_drives[OID_NODE_RL].actual_speed_valid;
-    wheels[2].last_good_tick = g_oid_drives[OID_NODE_RL].actual_speed_update_tick;
-    wheels[2].speed_mm_per_s = chassis_erpm_to_speed_mmps(
-        g_oid_drives[OID_NODE_RL].actual_speed_erpm, 1);
-    wheels[3].valid = g_oid_drives[OID_NODE_RR].actual_speed_valid;
-    wheels[3].last_good_tick = g_oid_drives[OID_NODE_RR].actual_speed_update_tick;
-    wheels[3].speed_mm_per_s = chassis_erpm_to_speed_mmps(
-        g_oid_drives[OID_NODE_RR].actual_speed_erpm, -1);
+    int32_t erpm[4];
+    const uint8_t nodes[4] = {OID_NODE_FL, OID_NODE_FR, OID_NODE_RL, OID_NODE_RR};
+    taskENTER_CRITICAL();
+    for (unsigned i=0; i<4U; ++i) {
+        wheels[i].valid = g_oid_drives[nodes[i]].actual_speed_valid;
+        wheels[i].last_good_tick = g_oid_drives[nodes[i]].actual_speed_update_tick;
+        erpm[i] = g_oid_drives[nodes[i]].actual_speed_erpm;
+    }
+    taskEXIT_CRITICAL();
+    for (unsigned i=0; i<4U; ++i)
+        wheels[i].speed_mm_per_s = chassis_erpm_to_speed_mmps(erpm[i], (i & 1U) ? -1 : 1);
 #elif MOTOR_DRIVER_USED == DRIVER_TYPE_MSSD
     {
+        taskENTER_CRITICAL();
         const float scale = PI * WHEEL_DIAMETER * 1000.0f /
                             (GEAR_RATIO * 60.0f);
         wheels[0].valid = g_mssd_drives[MSSD_NODE_LEFT].speed_r_valid;
@@ -499,6 +436,7 @@ bool chassis_control_read_wheel_feedback(ChassisWheelFeedback_t wheels[4])
         wheels[3].last_good_tick = g_mssd_drives[MSSD_NODE_RIGHT].speed_l_update_tick;
         wheels[3].speed_mm_per_s = (int32_t)(
             (float)g_mssd_drives[MSSD_NODE_RIGHT].actual_rpm_l * scale);
+        taskEXIT_CRITICAL();
     }
 #else
     memset(wheels, 0, sizeof(ChassisWheelFeedback_t) * 4U);
@@ -596,6 +534,8 @@ void set_chassis_velocity(ExecutionOwner_t owner, float vx, float vy, float omeg
         vy = 0.0f;
         omega = 0.0f;
     }
+    if (!isfinite(vx) || !isfinite(vy) || !isfinite(omega))
+        vx = vy = omega = 0.0f;
     vy = 0.0f; // 强制不支持侧向移动
 
     float R = TRACK_WIDTH / 2.0f;
@@ -817,16 +757,6 @@ void Control_Update(void)
         return;
     }
 
-#if MOWER_BLADE_OK_ENABLED
-    MowerModeControl_t *mode=RemoteBackend_ModeControl();
-    if (mode->selected == MOWER_SELECT_RC && mode->mode_valid && Ctrl_Mode==0U) {
-        get_rc_control_inputs(&mapped_throttle, &mapped_steering);
-        set_chassis_rc_control(mapped_throttle, mapped_steering);
-    } else if (mode->selected == MOWER_SELECT_API && Ctrl_Mode==2U) {
-        set_chassis_velocity(EXECUTION_OWNER_API,host_vx,0.0f,-host_omega);
-    } else chassis_stop();
-    return;
-#endif
     // --- 状态 0：纯遥控 ---
     if (Ctrl_Mode == 0)
     {

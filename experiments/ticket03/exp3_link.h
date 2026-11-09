@@ -8,6 +8,7 @@ extern "C" {
 /* Single writer per link. Caller supplies an experiment-only deadline. */
 typedef struct {
     Exp3Rx rx;
+    uint32_t controller, hmi; /* Trusted session for compact uplink reconstruction. */
     uint32_t transfer, sent_at, word_at, raw_started;
     uint8_t tx[36], fragment[18], raw[18];
     uint16_t last_word;

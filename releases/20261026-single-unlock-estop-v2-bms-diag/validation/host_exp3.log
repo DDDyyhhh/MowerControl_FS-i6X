@@ -1,0 +1,22 @@
+PASS one-way loss/retry/failsafe/reboot/fresh-session recovery/live log drain
+PASS HIL same-clock RTT, bounded overflow, one-time session binding
+PASS transport complete/static/duplicate/failsafe
+PASS golden/truncation/version/missing/order/duplicate/conflict/mixed/timeout/wrap
+PASS cancel-before-confirm/eviction/conflict/reboot/session/action exhaustion
+PASS query/confirm/duplicate/cancel
+PASS fragment complete and replay rejection
+PASS codec identity and corruption
+PASS CH4 center baseline before prompt
+PASS fast result full CRC/identity, duplicate/loss/corruption/timeout and wide fallback
+PASS i6X OK does not open main context menu during Experiment3 prompt
+PASS automatic paired sessions, reboot, loss, static failsafe and malformed bootstrap
+PASS Experiment3-to-blade gate and CH7 low/medium/high commands (driver=1)
+PASS Experiment3-to-blade gate and CH7 low/medium/high commands (driver=2)
+PASS invalid mapped safety frame cannot advance Experiment3 transport
+PASS actual AA/AC adapter, foreground queue/overflow, truncated RF bounds
+PASS independent Python/C Confirm/Cancel/Query/Result golden vectors
+PASS bench Confirm reply RTT 5884 ms with 120 ms sampling
+PASS bench Cancel reply RTT 5924 ms with 120 ms sampling
+PASS STM32 adapter auto binds and invalidates on remote session change
+PASS OpenI6X RF adapter auto binds and replaces rebooted controller session
+PASS actual SENS adapter addr9 and unchanged addr1-8

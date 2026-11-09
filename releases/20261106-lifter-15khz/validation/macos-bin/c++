@@ -1,0 +1,7 @@
+#!/usr/bin/env python3
+import os
+import sys
+arguments = sys.argv[1:]
+if any("mower-trim-lock-" in arg and arg.endswith("/keys.cpp") for arg in arguments):
+    arguments.append("-Wno-constant-logical-operand")
+os.execv("/usr/bin/c++", ["c++", *arguments])

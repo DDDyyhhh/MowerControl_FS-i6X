@@ -29,6 +29,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "app_context.h"
 #include "E34.h"
 #include "remote_backend.h"
 #include "remote_backend_config.h"
@@ -222,7 +223,8 @@ int main(void)
   HAL_Init();
 
   /* USER CODE BEGIN Init */
-
+  AppContext_RecordBootReset(RCC->CSR);
+  __HAL_RCC_CLEAR_RESET_FLAGS();
   /* USER CODE END Init */
 
   /* Configure the system clock */

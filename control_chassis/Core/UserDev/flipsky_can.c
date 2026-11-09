@@ -1,11 +1,9 @@
 #include "flipsky_can.h"
 #include "blade_motor_config.h"
+#include "can_tx_scheduler.h"
 #if defined(FLIPSKY_HOST_TEST)
 extern uint32_t HAL_GetTick(void);
-extern uint8_t CAN_Enqueue_Ext_Message(uint32_t id, uint8_t *data,
-                                       uint8_t len, uint8_t is_remote);
 #else
-#include "odrive_can.h"
 #include "stm32f4xx_hal.h"
 #endif
 #include <math.h>
@@ -28,11 +26,12 @@ static volatile uint32_t s_feedback_sequence;
 
 static uint16_t Flipsky_Crc16_Modbus(const uint8_t *data, uint32_t length)
 {
+    /* Reflected 0xA001 polynomial, four bits per lookup (two per byte). */
     static const uint16_t crc_table[16] = {
-        0x0000U, 0xC0C1U, 0xC181U, 0x0140U,
-        0xC301U, 0x03C0U, 0x0280U, 0xC241U,
-        0xC601U, 0x06C0U, 0x0780U, 0xC741U,
-        0x0500U, 0xC5C1U, 0xC481U, 0x0440U
+        0x0000U, 0xCC01U, 0xD801U, 0x1400U,
+        0xF001U, 0x3C00U, 0x2800U, 0xE401U,
+        0xA001U, 0x6C00U, 0x7800U, 0xB401U,
+        0x5000U, 0x9C01U, 0x8801U, 0x4400U
     };
     uint16_t crc = 0xFFFFU;
     while (length-- != 0U)
@@ -94,8 +93,8 @@ uint8_t Flipsky_CAN_SetCurrentPercent(float percent)
     data[4] = (uint8_t)(crc >> 8);
     data[5] = (uint8_t)crc;
 
-    if (CAN_Enqueue_Ext_Message(Flipsky_ExtId(FLIPSKY_CMD_CURRENT_PERCENT),
-                                 data, sizeof(data), 0U) == 0U)
+    if (CAN_Enqueue_BladeControl_Message(Flipsky_ExtId(FLIPSKY_CMD_CURRENT_PERCENT),
+                                 data, sizeof(data), scaled == 0) == 0U)
     {
         s_stats.tx_enqueue_fail_count++;
         return 0U;
@@ -230,7 +229,7 @@ uint8_t Flipsky_CAN_IsOnline(void)
 /**
  * @brief 发送占空比控制指令 (0x02)
  * @param duty_percent 占空比百分比 (0.0f ~ 100.0f)
- * @return 1: 成功入队, 0: 失败
+ * @return 1: 调度器接纳（不代表物理停刀）, 0: 拒绝
  */
 uint8_t Flipsky_CAN_SetDutyCycle(float duty_percent)
 {
@@ -259,8 +258,8 @@ uint8_t Flipsky_CAN_SetDutyCycle(float duty_percent)
     data[6] = (uint8_t)(crc >> 8U);   // 发送 0xCE
 
     // 4. 发送扩展帧 (EID = 0x00009A02)
-    if (CAN_Enqueue_Ext_Message(Flipsky_ExtId(FLIPSKY_CAN_CMD_DUTY_GEAR_CRC16),
-                                 data, sizeof(data), 0U) == 0U)
+    if (CAN_Enqueue_BladeControl_Message(Flipsky_ExtId(FLIPSKY_CAN_CMD_DUTY_GEAR_CRC16),
+                                 data, sizeof(data), scaled == 0) == 0U)
     {
         s_stats.tx_enqueue_fail_count++;
         return 0U;
@@ -277,7 +276,7 @@ uint8_t Flipsky_CAN_SetDutyCycle(float duty_percent)
 /**
  * @brief 发送转速控制指令 (0x18，不带 CRC)
  * @param erpm 电子转速 ERPM (目标RPM * 极对数)
- * @return 1: 成功入队, 0: 失败
+ * @return 1: 调度器接纳（不代表物理停刀）, 0: 拒绝
  */
 uint8_t Flipsky_CAN_SetSpeedErpm(float erpm)
 {
@@ -290,7 +289,7 @@ uint8_t Flipsky_CAN_SetSpeedErpm(float erpm)
     }
 
     // ERPM 为直接的整数，不需要乘以 1000000！
-    scaled_erpm = (int32_t)erpm;
+    scaled_erpm = (int32_t)erpm * BLADE_FTESC_ERPM_DIRECTION;
 
     // 1. 写入 4 字节大端序 ERPM 数值
     Flipsky_WriteI32BE(data, scaled_erpm);
@@ -299,6 +298,6 @@ uint8_t Flipsky_CAN_SetSpeedErpm(float erpm)
     data[4] = 0x00U;
 
     // 3. 发送指令 0x18 (EID = 0x00009A18)
-    return CAN_Enqueue_Ext_Message(Flipsky_ExtId(FLIPSKY_CAN_CMD_ERPM_GEAR),
-                                 data, 5U, 0U);
+    return CAN_Enqueue_BladeControl_Message(Flipsky_ExtId(FLIPSKY_CAN_CMD_ERPM_GEAR),
+                                 data, 5U, scaled_erpm == 0);
 }

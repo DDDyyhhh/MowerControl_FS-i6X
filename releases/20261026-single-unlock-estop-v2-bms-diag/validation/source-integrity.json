@@ -1,0 +1,21 @@
+{
+  "verified_source_files": 5206,
+  "workspace_vs_clean_rebuild": {
+    "chassis_bin_equal": true,
+    "radio_changed_symbol_sizes": {
+      "vers_stamp": [
+        67,
+        60
+      ]
+    },
+    "reason": "Generated build time and GIT_STR (workspace f64ed459, source snapshot 0); all other symbol sizes equal",
+    "workspace_stamp": "#define DATE    \"2026-10-26\"\n#define TIME    \"23:28:18\"\n#define VERSION \"2.3.0\"\n\n#define VERSION_MAJOR     2\n#define VERSION_MINOR     3\n#define VERSION_REVISION  0\n#define GIT_STR           \"f64ed459\"\n\n#define BUILD_YEAR        \"2026\"\n",
+    "clean_stamp": "#define DATE    \"2026-10-26\"\n#define TIME    \"23:32:49\"\n#define VERSION \"2.3.0\"\n\n#define VERSION_MAJOR     2\n#define VERSION_MINOR     3\n#define VERSION_REVISION  0\n#define GIT_STR           \"0\"\n\n#define BUILD_YEAR        \"2026\"\n"
+  },
+  "crlf_preserved": true,
+  "v34_tests_archived": true,
+  "original_input_count_before_packaging_hygiene": 5217,
+  "packaging_hygiene_removed_non_build_files": 11,
+  "sanitized_source_rebuild": "PASS",
+  "sanitized_rebuild_source_files_verified": 5206
+}

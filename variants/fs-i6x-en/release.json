@@ -1,0 +1,73 @@
+{
+  "release": "fs-i6x-en",
+  "protocol": "0x36",
+  "ui_language": "English",
+  "baseline": {
+    "url": "http://192.168.9.5:8080/svn/MowerControl/branches/MowerControl_FS-i6X",
+    "revision": "104",
+    "last-changed-revision": "104",
+    "baseline": "Current working files, including local modifications; not SVN HEAD",
+    "snapshot_files": 7030,
+    "preserved_original_files": 9456
+  },
+  "toolchain": "Arm GNU GCC 15.3.1",
+  "build_entrypoint": "./build.sh",
+  "capacity": {
+    "flash_used": 128564,
+    "static_ram_used": 15856,
+    "flash_limit": 131072,
+    "ram_limit": 16384,
+    "flash_free": 2508,
+    "static_ram_free": 528,
+    "baseline_flash_used": 130864,
+    "baseline_static_ram_used": 15856,
+    "flash_saved": 2300
+  },
+  "font": {
+    "glyphs": 65,
+    "bitmap_bytes": 585,
+    "type_pixels": 11,
+    "cell_width": 6,
+    "row_height": 12,
+    "face_index": 7,
+    "source_sha256": "b76b0433203017ca80401b2ee0dd69350349871c4b19d504c34dbdd80541690a"
+  },
+  "changed_sources": {
+    "OpenI6X/FS-I6X/opentx/radio/src/gui/128x64/mower_user_ui.h": "d76d140c620d3b338e6101236d647f0184eec04c55004542af88b2ffc645f24d",
+    "OpenI6X/FS-I6X/opentx/radio/src/gui/128x64/mower_zh_font.h": "ba86fdae27e7804e26cccf97847075cf485d49c5c106559a5916e47b4848b4c5",
+    "OpenI6X/FS-I6X/opentx/radio/src/gui/128x64/mower_zh_font.md": "6374e779fdaeb5db93474050d524634f2796593552b961e8630f70e078061749",
+    "OpenI6X/FS-I6X/opentx/radio/src/gui/128x64/view_main.cpp": "aa9eea1edda2584a063917522270883c1b330c144f2f7fb3a627731987d88a2c",
+    "tools/test_blade_ok_ui.py": "c4a6acee4e534758096acf703a80a0c5dfc8cf826734d2d59daf6df9507cf218"
+  },
+  "validation": {
+    "host": "PASS",
+    "chassis_arm": "PASS",
+    "radio_arm": "PASS",
+    "actual_ui_frames": 84,
+    "glyphs_bounds_overlap": "PASS",
+    "font_regeneration_check": "PASS",
+    "elf_hex_bin_consistency": "PASS byte-for-byte",
+    "new_radio_warnings": false,
+    "radio_warnings": [
+      "warning: ../../firmware.elf has a LOAD segment with RWX permissions"
+    ],
+    "original_files_unchanged": 9456,
+    "protected_control_and_protocol": "PASS unchanged",
+    "svn_preflight": "PASS with existing workspace warnings",
+    "hardware": "PENDING; no device flashed"
+  },
+  "artifacts": {
+    "firmware/fs-i6x-en.bin": {
+      "bytes": 128564,
+      "sha256": "bb754fa84f1b4f9220f43f79b3a4a0deb04ac25e698c41511fd6881dee860823"
+    },
+    "firmware/fs-i6x-en.elf": {
+      "bytes": 2151412,
+      "sha256": "40cd6dc73ed330589fae58bf2de83ff6f6b2f1f9933efb5c08027ea0c853232e"
+    },
+    "firmware/fs-i6x-en.hex": {
+      "bytes": 361690,
+      "sha256": "248c763e4cf8885377b969f70f71d39f05518cbcb054efef435fbf543e726fd8"
+    }
+  }
+}

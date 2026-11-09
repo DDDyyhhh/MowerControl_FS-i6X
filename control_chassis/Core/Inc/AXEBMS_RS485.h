@@ -1,7 +1,6 @@
 #ifndef __AXEBMS_RS485_H
 #define __AXEBMS_RS485_H
 
-#include "rs485.h"
 #include <stdint.h>
 #include <stdbool.h>
 

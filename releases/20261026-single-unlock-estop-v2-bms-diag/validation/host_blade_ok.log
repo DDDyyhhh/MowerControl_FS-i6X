@@ -1,0 +1,39 @@
+PASS controller decision required before reply; rejected Confirm is not Accepted
+PASS full controller Confirm/Result, fresh-frame low/medium/high, safety zero, duplicate no reauthorization (driver=1)
+MEASURE unlock controller acceptance=340ms (120ms downlink sampling model)
+PASS unlock Confirm/real authorization/compact Result, separate blade generation, cached duplicate cannot unlock again
+PASS controller decision required before reply; rejected Confirm is not Accepted
+PASS full controller Confirm/Result, fresh-frame low/medium/high, safety zero, duplicate no reauthorization (driver=2)
+MEASURE unlock controller acceptance=340ms (120ms downlink sampling model)
+PASS unlock Confirm/real authorization/compact Result, separate blade generation, cached duplicate cannot unlock again
+PASS grass bag AA/AC feedback, unplug/reconnect, frozen replay, timeout, heartbeat/time wrap
+PASS controller height AA/AC, no replay refresh, invalid range, time/heartbeat wrap
+PASS idle E1 battery AA/AC diagnostics: coherent pair, forward heartbeat, stale/replay/truncation, time/wrap; no result parser mutation
+PASS new binding clears fresh grass bag cache and waits for new heartbeat
+PASS actual RF completion: busy frame, wrong session/action/generation/context/command, truncated/lost part, duplicate and non-Cancelled rejection
+PASS OpenI6X RF adapter auto binds and replaces rebooted controller session
+PASS production backend CH6 cannot create confirmation; CH7 mapping preserved
+PASS release SENS addr13-15 four-byte completion, addr12 height, addr11 connection, addr10 output and unchanged addr1-8
+PASS release SENS addr13-15 four-byte completion, addr12 height, addr11 connection, addr10 output and unchanged addr1-8
+PASS Chinese production UI, live provider, actual main-view route, CH9/CH6 boundaries, scrolling and pixel bounds: UNKNOWN inhibits OK/prompt; 2s modal limit, deferred Cancel, late matching receipt, no repeat authorization; runtime home
+PASS completion codec: full canonical CRC/identity, all contexts/results/orders, corruption, mixed publication, expiry/wrap, wide fallback
+MEASURE real adapters/SENS/RF/blade, 15 slots / 150ms cycle + 5ms RF: unlock<=479ms, start/stop/restart<=476ms, 150 phases + 100 continuous cycles, driver=1
+PASS idle battery diagnostics/slow-frame overlap do not block Motion, no duplicate starts, matching Cancel, old-receiver legacy fallback
+MEASURE real adapters/SENS/RF/blade, 15 slots / 150ms cycle + 5ms RF: unlock<=479ms, start/stop/restart<=476ms, 150 phases + 100 continuous cycles, driver=2
+PASS idle battery diagnostics/slow-frame overlap do not block Motion, no duplicate starts, matching Cancel, old-receiver legacy fallback
+PASS production PD10 source: low=connected, always sampled while locked/offline/in safety fault
+PASS independent Python/C Confirm/Cancel/Query/Result golden vectors
+PASS production CH4/OK: fresh edge, thresholds, CH8 inert, safety, 200ms hold, no replay/duplicate/same-frame drive
+PASS fast result full CRC/identity, duplicate/loss/corruption/timeout and wide fallback
+PASS compact commands: 18 words/360ms, full identity/CRC32, loss/corruption/order/replay and wide fallback
+MEASURE Motion snapshot -> real RF parser: worst unlock display state=119ms over 120 receiver phases (120ms sampling model)
+MEASURE emergency status: worst=119ms over 120 phases and both AA/AC packet forms
+PASS E9/v2: old E2/E5 rejection, emergency stop, atomic status, same-heartbeat restrictions, frozen/reversed replay, modulo-64/clock wrap and unbound
+PASS production wheel snapshot: concurrent +1ms, 150/151ms and uint32 wrap
+PASS ISR telemetry read never spins on a preempted writer
+PASS CAN pipeline: busy retention, control/query/telemetry priority, coalescing, failure retry, newer stop, expiry/wrap, actual OID ingress time, coherent wheels, 150/151ms fault capture
+PASS actual 100Hz locked dispatcher + real iBUS/backend: both CH5 endpoints, first-frame stop before/waiting/after OK, no replay, fresh CH4/OK recovery, session/epoch/safety/link/mode rejection, blade isolation
+PASS production physical scan -> real iBUS/dispatcher -> Advance/Apply/Get: single recovery, repeated reads, duplicate/held OK, released/sequential causes, new stop
+PASS locked Motion -> RF runtime -> CH4 unlock popup: 0x0400, estop/collision, live OFF heartbeats, frozen feedback rejects, no auto authorization
+PASS CH5 first-frame bidirectional stop: both-endpoint unlock, overwritten/burst edges, jitter/CRC/ranges, no OK replay, link/safety recovery, drive gate and blade zero
+PASS CH5 first-frame bidirectional stop: both-endpoint unlock, overwritten/burst edges, jitter/CRC/ranges, no OK replay, link/safety recovery, drive gate and blade zero

@@ -14,7 +14,8 @@ typedef enum
     REMOTE_AUTH_WAIT_UNLOCK_EDGE_1,
     REMOTE_AUTH_WAIT_UNLOCK_EDGE_2,
     REMOTE_AUTH_VALIDATE_CENTER_AND_SAFETY,
-    REMOTE_AUTH_MANUAL_ARMED
+    REMOTE_AUTH_MANUAL_ARMED,
+    REMOTE_AUTH_WAIT_OK
 } RemoteAuthorizationState_t;
 
 typedef enum
@@ -53,6 +54,8 @@ typedef enum
 typedef struct
 {
     bool link_fresh;
+    /* Current timeout, distinct from a historical timeout latch. */
+    bool link_timed_out;
     bool stable_online;
     bool physical_latched;
     bool emergency_active;
@@ -63,8 +66,10 @@ typedef struct
     uint16_t run_enable_raw;
     uint16_t blade_gear_raw;
     uint16_t unlock_raw;
+    uint16_t ch4_raw;
     uint32_t frame_sequence;
     uint32_t timeout_sequence;
+    uint32_t ch5_stop_sequence;
 } RemoteAuthorizationInput_t;
 
 typedef struct
@@ -92,11 +97,14 @@ typedef struct
     uint8_t blade_gear_candidate_count;
     bool unlock_baseline_valid;
     bool centered;
+    bool ch4_center_seen;
+    bool ch4_full;
     uint32_t center_started_ms;
     uint32_t unlock_started_ms;
     uint32_t last_frame_sequence;
     uint32_t armed_frame_sequence;
     uint32_t last_timeout_sequence;
+    uint32_t last_ch5_stop_sequence;
 } RemoteAuthorization_t;
 
 void RemoteAuthorization_Init(RemoteAuthorization_t *authorization,
@@ -106,5 +114,14 @@ void RemoteAuthorization_Advance(RemoteAuthorization_t *authorization,
                                  uint32_t now_ms);
 void RemoteAuthorization_GetOutput(const RemoteAuthorization_t *authorization,
                                    RemoteAuthorizationOutput_t *output);
+/* Motion task only. An OK is consumed immediately, never queued for safety recovery. */
+bool RemoteAuthorization_ConfirmOK(RemoteAuthorization_t *authorization,
+                                  const RemoteAuthorizationInput_t *input,
+                                  uint32_t now_ms);
+/* Environmental checks shared by the center phase and actual confirmation. */
+uint8_t RemoteAuthorization_BlockReason(const RemoteAuthorization_t *authorization,
+                                       const RemoteAuthorizationInput_t *input, uint32_t now_ms);
+void RemoteAuthorization_CancelOK(RemoteAuthorization_t *authorization);
+void RemoteAuthorization_Revoke(RemoteAuthorization_t *authorization);
 
 #endif

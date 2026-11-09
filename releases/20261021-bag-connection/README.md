@@ -27,7 +27,7 @@
 | `control-chassis-bag-connection.elf` | 底盘 ST-Link/OpenOCD 烧录与调试 |
 | `control-chassis-bag-connection.bin` | 底盘原始镜像，81324 字节，基址 0x08000000 |
 
-`SHA256SUMS` 校验本包全部交付文件；各固件大小和哈希另见 `validation/firmware-manifest.json`。`rollback/` 是之前发布包的候选镜像副本，不是从当前设备读取的备份，也不代表其硬件已验收；刷写前仍须保存设备当前镜像和遥控器模型。
+各固件大小和哈希见 `validation/firmware-manifest.json`。`rollback/` 是之前发布包的候选镜像副本，不是从当前设备读取的备份，也不代表其硬件已验收；刷写前仍须保存设备当前镜像和遥控器模型。
 
 ## 实现与兼容
 

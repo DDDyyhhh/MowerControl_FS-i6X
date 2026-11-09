@@ -6,13 +6,33 @@
 #include <stdint.h>
 
 #include "remote_backend_config.h"
-#if MOWER_BLADE_OK_ENABLED
-#include "mower_mode_control.h"
-MowerModeControl_t *RemoteBackend_ModeControl(void); /* Motion task only. */
-#endif
 #include "grass_bag_control.h"
 #include "remote_authorization.h"
 #include "blade_confirm_ch6_adapter.h"
+
+/* UART callback metadata, not an over-the-air protocol change. */
+#define REMOTE_RX_BUFFER_SIZE 64U
+#define REMOTE_RX_QUEUE_DEPTH 16U
+typedef struct
+{
+    uint32_t received_at_ms;
+    uint32_t sequence;
+    uint16_t len;
+    uint8_t data[REMOTE_RX_BUFFER_SIZE];
+} RemoteRxMsg_t;
+
+typedef struct
+{
+    uint32_t expired_messages;
+    uint32_t queue_overflows;
+    uint32_t stream_resets;
+    uint32_t max_queue_age_ms;
+    uint32_t invalid_messages;
+    uint32_t crc_errors;
+    uint32_t invalid_channel_frames;
+    uint32_t uart_errors;
+    uint32_t last_uart_error;
+} RemoteRxDiagnostics_t;
 
 typedef struct
 {
@@ -24,10 +44,6 @@ typedef struct
     uint16_t blade_gear_raw;
     uint16_t run_enable_raw;
     uint16_t unlock_raw;
-    uint16_t mode_raw;
-    uint8_t selected_mode;
-    bool mode_valid;
-    uint32_t mode_sequence;
     uint16_t blade_start_raw;
     uint16_t blade_confirm_raw;
     uint16_t grass_bag_raw;
@@ -41,6 +57,7 @@ typedef struct
     uint8_t height_level;
     uint8_t operation_mode;
     uint8_t config_flags;
+    /* Production: either valid CH5 endpoint; run_permitted is authorization. */
     bool remote_run_enable;
     uint8_t remote_unlock;
     bool receiver_failsafe;
@@ -50,7 +67,7 @@ typedef struct
     bool valid;
     bool link_fresh;
     bool stable_online;
-    bool timeout_latched;
+    bool timeout_latched; /* Historical observation; never a current stop gate. */
     bool run_enable_configured;
     bool blade_start_configured;
     bool blade_confirm_configured;
@@ -60,12 +77,23 @@ typedef struct
     uint32_t confirm_request_sequence;
     uint32_t confirm_event_sequence;
     uint32_t frame_sequence;
+    /* Comm-observed timeout count; may lag Motion's independent watchdog. */
     uint32_t timeout_sequence;
+    uint32_t ch5_stop_sequence;
     uint32_t command_invalidation_sequence;
     RemoteAuthorizationState_t authorization_state;
     RemoteRecoverableLatchReason_t recoverable_latch_reason;
     uint32_t last_valid_ms;
 } RemoteCommand_t;
+
+/* Current outage or a timeout that still requires fresh authorization.
+ * A successfully recovered link may retain timeout_latched for diagnostics. */
+static inline bool RemoteCommand_TimeoutStopActive(const RemoteCommand_t *command)
+{
+    return command == NULL || !command->link_fresh ||
+        (command->remote_recoverable_latched &&
+         command->recoverable_latch_reason == REMOTE_LATCH_REASON_TIMEOUT);
+}
 
 typedef struct
 {
@@ -86,17 +114,27 @@ typedef struct
 FlySkyIbusConfig_t RemoteBackend_DefaultFlySkyConfig(void);
 float RemoteBackend_MapTravelSpeed(uint16_t pulse_us);
 float RemoteBackend_ApplyReverseSpeed(float speed_mps, bool reverse);
+/* Initialize before Comm and consumers can run; no concurrent reinitialization. */
 void RemoteBackend_Init(RemoteBackendClock_t clock);
 void RemoteBackend_InitWithFlySkyConfig(RemoteBackendClock_t clock,
                                         const FlySkyIbusConfig_t *config);
 /* Single consumer: Motion supplies the complete permission including mode/connection. */
 bool RemoteBackend_AdvanceGrassBag(bool permitted, GrassBagTarget_t *target);
 void RemoteBackend_Start(void);
+/* Comm only: owns parsing, stability and timeout event publication. */
 void RemoteBackend_Process(void);
+/* Comm only; applies the same age/continuity checks for target and host input. */
+void RemoteBackend_ProcessRxMessage(const RemoteRxMsg_t *message);
+/* Bounded read-only diagnostic copy. Counters saturate until initialization. */
+void RemoteBackend_GetRxDiagnostics(RemoteRxDiagnostics_t *diagnostics);
+/* Target ISR queues timestamped bytes. Host adapter invokes the same message service. */
 void RemoteBackend_OnUartRx(uintptr_t uart_instance, const uint8_t *data, uint16_t length);
 void RemoteBackend_OnUartError(uintptr_t uart_instance);
+/* Motion only: authorization/command state has a single owner. GetCommand and
+ * ConfirmUnlock also refresh the watchdog and must be called from Motion. */
 void RemoteBackend_Advance(uint32_t now_ms, RemoteSafetyInput_t safety);
 bool RemoteBackend_GetCommand(RemoteCommand_t *command);
+/* Read-only queries: bounded snapshot copy, no authorization side effects. */
 bool RemoteBackend_IsConnected(void);
 uint32_t RemoteBackend_LastReceiveAgeMs(void);
 bool RemoteBackend_UsesUart(uintptr_t uart_instance);
@@ -105,6 +143,10 @@ void RemoteBackend_GetJoystickOutput(uint16_t joystick[4]);
 void RemoteBackend_ConsumeConfirmEvent(uint32_t event_sequence);
 void RemoteBackend_GetBladeConfirmDiagnostics(BladeConfirmCh6Diagnostics_t *diagnostics);
 void RemoteBackend_SetActiveBladeRequest(uint32_t request_sequence);
+bool RemoteBackend_ConfirmUnlock(void);
+uint8_t RemoteBackend_UnlockBlockReason(void);
+void RemoteBackend_CancelUnlock(void);
+void RemoteBackend_RevokeAuthorization(void);
 
 #if SENS_IBUS_HIL_DIAG_USART1_TX_ENABLED && REMOTE_BACKEND_FLYSKY_IBUS
 typedef struct

@@ -1,0 +1,2 @@
+PASS actual RCC/TIM2/TIM3/EG2104: 84MHz -> bag 10kHz / height 15kHz, IOC agrees, +/-60% -> CCR5040/8400 and CCR3360/5600, startup/stop zero
+PASS actual RCC/TIM2/TIM3/EG2104: 84MHz -> bag 10kHz / height 15kHz, IOC agrees, +/-60% -> CCR5040/8400 and CCR3360/5600, startup/stop zero

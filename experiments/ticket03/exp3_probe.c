@@ -2,10 +2,7 @@
 
 #if EXP3_ENABLED
 #include <string.h>
-#include "mower_control_contract.h"
-#if MOWER_BLADE_OK_ENABLED
-static uint32_t action_controller, action_hmi, next_action;
-#endif
+#include "mower_fast_status.h"
 
 static uint8_t in_range(uint16_t value, uint16_t center, uint16_t tolerance)
 {
@@ -21,11 +18,6 @@ void exp3_ui_probe_init(Exp3UiProbe *probe)
 void exp3_ui_probe_bind(Exp3UiProbe *probe, uint32_t controller, uint32_t hmi,
                         uint32_t context, uint16_t target, uint32_t generation)
 {
-#if MOWER_BLADE_OK_ENABLED
-    if (controller!=action_controller || hmi!=action_hmi) {
-        action_controller=controller; action_hmi=hmi; next_action=0U;
-    }
-#endif
     probe->controller = controller;
     probe->hmi = hmi;
     probe->context = context;
@@ -35,6 +27,7 @@ void exp3_ui_probe_bind(Exp3UiProbe *probe, uint32_t controller, uint32_t hmi,
 
 static uint8_t is_start(uint16_t ch4_us)
 {
+    /* Both intents use left; the caller selects unlock or blade by lock state. */
     return in_range(ch4_us, 1000U, 100U);
 }
 
@@ -63,6 +56,54 @@ Exp3UiOutput exp3_ui_probe_step(Exp3UiProbe *probe, const Exp3UiInput *input)
     uint8_t start = is_start(input->ch4_us);
     memset(&output, 0, sizeof(output));
 
+    if (probe->context == EXP3_UNLOCK_CONTEXT && probe->completed) {
+        probe->state = EXP3_UI_IDLE;
+        probe->pending.action = 0U;
+        probe->cancel_pending = 0U;
+        if (input->authority_valid && (input->authority & MOWER_AUTH_UNLOCK))
+            probe->completed = 0U;
+    }
+    bool in_flight = probe->state == EXP3_UI_WAIT || probe->state == EXP3_UI_ACCEPTED ||
+        probe->state == EXP3_UI_TIMEOUT;
+#if MOWER_BLADE_OK_ENABLED
+    unsigned phase = mower_auth_phase(input->authority);
+    uint16_t generation = input->authority & MOWER_AUTH_TOKEN_MASK;
+    bool known = input->bound && input->authority_valid &&
+        !!(input->authority & MOWER_AUTH_UNLOCK) == (probe->context == EXP3_UNLOCK_CONTEXT);
+    if (!in_flight) {
+        if (in_range(input->ch4_us,1500U,100U) && known && !input->start_inhibited &&
+            (phase == MOWER_AUTH_CENTER || phase == MOWER_AUTH_CH4)) {
+            probe->center_seen = 1U;
+            probe->next_generation = generation;
+        }
+        if (start && !probe->ch4_start) {
+            probe->start_armed = probe->center_seen && known && !input->start_inhibited;
+            probe->center_seen = 0U;
+            probe->prompt_generation = 0U;
+            probe->edge_at = input->now_ms;
+        }
+        /* Do not erase a synchronized center for an intermediate CH4 sample or
+         * a short RF gap. Explicit safety/owner/stick blockers invalidate it. */
+        if (input->start_inhibited || (!known && input->authority_valid) ||
+            (known && (phase == MOWER_AUTH_SAFETY || phase == MOWER_AUTH_STICKS ||
+             phase == MOWER_AUTH_OWNER || phase == MOWER_AUTH_LOW || phase == MOWER_AUTH_INIT))) {
+            probe->start_armed = probe->center_seen = 0U;
+        }
+        if (start && probe->start_armed && known && phase == MOWER_AUTH_CONFIRM &&
+            generation > probe->next_generation) {
+            if (!probe->prompt_generation) probe->prompt_generation = generation;
+            else if (probe->prompt_generation != generation) probe->start_armed = 0U;
+        }
+        if (start && probe->start_armed && !probe->prompt_generation &&
+            (uint32_t)(input->now_ms-probe->edge_at) >= 1000U) probe->start_armed = 0U;
+        if (known && phase == MOWER_AUTH_CH4 && probe->prompt_generation)
+            probe->start_armed = 0U;
+        if (probe->state == EXP3_UI_PROMPT && (!known || !probe->start_armed ||
+            phase != MOWER_AUTH_CONFIRM || generation != probe->prompt_generation))
+            probe->state = EXP3_UI_IDLE;
+    }
+    if (!start) probe->start_armed = 0U;
+#else
     /* Count physical center-to-start edges even while a Cancel is pending.
      * Prompt rendering must not be the source of the wire generation. */
     if (in_range(input->ch4_us, 1500U, 100U))
@@ -72,13 +113,19 @@ Exp3UiOutput exp3_ui_probe_step(Exp3UiProbe *probe, const Exp3UiInput *input)
         if (probe->next_generation == 0U)
             ++probe->next_generation;
         probe->center_seen = 0U;
-        probe->start_armed = 1U;
+        probe->start_armed = !input->start_inhibited;
     }
-    if (!start)
+    if (!start || (input->start_inhibited &&
+        probe->state != EXP3_UI_WAIT && probe->state != EXP3_UI_ACCEPTED &&
+        probe->state != EXP3_UI_TIMEOUT))
         probe->start_armed = 0U;
     probe->ch4_start = start;
 
-    if (probe->cancel_pending) {
+#endif
+    probe->ch4_start = start;
+
+    if (probe->cancel_pending || (!start && in_flight)) {
+        probe->cancel_pending = 1U;
         probe->state = EXP3_UI_CANCEL_WAIT;
         if ((!input->transport_waiting || input->cancel_ready) && probe->pending.action != 0U) {
             make_command(probe, EXP3_CANCEL, &output);
@@ -97,20 +144,15 @@ Exp3UiOutput exp3_ui_probe_step(Exp3UiProbe *probe, const Exp3UiInput *input)
     }
 
     if (!start) {
-        if (probe->state == EXP3_UI_WAIT || probe->state == EXP3_UI_ACCEPTED ||
-            probe->state == EXP3_UI_TIMEOUT)
-            probe->cancel_pending = 1U;
         probe->state = EXP3_UI_IDLE;
-        if (probe->cancel_pending)
-            probe->state = EXP3_UI_CANCEL_WAIT;
-        if (probe->cancel_pending && (!input->transport_waiting || input->cancel_ready) && probe->pending.action != 0U) {
-            make_command(probe, EXP3_CANCEL, &output);
-            probe->cancel_pending = 0U;
-        }
     } else if (!probe->start_armed) {
         probe->state = EXP3_UI_IDLE;
     } else if (probe->state == EXP3_UI_IDLE) {
-        probe->state = input->transport_waiting ? EXP3_UI_CANCEL_WAIT : EXP3_UI_PROMPT;
+#if MOWER_BLADE_OK_ENABLED
+        if (probe->prompt_generation && known && phase == MOWER_AUTH_CONFIRM &&
+            generation == probe->prompt_generation)
+#endif
+            probe->state = input->transport_waiting ? EXP3_UI_CANCEL_WAIT : EXP3_UI_PROMPT;
     } else if (probe->state == EXP3_UI_UNBOUND && input->bound) {
         probe->state = EXP3_UI_PROMPT;
     }
@@ -118,7 +160,7 @@ Exp3UiOutput exp3_ui_probe_step(Exp3UiProbe *probe, const Exp3UiInput *input)
     if (probe->state == EXP3_UI_PROMPT && input->transport_waiting)
         probe->state = EXP3_UI_CANCEL_WAIT;
 
-    if (probe->state == EXP3_UI_PROMPT && input->ok_pressed) {
+    if (probe->state == EXP3_UI_PROMPT && input->ok_pressed && !input->start_inhibited) {
         if (!input->bound) {
             probe->state = EXP3_UI_UNBOUND;
         } else if (!input->transport_waiting) {
@@ -129,15 +171,11 @@ Exp3UiOutput exp3_ui_probe_step(Exp3UiProbe *probe, const Exp3UiInput *input)
             probe->pending.controller = probe->controller;
             probe->pending.hmi = probe->hmi;
             probe->pending.request = probe->next_action;
-#if MOWER_BLADE_OK_ENABLED
-            if (next_action==UINT32_MAX) { probe->state=EXP3_UI_REJECTED; output.state=probe->state; return output; }
-            probe->next_action=++next_action;
-            probe->pending.request=probe->next_action;
-#endif
             probe->pending.action = probe->next_action;
             probe->pending.context = probe->context;
-            probe->pending.generation = probe->context==MOWER_CHASSIS_CONTEXT ? input->generation : probe->prompt_generation;
+            probe->pending.generation = probe->prompt_generation;
             probe->pending.target = probe->target;
+            probe->completed = 0U;
             probe->sent_at = input->now_ms;
             probe->seen_matches = input->matches;
             probe->state = EXP3_UI_WAIT;
@@ -153,11 +191,24 @@ Exp3UiOutput exp3_ui_probe_step(Exp3UiProbe *probe, const Exp3UiInput *input)
         probe->state = EXP3_UI_TIMEOUT;
     }
 
-    if (in_range(input->ch4_us, 1500U, 100U) && probe->state == EXP3_UI_IDLE) {
+    if (!MOWER_BLADE_OK_ENABLED && in_range(input->ch4_us, 1500U, 100U) && probe->state == EXP3_UI_IDLE) {
         probe->center_seen = 1U;
     }
 
     output.state = probe->state;
+#if MOWER_BLADE_OK_ENABLED
+    if (output.state == EXP3_UI_IDLE && start) {
+        if (!known) output.state = EXP3_UI_NOT_READY;
+        else if (!input->start_inhibited) {
+            static const uint8_t states[8] = {EXP3_UI_NOT_READY,EXP3_UI_SAFETY,
+                EXP3_UI_STICKS_REQUIRED,EXP3_UI_CENTER_REQUIRED,EXP3_UI_IDLE,
+                EXP3_UI_CENTER_REQUIRED,EXP3_UI_BATTERY_LOW,EXP3_UI_OWNER};
+            output.state = (Exp3UiState)states[phase];
+            if (start && probe->start_armed && !probe->prompt_generation)
+                output.state = EXP3_UI_SYNCHRONIZING;
+        }
+    }
+#endif
     return output;
 }
 

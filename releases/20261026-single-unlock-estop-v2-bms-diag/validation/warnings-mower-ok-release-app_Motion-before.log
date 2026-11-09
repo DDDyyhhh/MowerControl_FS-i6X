@@ -1,0 +1,22 @@
+/tmp/mower-bms-warnings-thrj16dm/mower-source/control_chassis/Core/UserApp/app_Motion.c: In function 'StartTask_Motion':
+/tmp/mower-bms-warnings-thrj16dm/mower-source/control_chassis/Core/UserApp/app_Motion.c:397:12: warning: unused variable 'is_joystick_active' [-Wunused-variable]
+  397 |       bool is_joystick_active = (abs((int)mapped_throttle - 2048) > 200) ||
+      |            ^~~~~~~~~~~~~~~~~~
+/tmp/mower-bms-warnings-thrj16dm/mower-source/control_chassis/Core/UserApp/app_Motion.c:175:19: warning: unused variable 'cruise_toggle_tick' [-Wunused-variable]
+  175 |   static uint32_t cruise_toggle_tick = 0;
+      |                   ^~~~~~~~~~~~~~~~~~
+/tmp/mower-bms-warnings-thrj16dm/mower-source/control_chassis/Core/UserApp/app_Motion.c:173:18: warning: unused variable 'cruise_key_lock' [-Wunused-variable]
+  173 |   static uint8_t cruise_key_lock = 0;
+      |                  ^~~~~~~~~~~~~~~
+/tmp/mower-bms-warnings-thrj16dm/mower-source/control_chassis/Core/UserApp/app_Motion.c:171:18: warning: unused variable 'us_toggle_lock' [-Wunused-variable]
+  171 |   static uint8_t us_toggle_lock = 0;
+      |                  ^~~~~~~~~~~~~~
+/tmp/mower-bms-warnings-thrj16dm/mower-source/control_chassis/Core/UserApp/app_Motion.c:159:16: warning: unused variable 'last_blade_command' [-Wunused-variable]
+  159 |   static float last_blade_command = -1.0f;
+      |                ^~~~~~~~~~~~~~~~~~
+/tmp/mower-bms-warnings-thrj16dm/mower-source/control_chassis/Core/UserApp/app_Motion.c:158:18: warning: unused variable 'last_blade_knob' [-Wunused-variable]
+  158 |   static uint8_t last_blade_knob = 0xFF;
+      |                  ^~~~~~~~~~~~~~~
+/tmp/mower-bms-warnings-thrj16dm/mower-source/control_chassis/Core/UserApp/app_Motion.c:155:15: warning: variable 'last_key_state' set but not used [-Wunused-but-set-variable]
+  155 |   static bool last_key_state[8] = {0};
+      |               ^~~~~~~~~~~~~~

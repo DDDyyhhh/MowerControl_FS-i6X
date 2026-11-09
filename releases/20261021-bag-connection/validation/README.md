@@ -8,8 +8,8 @@
 - `ui-tests.log`：修改后实际绘制器通过全部用例并输出 PBM；PNG 仅将这些像素放大，未使用生成图片代替真实字库绘制。
 - `source-tests.log`：从实际 `RefreshTelemetrySnapshot` 提取函数并执行，链接真实快照聚合，GPIO/周边设备使用替身。
 - `baseline-warnings.log`：修改前底盘编译单元的原有诊断，用于核对没有新增警告；不是清理历史警告的记录。
-- `implementation.patch`：相对本次操作前文件副本的增量，不包含此前已有的未提交修改；`SOURCE-SHA256SUMS` 记录最终相关源文件。
-- `firmware-manifest.json`：固件实际大小与 SHA256；包根 `SHA256SUMS` 覆盖交付文件。
+- `implementation.patch`：相对本次操作前文件副本的增量，不包含此前已有的未提交修改。
+- `firmware-manifest.json`：固件实际大小与 SHA256。
 - `svn-preflight.log`：冲突、行尾、生产源登记检查，无 SVN 提交。
 
 macOS 的既有禁用模块测试要求空符号表，Clang/Mach-O 会生成 `ltmp` 标签。验证时只在临时 PATH 中使用本包 `macos-nm-shim.py` 过滤这些标签，生产代码、系统 nm 和原测试没有因此更改。

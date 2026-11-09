@@ -1,6 +1,7 @@
-PASS: packaged BIN exactly matches packaged ELF conversion.
-PASS: packaged HEX exactly matches packaged ELF conversion.
-PASS: final production ELF MX_TIM2_Init contains expected ARR immediate #8399.
-PASS: final production ELF MX_TIM3_Init contains expected ARR immediate #5599.
-Compared with November 5 production BIN: same length 83084 bytes; 3 byte(s) differ.
-[{"offset": "0x1d44", "before": 66, "after": 65}, {"offset": "0x1d46", "before": 207, "after": 223}, {"offset": "0x1d47", "before": 3, "after": 83}]
+PASS chassis: packaged ELF/BIN consistent, HEX generated from same ELF, 90396/524288 bytes, valid initial vectors.
+PASS radio: packaged ELF/BIN consistent, HEX generated from same ELF, 130864/131072 bytes, valid initial vectors.
+PASS control_chassis/Core/Src/tim.c: exactly the planned numeric replacement; all other bytes/line endings unchanged.
+PASS control_chassis/concrol.ioc: exactly the planned numeric replacement; all other bytes/line endings unchanged.
+PASS chassis BIN differs from same-machine unmodified r109 in only 3 bytes, all within MX_TIM3_Init: 0x1d50, 0x1d52, 0x1d53
+PASS final target TIM2 ARR=8399, TIM3 ARR=5599; existing RCC/TIM/EG2104 O0/O2 harness confirms 10kHz/60% CCR5040 and 15kHz/60% CCR3360.
+No hardware programming or waveform/physical motion measurements performed.

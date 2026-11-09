@@ -21,6 +21,8 @@
 #include "usart.h"
 extern uint8_t rx_dma_buffer[RX_BUF_SIZE];
 extern osMessageQueueId_t Queue_RxDataHandle;
+/* C99 compile-time check: DMA payload and queued payload must stay identical. */
+typedef char RemoteRxCapacityMatchesDma[(REMOTE_RX_BUFFER_SIZE == RX_BUF_SIZE) ? 1 : -1];
 #endif
 
 #if !defined(REMOTE_BACKEND_HOST)
@@ -40,13 +42,29 @@ extern osMessageQueueId_t Queue_RxDataHandle;
 static RemoteBackendClock_t g_clock;
 static RemoteCommand_t g_command;
 static uint32_t g_now_ms;
+/* ISR owns ingress sequence, overflow and UART error metadata; Comm owns the other fields.
+ * Each counter is independent, aligned 32-bit, and saturating. */
+static volatile uint32_t g_rx_sequence;
+static volatile RemoteRxDiagnostics_t g_rx_diagnostics;
+static uint32_t g_rx_last_sequence;
+static bool g_rx_has_sequence;
+
+static void RemoteBackend_Count(volatile uint32_t *counter)
+{
+    if (*counter != UINT32_MAX) ++*counter;
+}
 #if REMOTE_BACKEND_FLYSKY_IBUS
 static FlySkyIbusServo_t g_flysky_ibus;
+/* Comm owns the parser. Only this fixed-size publication crosses tasks. */
+static struct
+{
+    FlySkyIbusSnapshot_t snapshot;
+    bool available;
+} g_flysky_publication;
+/* Motion owns this observation; it must survive a delayed Comm publication. */
+static bool g_motion_timeout_latched;
 static RemoteAuthorization_t g_remote_authorization;
-#if MOWER_BLADE_OK_ENABLED
-static MowerModeControl_t g_mode_control;
-MowerModeControl_t *RemoteBackend_ModeControl(void) { return &g_mode_control; }
-#endif
+static RemoteAuthorizationInput_t g_authorization_input;
 static BladeConfirmCh6Adapter_t g_blade_confirm_adapter;
 static RemoteSafetyInput_t g_remote_safety;
 static uint32_t g_active_blade_request_sequence;
@@ -101,7 +119,97 @@ static void RemoteBackend_PublishLegacy(uint32_t now_ms)
 }
 #endif
 
+static uint32_t RemoteBackend_EnterSnapshotCritical(void)
+{
+#if !defined(REMOTE_BACKEND_HOST) || defined(REMOTE_BACKEND_IRQ_TEST)
+    uint32_t mask = __get_PRIMASK();
+    __disable_irq();
+    __COMPILER_BARRIER();
+    return mask;
+#else
+    return 0U;
+#endif
+}
+
+static void RemoteBackend_ExitSnapshotCritical(uint32_t mask)
+{
+#if !defined(REMOTE_BACKEND_HOST) || defined(REMOTE_BACKEND_IRQ_TEST)
+    __COMPILER_BARRIER();
+    __set_PRIMASK(mask);
+#else
+    (void)mask;
+#endif
+}
+
+void RemoteBackend_GetRxDiagnostics(RemoteRxDiagnostics_t *diagnostics)
+{
+    if (diagnostics == NULL) return;
+    uint32_t mask = RemoteBackend_EnterSnapshotCritical();
+    *diagnostics = g_rx_diagnostics;
+    RemoteBackend_ExitSnapshotCritical(mask);
+}
+
 #if REMOTE_BACKEND_FLYSKY_IBUS
+static bool RemoteBackend_ReadPublishedFlySky(FlySkyIbusSnapshot_t *snapshot)
+{
+    uint32_t mask = RemoteBackend_EnterSnapshotCritical();
+    bool available = g_flysky_publication.available;
+    if (available)
+    {
+        *snapshot = g_flysky_publication.snapshot;
+    }
+    RemoteBackend_ExitSnapshotCritical(mask);
+    return available;
+}
+
+static void RemoteBackend_ResetRxStream(void)
+{
+    if (g_flysky_ibus.stream_count != 0U)
+        RemoteBackend_Count(&g_rx_diagnostics.stream_resets);
+    FlySkyIbusServo_ResetStream(&g_flysky_ibus);
+}
+
+/* Parse in reception time, then expire in wall time before publishing. */
+static void RemoteBackend_ServiceFlySky(const RemoteRxMsg_t *message)
+{
+    FlySkyIbusSnapshot_t snapshot;
+    uint32_t now_ms = RemoteBackend_Now();
+    if (FlySkyIbusServo_ExpireStream(&g_flysky_ibus, now_ms))
+        RemoteBackend_Count(&g_rx_diagnostics.stream_resets);
+    if (message != NULL)
+    {
+        FlySkyIbusServo_Advance(&g_flysky_ibus, message->received_at_ms);
+        FlySkyIbusServo_FeedReceived(&g_flysky_ibus, message->data, message->len,
+                                     message->received_at_ms, now_ms);
+    }
+    FlySkyIbusServo_Advance(&g_flysky_ibus, RemoteBackend_Now());
+    g_rx_diagnostics.crc_errors = g_flysky_ibus.crc_errors;
+    g_rx_diagnostics.invalid_channel_frames = g_flysky_ibus.invalid_channel_frames;
+    if (FlySkyIbusServo_ReadSnapshot(&g_flysky_ibus, &snapshot))
+    {
+        uint32_t mask = RemoteBackend_EnterSnapshotCritical();
+        g_flysky_publication.snapshot = snapshot;
+        g_flysky_publication.available = true;
+        RemoteBackend_ExitSnapshotCritical(mask);
+    }
+}
+
+/* Pure reader-side watchdog: never mutates Comm state or its event counters.
+ * The configuration is immutable after initialization. */
+static void RemoteBackend_ExpireFlySkySnapshot(FlySkyIbusSnapshot_t *snapshot,
+                                             uint32_t now_ms)
+{
+    if ((uint32_t)(now_ms - snapshot->last_valid_ms) >= g_flysky_ibus.config.timeout_ms)
+    {
+        snapshot->link_fresh = false;
+        snapshot->stable_online = false;
+        snapshot->timeout_latched = true;
+        snapshot->steering = REMOTE_AXIS_CENTER;
+        snapshot->throttle = REMOTE_AXIS_CENTER;
+        snapshot->travel_speed_raw = 0U;
+    }
+}
+
 static void RemoteBackend_UpdateAuthorization(const FlySkyIbusSnapshot_t *snapshot,
                                               RemoteSafetyInput_t safety,
                                               uint32_t now_ms)
@@ -109,6 +217,7 @@ static void RemoteBackend_UpdateAuthorization(const FlySkyIbusSnapshot_t *snapsh
     RemoteAuthorizationInput_t input;
 
     input.link_fresh = snapshot->link_fresh;
+    input.link_timed_out = !snapshot->link_fresh;
     input.stable_online = snapshot->stable_online;
     input.physical_latched = safety.physical_latched;
     input.emergency_active = safety.emergency_active;
@@ -119,21 +228,11 @@ static void RemoteBackend_UpdateAuthorization(const FlySkyIbusSnapshot_t *snapsh
     input.run_enable_raw = snapshot->run_enable_raw;
     input.blade_gear_raw = snapshot->blade_gear_raw;
     input.unlock_raw = snapshot->unlock_raw;
+    input.ch4_raw = snapshot->blade_start_raw;
     input.frame_sequence = snapshot->frame_sequence;
     input.timeout_sequence = snapshot->timeout_sequence;
-#if MOWER_BLADE_OK_ENABLED
-    MowerModeInput_t mode = {0};
-    mode.online = snapshot->link_fresh && snapshot->stable_online;
-    mode.enabled = input.run_enable_raw >= 1880U && input.run_enable_raw <= 2120U;
-    mode.safety_active = safety.emergency_active || safety.collision_active || safety.tilt_active;
-    mode.centered = input.steering_raw >= 1450U && input.steering_raw <= 1550U &&
-        input.throttle_raw >= 1450U && input.throttle_raw <= 1550U;
-    mode.blade_centered = snapshot->blade_start_raw >= 1400U && snapshot->blade_start_raw <= 1600U;
-    mode.mode_raw = snapshot->channels[REMOTE_IBUS_CHANNEL_INDEX(REMOTE_IBUS_CHANNEL_MODE)];
-    mode.frame_sequence = snapshot->frame_sequence;
-    MowerMode_Advance(&g_mode_control, &mode, now_ms);
-    input.unlock_raw = 1500U; /* CH8 has no unlock semantics in production. */
-#endif
+    input.ch5_stop_sequence = snapshot->ch5_stop_sequence;
+    g_authorization_input = input;
     RemoteAuthorization_Advance(&g_remote_authorization, &input, now_ms);
     BladeConfirmCh6Input_t ch6_in;
     ch6_in.ch6_raw = snapshot->blade_confirm_raw;
@@ -232,13 +331,6 @@ static void RemoteBackend_CopyFlySkySnapshot(const FlySkyIbusSnapshot_t *snapsho
     uint8_t previous_height_level = g_command.height_level;
 
     RemoteAuthorization_GetOutput(&g_remote_authorization, &authorization);
-#if MOWER_BLADE_OK_ENABLED
-    authorization.run_permitted = g_mode_control.permitted;
-    authorization.remote_recoverable_latched = !g_mode_control.armed;
-    authorization.command_invalidation_sequence = g_mode_control.invalidation_sequence;
-    authorization.state = g_mode_control.armed ? REMOTE_AUTH_MANUAL_ARMED : REMOTE_AUTH_STOPPED_LATCHED;
-    authorization.latch_reason = g_mode_control.latch_reason;
-#endif
     memset(&g_command, 0, sizeof(g_command));
     g_command.steering = authorization.run_permitted ? snapshot->steering : REMOTE_AXIS_CENTER;
     g_command.throttle = authorization.run_permitted ? snapshot->throttle : REMOTE_AXIS_CENTER;
@@ -249,12 +341,6 @@ static void RemoteBackend_CopyFlySkySnapshot(const FlySkyIbusSnapshot_t *snapsho
                                      RemoteBackend_MapTravelSpeed(snapshot->travel_speed_raw) : 0.0f;
     g_command.run_enable_raw = snapshot->run_enable_raw;
     g_command.unlock_raw = snapshot->unlock_raw;
-#if MOWER_BLADE_OK_ENABLED
-    g_command.mode_raw = snapshot->channels[REMOTE_IBUS_CHANNEL_INDEX(REMOTE_IBUS_CHANNEL_MODE)];
-    g_command.selected_mode = (uint8_t)g_mode_control.selected;
-    g_command.mode_valid = g_mode_control.mode_valid;
-    g_command.mode_sequence = g_mode_control.mode_sequence;
-#endif
     g_command.blade_start_raw = snapshot->blade_start_raw;
     g_command.blade_confirm_raw = snapshot->blade_confirm_raw;
     g_command.grass_bag_raw = snapshot->grass_bag_raw;
@@ -272,7 +358,9 @@ static void RemoteBackend_CopyFlySkySnapshot(const FlySkyIbusSnapshot_t *snapsho
     g_command.confirm_request_sequence = 0U;
 #endif
     memcpy(g_command.channels, snapshot->channels, sizeof(g_command.channels));
-    g_command.remote_run_enable = authorization.run_enable == REMOTE_SWITCH_ON;
+    g_command.remote_run_enable = MOWER_BLADE_OK_ENABLED ?
+        authorization.run_enable != REMOTE_SWITCH_UNKNOWN :
+        authorization.run_enable == REMOTE_SWITCH_ON;
     g_command.remote_unlock = (uint8_t)authorization.unlock;
     g_command.receiver_failsafe = false;
     g_command.remote_recoverable_latched = authorization.remote_recoverable_latched;
@@ -297,6 +385,7 @@ static void RemoteBackend_CopyFlySkySnapshot(const FlySkyIbusSnapshot_t *snapsho
     g_command.travel_speed_configured = snapshot->travel_speed_configured;
     g_command.frame_sequence = snapshot->frame_sequence;
     g_command.timeout_sequence = snapshot->timeout_sequence;
+    g_command.ch5_stop_sequence = snapshot->ch5_stop_sequence;
     g_command.command_invalidation_sequence = authorization.command_invalidation_sequence;
     g_command.authorization_state = authorization.state;
     g_command.recoverable_latch_reason = authorization.latch_reason;
@@ -311,32 +400,55 @@ static void RemoteBackend_CopyFlySkySnapshot(const FlySkyIbusSnapshot_t *snapsho
     }
 }
 
-#if !MOWER_BLADE_OK_ENABLED
-static void RemoteBackend_RefreshFlySkyCommand(void)
+static void RemoteBackend_RefreshFlySkyCommand(uint32_t now_ms)
 {
     FlySkyIbusSnapshot_t snapshot;
-    bool available;
-
-#if !defined(REMOTE_BACKEND_HOST)
-    uint32_t interrupt_mask = __get_PRIMASK();
-    __disable_irq();
-#endif
-    available = FlySkyIbusServo_ReadSnapshot(&g_flysky_ibus, &snapshot);
-#if !defined(REMOTE_BACKEND_HOST)
-    if (interrupt_mask == 0U)
+    if (RemoteBackend_ReadPublishedFlySky(&snapshot))
     {
-        __enable_irq();
-    }
-#endif
-    if (available)
-    {
-        RemoteBackend_UpdateAuthorization(&snapshot, g_remote_safety,
-                                          RemoteBackend_Now());
+        RemoteBackend_ExpireFlySkySnapshot(&snapshot, now_ms);
+        g_motion_timeout_latched |= snapshot.timeout_latched;
+        snapshot.timeout_latched = g_motion_timeout_latched;
+        RemoteBackend_UpdateAuthorization(&snapshot, g_remote_safety, now_ms);
         RemoteBackend_CopyFlySkySnapshot(&snapshot);
     }
 }
 #endif
+
+uint8_t RemoteBackend_UnlockBlockReason(void)
+{
+#if REMOTE_BACKEND_FLYSKY_IBUS
+    return RemoteAuthorization_BlockReason(&g_remote_authorization,
+        &g_authorization_input, RemoteBackend_Now());
+#else
+    return 1U;
 #endif
+}
+
+bool RemoteBackend_ConfirmUnlock(void)
+{
+#if REMOTE_BACKEND_FLYSKY_IBUS
+    /* Consume any CH5 event received since the last Motion snapshot before OK. */
+    RemoteBackend_RefreshFlySkyCommand(RemoteBackend_Now());
+    return RemoteAuthorization_ConfirmOK(&g_remote_authorization,
+                                         &g_authorization_input, RemoteBackend_Now());
+#else
+    return false;
+#endif
+}
+
+void RemoteBackend_CancelUnlock(void)
+{
+#if REMOTE_BACKEND_FLYSKY_IBUS
+    RemoteAuthorization_CancelOK(&g_remote_authorization);
+#endif
+}
+
+void RemoteBackend_RevokeAuthorization(void)
+{
+#if REMOTE_BACKEND_FLYSKY_IBUS
+    RemoteAuthorization_Revoke(&g_remote_authorization);
+#endif
+}
 
 void RemoteBackend_GetJoystickOutput(uint16_t joystick[4])
 {
@@ -365,8 +477,16 @@ static void RemoteBackend_ApplyCommand(void)
     /* FlySky CH7 selects blade gear, not the legacy travel gear. */
     if (g_command.run_permitted)
     {
+        if (g_app.lock != 0U) {
+            g_app.collision_reason_latched = 0U;
+            g_app.emergency_reason_latched = 0U;
+        }
         g_app.lock = 0U;
         g_app.physical_safety_latched = 0U;
+        /* Advance has consumed a safe OK and a fresh frame. Readers in this
+         * same Motion tick must observe the cleared latch, not revoke it again. */
+        g_remote_safety.physical_latched = false;
+        g_authorization_input.physical_latched = false;
         g_app.g_collision_latched = 0U;
         if (g_app.g_system_report_state != REPORT_NONE)
         {
@@ -426,7 +546,7 @@ static uint16_t RemoteBackend_ReadBe12(const uint8_t *data)
     return (uint16_t)((((uint16_t)data[0] << 8) | data[1]) & 0x0FFFU);
 }
 
-static void RemoteBackend_HandleLegacy(const uint8_t *data, uint16_t length)
+static void RemoteBackend_HandleLegacy(const uint8_t *data, uint16_t length, uint32_t received_at_ms)
 {
     uint16_t i;
 
@@ -440,7 +560,7 @@ static void RemoteBackend_HandleLegacy(const uint8_t *data, uint16_t length)
             g_command.channels[1] = RemoteBackend_ReadBe12(&data[i + 3U]);
             g_command.channels[2] = RemoteBackend_ReadBe12(&data[i + 5U]);
             g_command.channels[3] = RemoteBackend_ReadBe12(&data[i + 7U]);
-            RemoteBackend_PublishLegacy(RemoteBackend_Now());
+            RemoteBackend_PublishLegacy(received_at_ms);
             i += 9U;
         }
         else if ((data[i] == 0xCCU) &&
@@ -496,15 +616,18 @@ void RemoteBackend_InitWithFlySkyConfig(RemoteBackendClock_t clock,
     memset(&g_command, 0, sizeof(g_command));
     g_clock = clock;
     g_now_ms = 0U;
+    g_rx_sequence = g_rx_last_sequence = 0U;
+    g_rx_has_sequence = false;
+    memset((void *)&g_rx_diagnostics, 0, sizeof(g_rx_diagnostics));
 #if REMOTE_BACKEND_FLYSKY_IBUS
     g_active_blade_request_sequence = 0U;
     memset(&g_grass_bag_remote, 0, sizeof(g_grass_bag_remote));
     memset(&g_remote_safety, 0, sizeof(g_remote_safety));
+    memset(&g_authorization_input, 0, sizeof(g_authorization_input));
+    memset(&g_flysky_publication, 0, sizeof(g_flysky_publication));
+    g_motion_timeout_latched = false;
     FlySkyIbusServo_Init(&g_flysky_ibus, config);
     RemoteAuthorization_Init(&g_remote_authorization, config);
-#if MOWER_BLADE_OK_ENABLED
-    MowerMode_Init(&g_mode_control);
-#endif
     BladeConfirmCh6Config_t ch6_cfg;
     if (config != NULL)
     {
@@ -550,17 +673,89 @@ void RemoteBackend_Start(void)
 #endif
 }
 
+static void RemoteBackend_ServiceNoData(void)
+{
+#if REMOTE_BACKEND_FLYSKY_IBUS
+    RemoteBackend_ServiceFlySky(NULL);
+#else
+    if (g_command.connected && (uint32_t)(RemoteBackend_Now() - g_command.last_valid_ms) >=
+        REMOTE_LEGACY_TIMEOUT_MS)
+    {
+        g_command.connected = g_command.link_fresh = g_command.stable_online = false;
+        g_command.valid = g_command.run_permitted = false;
+    }
+#endif
+}
+
+void RemoteBackend_ProcessRxMessage(const RemoteRxMsg_t *message)
+{
+    uint32_t now_ms = RemoteBackend_Now();
+    if (message == NULL || message->len == 0U || message->len > REMOTE_RX_BUFFER_SIZE)
+    {
+        RemoteBackend_Count(&g_rx_diagnostics.invalid_messages);
+#if REMOTE_BACKEND_FLYSKY_IBUS
+        RemoteBackend_ResetRxStream();
+#endif
+        RemoteBackend_ServiceNoData();
+        return;
+    }
+    uint32_t age = now_ms - message->received_at_ms;
+    if (age > g_rx_diagnostics.max_queue_age_ms) g_rx_diagnostics.max_queue_age_ms = age;
+    uint32_t delta = message->sequence - g_rx_last_sequence;
+    if (g_rx_has_sequence && (delta == 0U || delta > UINT32_MAX / 2U))
+    {
+        RemoteBackend_Count(&g_rx_diagnostics.invalid_messages);
+#if REMOTE_BACKEND_FLYSKY_IBUS
+        RemoteBackend_ResetRxStream();
+#endif
+        RemoteBackend_ServiceNoData();
+        return;
+    }
+#if REMOTE_BACKEND_FLYSKY_IBUS
+    if (g_rx_has_sequence && delta != 1U) RemoteBackend_ResetRxStream();
+#endif
+    g_rx_has_sequence = true;
+    g_rx_last_sequence = message->sequence;
+#if REMOTE_BACKEND_FLYSKY_IBUS
+    uint32_t timeout_ms = g_flysky_ibus.config.timeout_ms;
+#else
+    uint32_t timeout_ms = REMOTE_LEGACY_TIMEOUT_MS;
+#endif
+    if (age >= timeout_ms)
+    {
+        RemoteBackend_Count(&g_rx_diagnostics.expired_messages);
+#if REMOTE_BACKEND_FLYSKY_IBUS
+        RemoteBackend_ResetRxStream();
+#endif
+        RemoteBackend_ServiceNoData();
+        return;
+    }
+#if REMOTE_BACKEND_FLYSKY_IBUS
+    RemoteBackend_ServiceFlySky(message);
+#else
+    RemoteBackend_HandleLegacy(message->data, message->len, message->received_at_ms);
+    RemoteBackend_ServiceNoData();
+#if !defined(REMOTE_BACKEND_HOST)
+    RemoteBackend_ApplyCommand();
+#endif
+#endif
+}
+
 void RemoteBackend_Process(void)
 {
-#if REMOTE_BACKEND_A28_E34 && !defined(REMOTE_BACKEND_HOST)
-    UartRxMsg_t msg;
-    if (osMessageQueueGet(Queue_RxDataHandle, &msg, NULL, 2000U) == osOK)
-    {
-        RemoteBackend_HandleLegacy(msg.data, msg.len);
-        RemoteBackend_ApplyCommand();
-    }
+#if !defined(REMOTE_BACKEND_HOST)
+    RemoteRxMsg_t message;
+#if REMOTE_BACKEND_A28_E34
+    const uint32_t wait_ms = 2000U;
+#else
+    const uint32_t wait_ms = 10U;
+#endif
+    if (osMessageQueueGet(Queue_RxDataHandle, &message, NULL, wait_ms) == osOK)
+        RemoteBackend_ProcessRxMessage(&message);
     else
     {
+        RemoteBackend_ServiceNoData();
+#if REMOTE_BACKEND_A28_E34
         HAL_UART_AbortReceive(&huart3);
         HAL_UART_DMAStop(&huart3);
         __HAL_UART_CLEAR_OREFLAG(&huart3);
@@ -568,63 +763,57 @@ void RemoteBackend_Process(void)
         __HAL_UART_CLEAR_FEFLAG(&huart3);
         (void)huart3.Instance->DR;
         HAL_UARTEx_ReceiveToIdle_DMA(&huart3, rx_dma_buffer, RX_BUF_SIZE);
+#endif
     }
-#elif REMOTE_BACKEND_FLYSKY_IBUS && !defined(REMOTE_BACKEND_HOST)
-    UartRxMsg_t msg;
-    if (osMessageQueueGet(Queue_RxDataHandle, &msg, NULL, 10U) == osOK)
-    {
-        FlySkyIbusServo_Feed(&g_flysky_ibus, msg.data, msg.len,
-                             RemoteBackend_Now());
-    }
-    /* The 100 Hz motion task advances authorization with current safety inputs. */
+#else
+    RemoteBackend_ServiceNoData();
 #endif
 }
 
-void RemoteBackend_OnUartRx(uintptr_t uart_instance,
-                            const uint8_t *data,
-                            uint16_t length)
+void RemoteBackend_OnUartRx(uintptr_t uart_instance, const uint8_t *data, uint16_t length)
 {
-    if ((data == NULL) || (length == 0U) ||
-        !RemoteBackend_UsesUart(uart_instance))
+    /* Callback entry time, before copying or any scheduling delay. */
+    uint32_t received_at_ms = RemoteBackend_Now();
+    if (data == NULL || length == 0U || !RemoteBackend_UsesUart(uart_instance)) return;
+#if !defined(REMOTE_BACKEND_HOST)
+    RemoteRxMsg_t message;
+    message.received_at_ms = received_at_ms;
+    message.sequence = ++g_rx_sequence;
+    message.len = length > REMOTE_RX_BUFFER_SIZE ? REMOTE_RX_BUFFER_SIZE : length;
+    memcpy(message.data, data, message.len);
+    if (Queue_RxDataHandle == NULL ||
+        osMessageQueuePut(Queue_RxDataHandle, &message, 0U, 0U) != osOK)
+        RemoteBackend_Count(&g_rx_diagnostics.queue_overflows);
+#else
+    /* Existing byte-stream host callers may supply more than one DMA block. */
+    while (length != 0U)
     {
-        return;
+        RemoteRxMsg_t message;
+        message.received_at_ms = received_at_ms;
+        message.sequence = ++g_rx_sequence;
+        message.len = length > REMOTE_RX_BUFFER_SIZE ? REMOTE_RX_BUFFER_SIZE : length;
+        memcpy(message.data, data, message.len);
+        RemoteBackend_ProcessRxMessage(&message);
+        data += message.len;
+        length = (uint16_t)(length - message.len);
     }
-
-#if REMOTE_BACKEND_A28_E34
-#if !defined(REMOTE_BACKEND_HOST)
-    UartRxMsg_t msg;
-    msg.len = (length > RX_BUF_SIZE) ? RX_BUF_SIZE : length;
-    memcpy(msg.data, data, msg.len);
-    (void)osMessageQueuePut(Queue_RxDataHandle, &msg, 0U, 0U);
-#else
-    RemoteBackend_HandleLegacy(data, length);
-#endif
-#elif REMOTE_BACKEND_FLYSKY_IBUS
-#if !defined(REMOTE_BACKEND_HOST)
-    UartRxMsg_t msg;
-    msg.len = (length > RX_BUF_SIZE) ? RX_BUF_SIZE : length;
-    memcpy(msg.data, data, msg.len);
-    (void)osMessageQueuePut(Queue_RxDataHandle, &msg, 0U, 0U);
-#else
-    FlySkyIbusServo_Feed(&g_flysky_ibus, data, length, RemoteBackend_Now());
-#endif
 #endif
 }
 
 void RemoteBackend_OnUartError(uintptr_t uart_instance)
 {
+    if (!RemoteBackend_UsesUart(uart_instance)) return;
+    RemoteBackend_Count(&g_rx_diagnostics.uart_errors);
+    /* ISR must not touch Comm's stream. Next dequeued block sees the gap. */
+    ++g_rx_sequence;
 #if !defined(REMOTE_BACKEND_HOST)
-    if (!RemoteBackend_UsesUart(uart_instance))
-    {
-        return;
-    }
 #if REMOTE_BACKEND_A28_E34
+    g_rx_diagnostics.last_uart_error = huart3.ErrorCode;
     HAL_UARTEx_ReceiveToIdle_DMA(&huart3, rx_dma_buffer, RX_BUF_SIZE);
-#elif REMOTE_BACKEND_FLYSKY_IBUS
+#else
+    g_rx_diagnostics.last_uart_error = huart1.ErrorCode;
     HAL_UARTEx_ReceiveToIdle_DMA(&huart1, rx_dma_buffer, RX_BUF_SIZE);
 #endif
-#else
-    (void)uart_instance;
 #endif
 }
 
@@ -647,15 +836,8 @@ void RemoteBackend_Advance(uint32_t now_ms, RemoteSafetyInput_t safety)
 #endif
     }
 #elif REMOTE_BACKEND_FLYSKY_IBUS
-    FlySkyIbusSnapshot_t snapshot;
-
     g_remote_safety = safety;
-    FlySkyIbusServo_Advance(&g_flysky_ibus, now_ms);
-    if (FlySkyIbusServo_ReadSnapshot(&g_flysky_ibus, &snapshot))
-    {
-        RemoteBackend_UpdateAuthorization(&snapshot, safety, now_ms);
-        RemoteBackend_CopyFlySkySnapshot(&snapshot);
-    }
+    RemoteBackend_RefreshFlySkyCommand(now_ms);
 #if !defined(REMOTE_BACKEND_HOST)
     g_app.communication_connected = g_command.connected;
     g_app.last_receive_timestamp = g_command.last_valid_ms;
@@ -689,8 +871,8 @@ bool RemoteBackend_GetCommand(RemoteCommand_t *command)
         return false;
     }
 
-#if REMOTE_BACKEND_FLYSKY_IBUS && !MOWER_BLADE_OK_ENABLED
-    RemoteBackend_RefreshFlySkyCommand();
+#if REMOTE_BACKEND_FLYSKY_IBUS
+    RemoteBackend_RefreshFlySkyCommand(RemoteBackend_Now());
 #endif
     *command = g_command;
     return g_command.valid;
@@ -702,10 +884,11 @@ bool RemoteBackend_ReadIbusProbe(RemoteIbusProbe_t *probe)
     uint8_t i;
 
     if ((probe == NULL) ||
-        !FlySkyIbusServo_ReadSnapshot(&g_flysky_ibus, &snapshot))
+        !RemoteBackend_ReadPublishedFlySky(&snapshot))
     {
         return false;
     }
+    RemoteBackend_ExpireFlySkySnapshot(&snapshot, RemoteBackend_Now());
     for (i = 0U; i < 4U; i++)
     {
         probe->channels[i] = snapshot.channels[10U + i];
@@ -721,22 +904,29 @@ bool RemoteBackend_ReadIbusProbe(RemoteIbusProbe_t *probe)
 
 bool RemoteBackend_IsConnected(void)
 {
-#if REMOTE_BACKEND_FLYSKY_IBUS && !MOWER_BLADE_OK_ENABLED
-    RemoteBackend_RefreshFlySkyCommand();
-#endif
+#if REMOTE_BACKEND_FLYSKY_IBUS
+    FlySkyIbusSnapshot_t snapshot;
+    if (!RemoteBackend_ReadPublishedFlySky(&snapshot)) return false;
+    RemoteBackend_ExpireFlySkySnapshot(&snapshot, RemoteBackend_Now());
+    return snapshot.link_fresh && snapshot.stable_online;
+#else
     return g_command.connected;
+#endif
 }
 
 uint32_t RemoteBackend_LastReceiveAgeMs(void)
 {
-#if REMOTE_BACKEND_FLYSKY_IBUS && !MOWER_BLADE_OK_ENABLED
-    RemoteBackend_RefreshFlySkyCommand();
-#endif
+#if REMOTE_BACKEND_FLYSKY_IBUS
+    FlySkyIbusSnapshot_t snapshot;
+    if (!RemoteBackend_ReadPublishedFlySky(&snapshot)) return UINT32_MAX;
+    return (uint32_t)(RemoteBackend_Now() - snapshot.last_valid_ms);
+#else
     if (!g_command.link_fresh && (g_command.last_valid_ms == 0U))
     {
         return UINT32_MAX;
     }
     return (uint32_t)(RemoteBackend_Now() - g_command.last_valid_ms);
+#endif
 }
 
 bool RemoteBackend_UsesUart(uintptr_t uart_instance)

@@ -1,6 +1,10 @@
 #include "exp3.h"
 #if EXP3_ENABLED
 #include <string.h>
+#if MOWER_BLADE_OK_ENABLED
+#include "exp3_completion.h"
+#include "exp3_probe.h"
+#endif
 static void put32(uint8_t *p, uint32_t v) {
     unsigned i;
     for (i = 0; i < 4; ++i)
@@ -69,6 +73,66 @@ bool exp3_decode(const uint8_t *b, size_t n, Exp3Message *m) {
     *m = v;
     return true;
 }
+
+#if MOWER_BLADE_OK_ENABLED
+bool exp3_completion_encode(const Exp3Message *m, uint8_t bytes[EXP3_COMPLETION_BYTES]) {
+    uint8_t full[EXP3_MESSAGE_BYTES];
+    if (!bytes || !m || m->kind != EXP3_RESULT || m->request != m->action ||
+        m->action > 65535U || m->generation > 65535U || m->target != 1U ||
+        (m->context != EXP3_PWM_CONTEXT && m->context != EXP3_UNLOCK_CONTEXT) ||
+        !exp3_encode(m, full)) return false;
+    memcpy(bytes, full + 16, 2U);
+    memcpy(bytes + 2, full + 24, 2U);
+    /* command[1:0], status[4:2], unlock context[5], reserved[7:6]=0. */
+    bytes[4] = (uint8_t)(m->command | (m->status << 2) |
+                         (m->context == EXP3_UNLOCK_CONTEXT ? 0x20U : 0U));
+    memcpy(bytes + 5, full + 32, 4U);
+    return true;
+}
+
+bool exp3_completion_decode(const uint8_t bytes[EXP3_COMPLETION_BYTES], uint32_t controller,
+                            uint32_t hmi, Exp3Message *m) {
+    uint8_t full[EXP3_MESSAGE_BYTES] = {0};
+    if (!bytes || !m || (bytes[4] & 0xC0U)) return false;
+    full[0] = 0xE3U; full[1] = EXP3_WIRE_VERSION;
+    full[2] = EXP3_RESULT; full[3] = 2U;
+    put32(full + 4, controller); put32(full + 8, hmi);
+    memcpy(full + 12, bytes, 2U); memcpy(full + 16, bytes, 2U);
+    put32(full + 20, bytes[4] & 0x20U ? EXP3_UNLOCK_CONTEXT : EXP3_PWM_CONTEXT);
+    memcpy(full + 24, bytes + 2, 2U); full[28] = 1U;
+    full[30] = (bytes[4] >> 2) & 7U; full[31] = bytes[4] & 3U;
+    memcpy(full + 32, bytes + 5, 4U);
+    return exp3_decode(full, sizeof(full), m);
+}
+
+uint32_t exp3_completion_part(const uint8_t bytes[EXP3_COMPLETION_BYTES], uint8_t sequence,
+                              unsigned part) {
+    if (!bytes || !sequence || part >= EXP3_COMPLETION_PARTS) return 0U;
+    return (uint32_t)sequence | ((uint32_t)bytes[part*3U] << 8) |
+        ((uint32_t)bytes[part*3U+1U] << 16) | ((uint32_t)bytes[part*3U+2U] << 24);
+}
+
+int exp3_completion_receive(Exp3CompletionRx *rx, unsigned part, uint32_t word,
+                            uint32_t now, uint32_t controller, uint32_t hmi,
+                            Exp3Message *m) {
+    uint8_t sequence = (uint8_t)word, delta;
+    if (!rx || !m || !sequence || part >= EXP3_COMPLETION_PARTS) return EXP3_REJECT;
+    if (!rx->sequence || (uint32_t)(now-rx->started) >= EXP3_COMPLETION_FRESHNESS_MS) {
+        rx->sequence = sequence; rx->mask = 0U; rx->started = now;
+    } else if (rx->sequence != sequence) {
+        delta = (uint8_t)(sequence-rx->sequence);
+        if (delta >= 128U) return EXP3_REJECT;
+        rx->sequence = sequence; rx->mask = 0U; rx->started = now;
+    }
+    if (rx->mask & (1U << part)) return EXP3_DUPLICATE;
+    rx->bytes[part*3U] = (uint8_t)(word >> 8);
+    rx->bytes[part*3U+1U] = (uint8_t)(word >> 16);
+    rx->bytes[part*3U+2U] = (uint8_t)(word >> 24);
+    rx->mask |= (uint8_t)(1U << part);
+    if (rx->mask != 7U) return EXP3_MORE;
+    return exp3_completion_decode(rx->bytes, controller, hmi, m) ? EXP3_COMPLETE : EXP3_REJECT;
+}
+#endif
 
 bool exp3_fragment(const uint8_t b[EXP3_MESSAGE_BYTES], uint32_t transfer, unsigned index,
                    uint8_t f[EXP3_FRAGMENT_BYTES]) {

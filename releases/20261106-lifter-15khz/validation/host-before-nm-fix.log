@@ -1,0 +1,50 @@
+[1m=== Running Battery Protection Harnesses ===[0m
+  [[0;32mPASS[0m] Battery Protection (BMS publication, Motion recovery, full-speed wheel adapters and LOW latch)
+[1m=== [1/9] Running Blade Driver Selection Harness ===[0m
+  [[0;32mPASS[0m] Blade Driver Selection (default FTESC CAN, explicit PWM/FTESC CAN, negative compile guards)
+[1m=== [2/9] Running Blade Manual Control Harness ===[0m
+  [[0;32mPASS[0m] Blade Manual Control (PWM & FTESC CAN confirmation state machine)
+[1m=== [3/9] Running Blade Confirm CH6 Adapter Harness ===[0m
+  [[0;32mPASS[0m] Blade Confirm CH6 Adapter (Baseline, edge debounce, duplicate rejection & BMC integration)
+[1m=== Running CAN TX scheduler failure/interleaving harness (-O0/-O2) ===[0m
+  [[0;32mPASS[0m] CAN TX scheduler (stop retention, completion and mailbox ordering)
+[1m=== [4/9] Running FTESC Realtime Feedback Harness ===[0m
+  [[0;32mPASS[0m] FTESC Realtime Feedback (CAN packet parsing & CRC validation)
+[1m=== [5/9] Running SENS i-BUS Responder Harness ===[0m
+  [[0;32mPASS[0m] SENS i-BUS Responder (Discovery, measurement request & packet packing)
+[1m=== [6/9] Running Telemetry Snapshot Harness ===[0m
+  [[0;32mPASS[0m] Telemetry Snapshot (BMS, odometry, fault bitfield & atomic exchange)
+[1m=== [7/9] Running Remote Authorization Harness ===[0m
+  [[0;32mPASS[0m] Remote Authorization (CH8 dual-edge unlock state machine)
+[1m=== Running i-BUS Snapshot Concurrency Harness ===[0m
+  [[0;32mPASS[0m] Remote receive timestamps, stale queue rejection and stream continuity
+  [[0;32mPASS[0m] i-BUS Snapshot (single writer, preemption, independent timeout, IRQ restore; O0/O2)
+[1m=== [8/9] Running Remote Backend Harness ===[0m
+  [[0;32mPASS[0m] Remote Backend (A28/E34 & FlySky i-BUS stream/framing isolation)
+  [[0;32mPASS[0m] Actuator PWM (actual RCC/TIM/EG2104, bag 10kHz / height 15kHz, +/-60%, startup and stop zero)
+[1m=== Running Lifter Height Homing Harness (both remote backends) ===[0m
+  [[0;32mPASS[0m] Lifter Height (interruptible 10s homing, reversed PWM, latest target wins)
+  [[0;32mPASS[0m] i6X stick calibration validation and neutral fallback
+  [[0;32mPASS[0m] i6X mower direct startup, native throttle/switch warnings and calibration isolation
+[1m=== Running IMU Fault / Runtime / SPI Deadline Harnesses ===[0m
+  [[0;32mPASS[0m] IMU fault propagation, runtime diagnostics and bounded HAL deadlines
+[1m=== Running IMU Numeric Harness (optimized strict aliasing) ===[0m
+  [[0;32mPASS[0m] IMU Numeric (accuracy, pose and strict-aliasing optimization)
+[1m=== [9/9] Running Safety Ownership Gate Harness ===[0m
+  [[0;32mPASS[0m] Safety Ownership Gate (Arbitration, latching, zero-intent enforcement)
+
+PASS one-way loss/retry/failsafe/reboot/fresh-session recovery/live log drain
+PASS HIL same-clock RTT, bounded overflow, one-time session binding
+PASS transport complete/static/duplicate/failsafe
+PASS golden/truncation/version/missing/order/duplicate/conflict/mixed/timeout/wrap
+PASS cancel-before-confirm/eviction/conflict/reboot/session/action exhaustion
+PASS query/confirm/duplicate/cancel
+PASS fragment complete and replay rejection
+PASS codec identity and corruption
+PASS CH4 center baseline before prompt
+PASS fast result full CRC/identity, duplicate/loss/corruption/timeout and wide fallback
+PASS i6X OK does not open main context menu during Experiment3 prompt
+PASS automatic paired sessions, reboot, loss, static failsafe and malformed bootstrap
+PASS Experiment3-to-blade gate and CH7 low/medium/high commands (driver=1)
+PASS Experiment3-to-blade gate and CH7 low/medium/high commands (driver=2)
+PASS invalid mapped safety frame cannot advance Experiment3 transport

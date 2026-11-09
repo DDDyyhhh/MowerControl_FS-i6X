@@ -1,0 +1,465 @@
+--- a/OpenI6X/FS-I6X/opentx/radio/src/gui/128x64/mower_user_ui.h
++++ b/OpenI6X/FS-I6X/opentx/radio/src/gui/128x64/mower_user_ui.h
+@@ -83,7 +83,6 @@
+   if (causes & 0x0001U) return "急停";
+   if (causes & 0x0400U) return "锁定";
+   if ((data.valid & MOWER_UI_FAULT) && !(data.fault_bits & 0x0007U)) {
+-    if (data.fault_bits & 0x0040U) return "电池异常";
+     if (data.fault_bits & (MOWER_BATTERY_WARNING | MOWER_BATTERY_BLADE_INHIBIT)) return "请充电";
+   }
+   if (data.fast_status_known) {
+--- a/OpenI6X/FS-I6X/opentx/radio/src/gui/128x64/view_main.cpp
++++ b/OpenI6X/FS-I6X/opentx/radio/src/gui/128x64/view_main.cpp
+@@ -556,7 +556,7 @@
+   MowerUiSnapshot batteryData;
+   mowerUiRead(batteryData);
+   const bool lowBattery = batteryData.telemetry_online &&
+-      (batteryData.valid & MOWER_UI_FAULT) && !(batteryData.fault_bits & 0x0040U) &&
++      (batteryData.valid & MOWER_UI_FAULT) &&
+       (batteryData.fault_bits & MOWER_BATTERY_BLADE_INHIBIT);
+   const bool startPosition = ch4 >= 900 && ch4 <= 1100;
+   const bool newStart = startPosition && !mowerExp3Probe.ch4_start && mowerExp3Probe.center_seen;
+--- a/control_chassis/Core/Inc/battery_monitor.h
++++ b/control_chassis/Core/Inc/battery_monitor.h
+@@ -39,7 +39,7 @@
+ bool BatterySample_IsValid(const BatterySample_t *sample);
+ void BatteryMonitor_Init(BatteryMonitor_t *monitor);
+ void BatteryMonitor_Update(BatteryMonitor_t *monitor, const BatterySample_t *sample, uint32_t now_ms);
+-/* Authorized unlock clears DATA loss only. LOW can only clear at Init/reboot. */
++/* Compatibility hook; DATA is diagnostic only. LOW clears only at Init/reboot. */
+ bool BatteryMonitor_Rearm(BatteryMonitor_t *monitor);
+ 
+ #endif
+--- a/control_chassis/Core/UserApp/app_Motion.c
++++ b/control_chassis/Core/UserApp/app_Motion.c
+@@ -1403,8 +1403,7 @@
+         if (current) RemoteBackend_CancelUnlock();
+         accepted = identity; /* An obsolete Cancel drains without touching a newer request. */
+       }
+-      else if (current && Ctrl_Mode == 0U && g_app.battery.data_fresh &&
+-               (!g_app.battery.stop_required || g_app.battery.recovery_ready))
++      else if (current && Ctrl_Mode == 0U)
+         accepted = RemoteBackend_ConfirmUnlock();
+       else if (current) RemoteBackend_CancelUnlock();
+       exp3_board_complete_pwm_event(&event, accepted);
+@@ -1430,7 +1429,6 @@
+   AXEBMS_Data raw = {0};
+   uint32_t tick = 0U;
+   bool valid = false;
+-  bool previously_stopped = g_app.battery.stop_required;
+   BatterySample_t sample = {0};
+   if (AXEBMS_RS485_ReadTelemetry(&my_bms, &raw, &tick, &valid)) {
+     sample.sample_ms = tick; sample.valid = valid;
+@@ -1444,24 +1442,10 @@
+   } else {
+     BatteryMonitor_Update(&g_app.battery, NULL, now_ms);
+   }
+-  if (!previously_stopped && g_app.battery.stop_required) {
+-    g_app.lock = 1U;
+-    RemoteBackend_RevokeAuthorization();
+-  }
+ }
+ 
+ static void ApplyBatteryAuthorization(void)
+ {
+-  /* g_app.lock is cleared only by the existing authorized unlock paths. */
+-  if (g_app.battery_seen_locked && g_app.lock == 0U &&
+-      g_app.battery.stop_latched) {
+-    if (!BatteryMonitor_Rearm(&g_app.battery)) {
+-      g_app.lock = 1U;
+-      RemoteBackend_RevokeAuthorization();
+-    }
+-  }
+-  if (g_app.battery.stop_required) g_app.lock = 1U;
+-  g_app.battery_seen_locked = g_app.lock != 0U;
+   SafetyOwnershipGate_SetBatteryPolicy(g_app.battery.stop_required,
+       g_app.battery.blade_inhibited);
+   if (g_app.battery.blade_inhibited) {
+--- a/control_chassis/Core/UserApp/battery_monitor.c
++++ b/control_chassis/Core/UserApp/battery_monitor.c
+@@ -14,11 +14,13 @@
+ 
+ static void RefreshOutputs(BatteryMonitor_t *m)
+ {
+-    m->stop_required = !m->data_fresh || m->stop_latched;
+-    m->blade_inhibited = m->stop_required || m->low_latched || !m->startup_checked;
+-    m->state = !m->data_fresh ? BATTERY_INVALID : m->stop_latched ? BATTERY_STOP :
++    /* Feedback validity is diagnostic only. A confirmed LOW remains latched,
++     * and a valid first LOW sample still closes the startup debounce window. */
++    m->stop_required = m->stop_latched = false;
++    m->blade_inhibited = m->low_latched || (m->data_fresh && !m->startup_checked);
++    m->state = !m->data_fresh ? BATTERY_INVALID :
+                m->low_latched ? BATTERY_LOW : BATTERY_NORMAL;
+-    m->reasons = m->low_reasons | (m->stop_required ? BATTERY_REASON_DATA : 0U);
++    m->reasons = m->low_reasons | (!m->data_fresh ? BATTERY_REASON_DATA : 0U);
+ }
+ 
+ void BatteryMonitor_Init(BatteryMonitor_t *m)
+@@ -47,8 +49,7 @@
+                     (uint32_t)(now - m->latest.sample_ms) < BATTERY_FRESHNESS_MS;
+     if (!m->data_fresh) {
+         m->low_pending = m->recovery_pending = m->recovery_ready = false;
+-        /* Startup waits without manufacturing a received sample or a real SOC. */
+-        if (m->has_sample) m->stop_latched = true;
++        /* Do not manufacture a healthy sample or clear an established LOW. */
+     } else if (new_sample) {
+         uint16_t cause = (s->soc_percent < BATTERY_LOW_SOC_PERCENT ? BATTERY_REASON_SOC : 0U) |
+                          (s->pack_cv < BATTERY_LOW_PACK_CV ? BATTERY_REASON_PACK : 0U);
+@@ -67,9 +68,8 @@
+ 
+ bool BatteryMonitor_Rearm(BatteryMonitor_t *m)
+ {
+-    if (!m->data_fresh || !m->recovery_ready) return false;
+-    m->stop_latched = false;
+-    /* Do not clear low_latched: unlocking travel cannot authorize a blade. */
++    /* Compatibility hook: feedback faults no longer need rearming.
++     * Do not clear low_latched: unlocking travel cannot authorize a blade. */
+     RefreshOutputs(m);
+     return true;
+ }
+--- a/control_chassis/docs/battery_monitor.md
++++ b/control_chassis/docs/battery_monitor.md
+@@ -10,11 +10,11 @@
+ | SOC = 20% 且总电压 = 48.00V | 两项均未低于阈值，不触发低电 |
+ | 低电后电压回升、普通解锁或切换控制模式 | 仍然禁刀，行走继续使用既有档位和安全规则 |
+ | 低电后本次上电期间申请启刀 | 弹出“电量过低”“禁止开启割刀”两行提示，2秒后关闭；不发送新的启刀确认 |
+-| BMS 数据达到3秒有效期或数值无效 | 显示未知，禁止动力；运行后发生失效需要稳定新数据及合法解锁 |
++| BMS 无反馈、数据达到3秒有效期或数值无效 | 电池数值显示未知，仅在调试页显示“电池反馈异常”；不影响解锁、行走、割刀操作，不产生数据故障停机锁存 |
+ | 重新上电 | 清除上次低电锁存，重新检查真实数据；不表示已经充电或换电，不自动解锁/启刀 |
+ 
+ 低电只限制割刀，不增加行走限速、不设置整车锁定、不撤销行走授权。急停、碰撞、倾斜、链路超时等既有安全限制仍然优先。
+-未连接、物理安全故障和电池数据失效提示优先于充电提示。
++未连接和物理安全故障提示优先于充电提示。单独的电池反馈异常不触发首页报错；已经确认的低电即使随后失去反馈，仍提示“请充电”并禁刀。
+ 
+ ## 数据与时序
+ 
+@@ -25,8 +25,9 @@
+ BMS失效用0xFF表示未知，FS-i6X显示 `--`。序列计数读取有限次返回，避免高优先级 Motion 等待被抢占的 BMS 写任务。
+ 只保留最新样本，不保存采样历史，不执行导出、Flash写入或新增串口日志。
+ 
+-低电锁存和数据失效停车锁存独立：`BatteryMonitor_Rearm` 仅清除数据故障停车，不清除低电禁刀。
+-低电锁存只在 `BatteryMonitor_Init`（重新上电初始化）清除。首次开机样本低电时，在2秒确认期间也禁止割刀，避免启动窗口。
++当前临时策略将反馈有效性与动力授权分开：缺失、过期和无效样本仍产生数据失效诊断，但不撤销遥控授权、不设置软件锁定、不使已确认的割刀请求失效，也不要求等待恢复或重新解锁。恢复数据不会自动解锁或启动割刀。
++`BatteryMonitor_Rearm` 保留为兼容接口，不再要求数据恢复；低电锁存仍不可由该接口清除。共用执行门下的遥控、API和巡航使用同一电池策略，其他控制权条件保持有效。
++低电锁存只在 `BatteryMonitor_Init`（重新上电初始化）清除。首次开机收到有效低电样本时，在2秒确认期间也禁止割刀，避免启动窗口；完全没有有效数据不视为低电。确认前数据失效会终止该次低电计时，已经确认的低电不因数据失效而清除。
+ 已正常运行时的短暂压降不足2秒不会锁存禁刀。
+ 
+ 割刀公共 PWM/FTESC 输出入口执行禁刀，Motion 同时清除启动请求、待确认事务和割刀状态。低电到来时，旧请求只允许排空取消事务，不能重新提交 Confirm。
+@@ -45,7 +46,7 @@
+ 
+ 发送按最新遥测快照时间的bit8交替两种字，每相256ms；心跳为`(generated_at_ms >> 9) & 31`，在时间回绕时自然循环。接收端要求先收到最低单体、1000ms内再收到原因；第一对建立心跳基线，后续前进1～15的心跳才发布完整诊断。重复/倒退/冻结样本不能延长有效期，3秒无进展显示未知；重新绑定清空基线。事务繁忙时诊断可以暂时未知，低电警告及禁刀状态继续由E0传递，底盘保护独立生效。
+ 
+-E0 bit11表示低电已确认，bit12表示低电禁刀，bit13表示电池数据故障停车；bit14保留，不再发布状态。
++E0 bit6继续表示电池反馈异常，仅用于调试；E9及首页通用报错摘要排除此位。bit11表示低电已确认，bit12表示低电禁刀，bit13保留原数据故障停车含义但当前策略不置位；bit14保留，不再发布状态。E1原因bit0继续报告数据失效。
+ 开机读到低电但尚未完成2秒确认时，bit12可先置位表示启动禁止，bit11仍等待确认。
+ 这些状态不会将原始 SOC 改写为0%，也不表示电池化学剩余容量已校准。
+ 调试页保留原始 SOC、整车电压、最低单体与保护原因。
+@@ -58,5 +59,5 @@
+ - 重新生成并校验中文字库，执行 `./tools/svn_preflight.sh`。
+ - 快速完成回执覆盖两种割刀后端、全部150相位及额外100轮连续启停；E1诊断开启时仍检查原有响应时间上界。
+ 
+-实机需核对电压与 BMS 读数，验证低电停刀、重复启刀被拒绝、普通解锁后行走速度正常、回升仍禁刀及重启重新判断。测试不应反复将电池放到 BMS 硬切断。
++实机需核对电压与 BMS 读数，验证无BMS开机解锁、运行中掉反馈仍能遥控、无效数值仅显示诊断、恢复不自动执行旧操作，并验证低电停刀、重复启刀被拒绝、普通解锁后行走速度正常、低电后掉反馈仍禁刀、回升仍禁刀及重启重新判断。测试不应反复将电池放到 BMS 硬切断。
+ 48V是本次指定的禁刀/充电门限，不是本软件认定的真实0%电量或 BMS 最终断电门限。
+--- a/control_chassis/host/battery_monitor_harness.c
++++ b/control_chassis/host/battery_monitor_harness.c
+@@ -21,6 +21,11 @@
+ int main(void)
+ {
+     BatteryMonitor_t m;
++    BatteryMonitor_Init(&m);
++    BatteryMonitor_Update(&m,NULL,10000U);
++    assert(!m.data_fresh && m.state==BATTERY_INVALID);
++    assert(!m.stop_required && !m.stop_latched && !m.blade_inhibited);
++    assert(m.reasons==BATTERY_REASON_DATA);
+     const uint16_t socs[] = {19,20,21};
+     const uint32_t volts[] = {4799,4800,4801};
+     for (unsigned i=0;i<3;i++) for (unsigned j=0;j<3;j++) {
+@@ -58,18 +63,45 @@
+     assert(m.low_latched && (m.reasons & BATTERY_REASON_SOC));
+     BatteryMonitor_Update(&m,NULL,3998U); assert(m.data_fresh);
+     BatteryMonitor_Update(&m,NULL,3999U);
+-    assert(!m.data_fresh && m.stop_latched && m.stop_required);
++    assert(!m.data_fresh && !m.stop_latched && !m.stop_required && m.blade_inhibited);
++    assert((m.reasons & (BATTERY_REASON_DATA|BATTERY_REASON_SOC))==
++           (BATTERY_REASON_DATA|BATTERY_REASON_SOC));
+     for (unsigned t=4000;t<=6000;t+=500) Feed(&m,t,5200,80);
+-    assert(m.recovery_ready && m.stop_required);
++    assert(m.recovery_ready && !m.stop_required);
+     assert(BatteryMonitor_Rearm(&m));
+     assert(!m.stop_required && m.low_latched && m.blade_inhibited);
+ 
+     BatteryMonitor_Init(&m); /* Only a reboot/init clears LOW. */
+-    assert(m.stop_required && m.blade_inhibited && !m.data_fresh);
++    assert(!m.stop_required && !m.blade_inhibited && !m.data_fresh);
+     Feed(&m,0,5200,80); assert(!m.blade_inhibited && !m.low_latched);
+     BatterySample_t invalid=Sample(500,5200,101);
+     BatteryMonitor_Update(&m,&invalid,500);
+-    assert(!m.data_fresh && m.stop_required && m.state==BATTERY_INVALID);
++    assert(!m.data_fresh && !m.stop_required && !m.blade_inhibited && m.state==BATTERY_INVALID);
++    Feed(&m,1000,5200,80);
++    BatteryMonitor_Update(&m,NULL,3999); assert(m.data_fresh);
++    BatteryMonitor_Update(&m,NULL,4000);
++    assert(!m.data_fresh && !m.stop_required && !m.blade_inhibited);
++    Feed(&m,4500,5200,80); /* First good sample restores diagnostics immediately. */
++    assert(m.data_fresh && !m.stop_required && !m.blade_inhibited && !m.reasons);
++    invalid=Sample(5000,4700,19); invalid.min_cell_mv=0;
++    BatteryMonitor_Update(&m,&invalid,5000);
++    assert(!m.data_fresh && !m.low_latched && !m.blade_inhibited);
++
++    BatteryMonitor_Init(&m);
++    Feed(&m,0,4700,80); Feed(&m,1000,4700,80); Feed(&m,1999,4700,80);
++    assert(m.blade_inhibited && !m.low_latched);
++    Feed(&m,2000,4700,80); assert(m.low_latched);
++
++    /* Feedback loss must not invalidate an already authorized command. */
++    BatteryMonitor_Init(&m);
++    for (unsigned owner=EXECUTION_OWNER_MANUAL_REMOTE;owner<=EXECUTION_OWNER_CRUISE;owner++) {
++        SafetyOwnershipGateInput_t gate={false,false,false,true,true,(ExecutionOwner_t)owner,1,0};
++        SafetyOwnershipGate_Reset(); SafetyOwnershipGate_Update(&gate);
++        SafetyOwnershipGate_SetBatteryPolicy(m.stop_required,m.blade_inhibited);
++        assert(SafetyOwnershipGate_Authorize((ExecutionOwner_t)owner,true));
++        assert(SafetyOwnershipGate_AuthorizeBlade((ExecutionOwner_t)owner,true));
++        assert(!SafetyOwnershipGate_TakeStopRequest());
++    }
+ 
+     for (unsigned owner=EXECUTION_OWNER_MANUAL_REMOTE;owner<=EXECUTION_OWNER_CRUISE;owner++) {
+         SafetyOwnershipGateInput_t gate={false,false,false,true,true,(ExecutionOwner_t)owner,1,0};
+--- a/docs/protocols/ch4-fast-wheel-feedback.md
++++ b/docs/protocols/ch4-fast-wheel-feedback.md
+@@ -28,7 +28,7 @@
+ |4|系统锁定|
+ |5|最终手动运行许可|
+ |6|碰撞或碰撞原因锁存|
+-|7|除系统锁定/碰撞/轮速过期以外的告警摘要；完整诊断原因查E0|
++|7|除系统锁定/碰撞/轮速过期/电池反馈异常以外的告警摘要；完整诊断原因查E0|
+ |8|轮速反馈过期；立即屏蔽ACT实际速度，避免慢E0延迟造成假零速|
+ |9..14|Motion生产者100ms递增心跳，模64|
+ |15|急停按钮有效或急停原因锁存；置位时必须锁定|
+@@ -37,7 +37,7 @@
+ 
+ 第一次样本只建立基线；模差1..31才建立/更新新鲜度；差32存在方向歧义，差33..63按倒序忽略；满1000ms无前进即未知。相同心跳只累计锁定/碰撞/急停/故障、撤销许可/输出，延迟的宽松状态不能撤销这些限制；只有前进心跳可恢复。新会话清空缓存。
+ 
+-首页与CH4弹窗采用新鲜E9，详细诊断仍使用E0。首页优先级为未连接/状态未知、碰撞、急停、锁定、电池提示/其他故障、已连接；新鲜快状态优先于滞后的E0，缺少快状态时才使用有效E0。正常开机首次收到锁定状态即显示锁定，电池采样未就绪不遮挡该状态；急停原因保持到合法解锁成功。
++首页与CH4弹窗采用新鲜E9，详细诊断仍使用E0。首页优先级为未连接/状态未知、碰撞、急停、锁定、低电提示/其他故障、已连接；新鲜快状态优先于滞后的E0，缺少快状态时才使用有效E0。正常开机首次收到锁定状态即显示锁定，电池采样未就绪不遮挡该状态；急停原因保持到合法解锁成功。电池反馈异常E0 bit6仅在调试页显示，不进入E9通用故障摘要或首页报错，也不参与操控授权；真实低电禁刀位继续有效。
+ 
+ 实际已解锁可关闭等待遮罩；本次解锁一旦由新鲜E9或匹配的Accepted确认，CH4回中引起的事务收尾也不弹“等待取消”。收尾仍在后台进行，不会提前结束事务、接受旧回执、排队OK或复用解锁边沿启动割刀。新解锁Confirm和新会话清除此显示完成标记；未确认成功的解锁取消和割刀取消提示保留。
+ 
+--- a/experiments/ticket03/mower_fast_status.h
++++ b/experiments/ticket03/mower_fast_status.h
+@@ -13,8 +13,8 @@
+ #define MOWER_FAST_WHEEL_STALE 0x100U
+ #define MOWER_FAST_EMERGENCY 0x8000U
+ #define MOWER_FAST_STOP_MASK (MOWER_FAST_LOCKED | MOWER_FAST_COLLISION | MOWER_FAST_EMERGENCY)
+-/* E0 bit7 remains diagnostic/data validity; it is not a display alarm. */
+-#define MOWER_STATUS_ALARM_MASK 0xBF7FU /* bit14 reserved; not an alarm */
++/* E0 bits6/7 remain diagnostic/data validity; neither is a display alarm. */
++#define MOWER_STATUS_ALARM_MASK 0xBF3FU /* bit14 reserved; not an alarm */
+ #define MOWER_FAST_HEARTBEAT_MASK 0x3FU
+ #define MOWER_FAST_HEARTBEAT_SHIFT 9U
+ #define MOWER_FAST_HEARTBEAT_WORD_MASK (MOWER_FAST_HEARTBEAT_MASK << MOWER_FAST_HEARTBEAT_SHIFT)
+--- a/experiments/ticket03/test_fast_status.c
++++ b/experiments/ticket03/test_fast_status.c
+@@ -56,7 +56,11 @@
+     assert(word&MOWER_FAST_WHEEL_STALE);
+     assert(!(word&MOWER_FAST_FAULT));
+     stale.bms.valid=false; TelemetrySnapshot_Update(&stale,1100U);
+-    assert(TelemetrySnapshot_ReadFastStatus()&MOWER_FAST_FAULT);
++    assert(TelemetrySnapshot_Read(&snapshot));
++    assert(snapshot.values[TELEMETRY_VALUE_DETAILED_FAULT]&0x40U);
++    word=TelemetrySnapshot_ReadFastStatus();
++    assert(!(word&MOWER_FAST_FAULT) && (word&MOWER_FAST_RUN));
++    assert(mower_fast_status_pack(0U,4U,0U,0U)&MOWER_FAST_FAULT); /* Tilt still alarms. */
+     g_exp3_hil.bound=1;g_exp3_hil.controller=1;g_exp3_hil.hmi=2;
+     packet(0x0028,1000,0xe2);packet(0x0128,1120,0xe2);
+     assert(!exp3_board_runtime(1120,&word));
+--- a/tools/test_battery_protection.py
++++ b/tools/test_battery_protection.py
+@@ -89,6 +89,10 @@
+  my_bms.sample_sequence=0;
+  BatteryMonitor_Init(&g_app.battery);g_app.lock=1;g_app.battery_seen_locked=true;
+  SafetyOwnershipGate_Reset();
++ RefreshBatteryMonitor(0);ApplyBatteryAuthorization();
++ assert(g_app.lock && !g_app.battery.data_fresh && !revoked && !blade_stops);
++ assert(!g_app.battery.stop_required && !g_app.battery.blade_inhibited);
++ g_app.lock=0;ApplyBatteryAuthorization();assert(!g_app.lock);
+  sample(0,5400,3350);assert(g_app.battery.data_fresh);
+  assert(my_bms.data.CurCadc==-120 && my_bms.data.RSOC==29 && my_bms.data.FCC==10000);
+  assert(g_app.battery.latest.rc_cah==2900 && g_app.battery.latest.min_temp_dc==250);
+@@ -105,18 +109,28 @@
+  g_app.lock=1;ApplyBatteryAuthorization();g_app.lock=0;ApplyBatteryAuthorization();
+  assert(!g_app.lock && g_app.battery.low_latched && g_app.battery.blade_inhibited);
+  now=8000;RefreshBatteryMonitor(now);ApplyBatteryAuthorization();
+- assert(g_app.lock && !g_app.battery.data_fresh && revoked==1);
++ assert(!g_app.lock && !g_app.battery.data_fresh && !revoked);
++ assert(g_app.battery.low_latched && g_app.battery.blade_inhibited);
+  sample(8500,5400,3350);
+- g_app.lock=0;ApplyBatteryAuthorization();assert(g_app.lock); /* data not yet stable */
++ assert(!g_app.lock && g_app.battery.data_fresh); /* No recovery/rearm barrier. */
+  for(unsigned t=9000;t<=10500;t+=500) sample(t,5400,3350);
+  g_app.lock=0;ApplyBatteryAuthorization();
+  assert(!g_app.lock && !g_app.battery.stop_required && g_app.battery.low_latched);
+- assert(g_app.battery.blade_inhibited); /* DATA rearm cannot clear LOW */
++ assert(g_app.battery.blade_inhibited); /* Diagnostic recovery cannot clear LOW. */
+  AXEBMS_RS485_Init(&my_bms,1);BatteryMonitor_Init(&g_app.battery);
+  g_app.lock=1;g_app.battery_seen_locked=true;
+  sample(11000,5400,3350);
+  assert(g_app.lock && !g_app.battery.low_latched); /* healthy reboot stays locked */
+- puts("PASS actual BMS decoder -> Motion -> gate: raw units, odd writer, zero tick, loss/reconnection and explicit recovery");
++ g_app.lock=0;ApplyBatteryAuthorization();
++ unsigned stops=blade_stops;
++ now=14000;RefreshBatteryMonitor(now);ApplyBatteryAuthorization();
++ assert(!g_app.lock && !revoked && blade_stops==stops && !g_app.battery.blade_inhibited);
++ sample(14500,5400,0); /* Invalid raw cell data must remain diagnostic only. */
++ assert(!g_app.battery.data_fresh && !g_app.lock && !revoked && blade_stops==stops);
++ sample(15000,5400,3350);
++ assert(g_app.battery.data_fresh && !g_app.lock && !g_app.battery.blade_inhibited);
++ g_app.lock=1;sample(15500,5400,3350);assert(g_app.lock); /* Recovery never unlocks. */
++ puts("PASS actual BMS decoder -> Motion -> gate: absent/stale/invalid feedback is diagnostic only; recovery never unlocks; LOW remains blade-only");
+ }
+ '''
+     (work/'motion.c').write_text(prefix+hooks+cases)
+@@ -130,6 +144,7 @@
+ #include <stdio.h>
+ #include <math.h>
+ #include "safety_ownership_gate.h"
++#include "battery_monitor.h"
+ #define DRIVER_TYPE_ODRIVE 0
+ #define DRIVER_TYPE_MSSD 1
+ #define DRIVER_TYPE_OID 2
+@@ -163,7 +178,9 @@
+  for(unsigned owner=EXECUTION_OWNER_MANUAL_REMOTE;owner<=EXECUTION_OWNER_CRUISE;++owner) {
+   SafetyOwnershipGateInput_t input={false,false,false,true,true,(ExecutionOwner_t)owner,1,0};
+   SafetyOwnershipGate_Reset();SafetyOwnershipGate_Update(&input);
+-  SafetyOwnershipGate_SetBatteryPolicy(false,true);
++  BatteryMonitor_t battery;BatteryMonitor_Init(&battery);
++  assert(!battery.data_fresh);
++  SafetyOwnershipGate_SetBatteryPolicy(battery.stop_required,battery.blade_inhibited);
+   const float intents[4][2]={{1.8f,0.0f},{0.0f,3.0f},{-1.2f,-3.0f},{0.1f,0.1f}};
+   for(unsigned i=0;i<4;i++) {
+    count=0;set_chassis_velocity((ExecutionOwner_t)owner,intents[i][0],0.0f,intents[i][1]);
+@@ -173,16 +190,27 @@
+    for(unsigned j=0;j<4;j++)
+     assert(fabsf(fabsf(output[j])-fabsf(j<2 ? right : left))<0.002f);
+   }
+-  SafetyOwnershipGate_SetBatteryPolicy(true,true);
++  /* A real LOW monitor still allows identical full-speed travel. */
++  BatterySample_t low={0};low.valid=true;low.pack_cv=4700;low.soc_percent=19;
++  low.min_cell_mv=3000;low.max_cell_mv=3400;
++  for(unsigned t=0;t<=2000;t+=500) {
++   low.sample_ms=t;BatteryMonitor_Update(&battery,&low,t);
++  }
++  BatteryMonitor_Update(&battery,NULL,5000); /* Confirmed LOW plus lost feedback. */
++  assert(battery.low_latched && battery.blade_inhibited && !battery.stop_required);
++  SafetyOwnershipGate_SetBatteryPolicy(battery.stop_required,battery.blade_inhibited);
++  count=0;set_chassis_velocity((ExecutionOwner_t)owner,1.8f,0.0f,0.0f);
++  for(unsigned j=0;j<4;j++) assert(fabsf(fabsf(output[j])-1.8f)<0.002f);
++  SafetyOwnershipGate_SetBatteryPolicy(true,true); /* Independent gate stop remains enforced. */
+   count=0;set_chassis_velocity((ExecutionOwner_t)owner,1.8f,0.0f,3.0f);
+   for(unsigned j=0;j<4;j++) assert(output[j]==0.0f);
+  }
+- printf("PASS real final wheel adapter %u: LOW retains RC/API/cruise full speed, reverse/turns; DATA stops\n", MOTOR_DRIVER_USED);
++ printf("PASS real final wheel adapter %u: absent feedback and LOW retain RC/API/cruise full speed; explicit safety stop zeros output\n", MOTOR_DRIVER_USED);
+ }
+ '''
+     (work/'wheels.c').write_text(constants+wheel_prefix+function(chassis, 'void set_chassis_velocity(')+wheel_cases)
+     for driver in range(3):
+-        run([work/'wheels.c', gate], ['-DMOTOR_DRIVER_USED='+str(driver)])
++        run([work/'wheels.c', gate, monitor], ['-DMOTOR_DRIVER_USED='+str(driver)])
+ 
+ 
+ print('PASS low-battery blade-only protection integration')
+--- a/tools/test_blade_ok_ui.py
++++ b/tools/test_blade_ok_ui.py
+@@ -603,7 +603,7 @@
+       assert(has((fault&2U) ? "碰撞" : (fault&1U) ? "急停" : "锁定"));
+       saveScreen((fault&2U) ? "status-collision" : (fault&1U) ? "status-estop" : "status-locked");
+     }
+-    fixture.fault_bits=0x40; assert(std::string(mowerConnection(fixture))=="电池异常");
++    fixture.fault_bits=0x40; assert(std::string(mowerConnection(fixture))=="已连接");
+ 
+     // Release after live success but BEFORE the slow Accepted receipt.
+     runtime=MOWER_FAST_VALID|MOWER_FAST_LOCKED; known=true;
+@@ -653,7 +653,7 @@
+       const unsigned mask=1U<<bit;
+       if(mask==0x80U) continue;
+       fixture.fault_bits=0x80U|mask;
+-      assert(std::string(mowerConnection(fixture))==(mask==1U ? "急停" : mask==2U ? "碰撞" : mask==0x40U ? "电池异常" : "报错"));
++      assert(std::string(mowerConnection(fixture))==(mask==1U ? "急停" : mask==2U ? "碰撞" : mask==0x40U ? "已连接" : "报错"));
+     }
+     fixture.fault_bits=0x80U;
+     resetDraw();
+@@ -683,9 +683,17 @@
+     fixture.battery_reasons=0x20;
+     resetDraw(); mowerUserDebugRow(26,24,fixture,false,0); assert(has("电量过低"));
+     fixture.valid &= ~(MOWER_UI_SOC|MOWER_UI_VOLTAGE|MOWER_UI_BATTERY_MIN);
+-    fixture.fault_bits=MOWER_BATTERY_STOP|MOWER_BATTERY_BLADE_INHIBIT|0x40U;
++    fixture.fault_bits=0x40U;
+     resetDraw(); mowerUserHome(fixture,false,0);
+-    assert(has("电池异常") && has("--%") && !has("请充电") && !has("29%")); saveScreen("battery-invalid");
++    assert(has("已连接") && has("--%") && !has("电池异常") && !has("请充电") && !has("29%")); saveScreen("battery-invalid");
++    fixture.battery_reasons=1;
++    resetDraw(); mowerUserDebugRow(21,12,fixture,false,0);
++    mowerUserDebugRow(26,24,fixture,false,0);
++    assert(has("电池反馈异常") && has("!") && has("数据失效"));
++    saveScreen("battery-invalid-debug");
++    fixture.fault_bits=MOWER_BATTERY_WARNING|MOWER_BATTERY_BLADE_INHIBIT|0x40U;
++    resetDraw(); mowerUserHome(fixture,false,0);
++    assert(has("请充电") && has("--%")); // Confirmed LOW survives lost BMS feedback.
+     fixture.valid=MOWER_UI_FAULT|MOWER_UI_SOC; fixture.fault_bits=MOWER_BATTERY_BLADE_INHIBIT;
+     fixture.soc_percent=29;
+     board={}; board.bound=true; board.controller=1; board.hmi=2;
+@@ -697,6 +705,8 @@
+     resetDraw(); mowerUserRender();
+     assert(has("电量过低") && has("禁止开启割刀") && !has("确认启动割刀"));
+     saveScreen("battery-start-denied");
++    assert(mowerExp3Step(EVT_KEY_BREAK(KEY_ENTER))==EXP3_UI_BATTERY_LOW && submissions==0);
++    fixture.fault_bits=MOWER_BATTERY_WARNING|MOWER_BATTERY_BLADE_INHIBIT|0x40U;
+     assert(mowerExp3Step(EVT_KEY_BREAK(KEY_ENTER))==EXP3_UI_BATTERY_LOW && submissions==0);
+     ticks+=199; assert(mowerExp3Step(0)==EXP3_UI_BATTERY_LOW);
+     ticks++; assert(mowerExp3Step(0)==EXP3_UI_IDLE && submissions==0);
+@@ -726,6 +736,16 @@
+     assert(mowerExp3Step(0)==EXP3_UI_PROMPT && mowerUnlockDisplay);
+     assert(mowerExp3Step(EVT_KEY_BREAK(KEY_ENTER))==EXP3_UI_WAIT && submissions==1);
+     assert(mowerUnlockProbe.pending.context==EXP3_UNLOCK_CONTEXT);
++    // An isolated BMS feedback fault neither cancels nor submits a blade intent.
++    fixture.fault_bits=0x40U; runtime=MOWER_FAST_VALID|MOWER_FAST_RUN;
++    mowerExp3Initialized=false; submissions=0; board.waiting=false;
++    channelOutputs[3]=0; mowerExp3Step(0); channelOutputs[3]=-1000;
++    assert(mowerExp3Step(0)==EXP3_UI_PROMPT && submissions==0);
++    fixture.fault_bits=0;
++    assert(mowerExp3Step(0)==EXP3_UI_PROMPT && submissions==0);
++    fixture.fault_bits=0x40U;
++    assert(mowerExp3Step(EVT_KEY_BREAK(KEY_ENTER))==EXP3_UI_WAIT && submissions==1);
++    assert(mowerExp3Probe.pending.context==EXP3_PWM_CONTEXT);
+     renderFixture=false; streaming=true; known=false;
+     batteryKnown=true; batteryMin=2930; batteryReasons=4;
+     telemetryItems[6].value=0;
+--- a/tools/test_unlock_dispatch.py
++++ b/tools/test_unlock_dispatch.py
+@@ -87,7 +87,15 @@
+     frame(1000U, 420U); assert(command.run_permitted);
+     message(1U, EXP3_UNLOCK_CONTEXT); DispatchRemoteConfirmation(now, safety, &command);
+     assert(!accepted && command.run_permitted); /* Duplicate cannot relock/re-authorize. */
+-    for (unsigned scenario = 0U; scenario < 10U; ++scenario) {
++    init(); g_app.battery.data_fresh=false;
++    message(1U,EXP3_UNLOCK_CONTEXT); DispatchRemoteConfirmation(now,safety,&command);
++    assert(accepted && !command.run_permitted && !g_motion_blade_event_ready);
++    frame(1000U,420U); assert(command.run_permitted);
++    message(1U,EXP3_UNLOCK_CONTEXT); DispatchRemoteConfirmation(now,safety,&command);
++    assert(!accepted && command.run_permitted); /* Feedback loss cannot replay an old OK. */
++    message(1U,EXP3_PWM_CONTEXT); DispatchRemoteConfirmation(now,safety,&command);
++    assert(g_motion_blade_event_ready); /* Separate blade OK remains available without BMS. */
++    for (unsigned scenario = 0U; scenario < 8U; ++scenario) {
+         init(); message(1U, EXP3_UNLOCK_CONTEXT);
+         if (scenario == 0) inbox.message.generation = 2U;
+         if (scenario == 1) inbox.message.hmi = 3U;
+@@ -97,8 +105,6 @@
+         if (scenario == 5) { now=600U; RemoteBackend_Advance(now, safety); }
+         if (scenario == 6) Ctrl_Mode=2U;
+         if (scenario == 7) { inbox.message.context=EXP3_PWM_CONTEXT; }
+-        if (scenario == 8) g_app.battery.data_fresh=false;
+-        if (scenario == 9) g_app.battery.stop_required=true;
+         DispatchRemoteConfirmation(now, safety, &command);
+         assert(!accepted && !command.run_permitted && !g_motion_blade_event_ready);
+         assert(completions == 1U);

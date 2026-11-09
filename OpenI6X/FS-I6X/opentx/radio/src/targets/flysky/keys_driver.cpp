@@ -106,7 +106,13 @@ uint32_t readTrims()
 
 uint8_t trimDown(uint8_t idx)
 {
+#if defined(PCBI6X_MOWER_BLADE_OK) && !defined(BOOT)
+  // The mower keeps saved trims, but physical trims cannot trigger controls.
+  (void)idx;
+  return 0;
+#else
   return (readTrims() & (1 << (TRM_BASE + idx))) ? 1 : 0;
+#endif
 }
 
 bool keyDown()
@@ -126,7 +132,13 @@ void readKeysAndTrims()
     keys[index++].input(keys_input & (1 << i));
   }
 
+#if defined(PCBI6X_MOWER_BLADE_OK) && !defined(BOOT)
+  // Suppress FIRST/LONG/REPEAT/BREAK before debounce. Raw readTrims() remains
+  // available to the power-on DFU chord; stored model trim values are untouched.
+  const uint32_t trims_input = 0;
+#else
   uint32_t trims_input = readTrims();
+#endif
   for (i = TRM_BASE; i <= TRM_LAST; i++)
   {
     keys[index++].input(trims_input & (1 << i));

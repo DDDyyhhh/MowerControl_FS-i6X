@@ -1,0 +1,20 @@
+[PASS] New height target interrupts homing on the next lifter update
+[PASS] First/repeated level 5, saved-height drift, exact 10s and lazy save
+[PASS] Latest target wins before/during homing; no delayed reset; lazy save
+[PASS] Level-5 reentry and repeated/manual requests during active homing
+[PASS] Levels 1-4 unchanged, reversed +/-20% PWM and stop before reversal
+[PASS] Tick rollover and interruptible invalid-Flash boot homing
+[PASS] Manual homing interruption, continued upward target, late request/fault report
+[PASS] Cancel before start/at target/9999ms, lazy save and interrupt time wrap
+[PASS] Concurrent grass-bag direction, 20s timing and permission stop unchanged
+[PASS] Production lifter height regression
+[PASS] New height target interrupts homing on the next lifter update
+[PASS] First/repeated level 5, saved-height drift, exact 10s and lazy save
+[PASS] Latest target wins before/during homing; no delayed reset; lazy save
+[PASS] Level-5 reentry and repeated/manual requests during active homing
+[PASS] Levels 1-4 unchanged, reversed +/-20% PWM and stop before reversal
+[PASS] Tick rollover and interruptible invalid-Flash boot homing
+[PASS] Manual homing interruption, continued upward target, late request/fault report
+[PASS] Cancel before start/at target/9999ms, lazy save and interrupt time wrap
+[PASS] Concurrent grass-bag direction, 20s timing and permission stop unchanged
+[PASS] Production lifter height regression

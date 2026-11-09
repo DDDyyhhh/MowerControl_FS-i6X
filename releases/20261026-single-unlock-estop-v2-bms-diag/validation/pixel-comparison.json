@@ -1,0 +1,10 @@
+{
+  "compared": 36,
+  "unchanged": 35,
+  "intentional_changes": [
+    "battery-invalid.pbm"
+  ],
+  "new": [
+    "battery-invalid-debug.pbm"
+  ]
+}

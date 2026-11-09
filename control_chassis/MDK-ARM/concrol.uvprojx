@@ -642,6 +642,16 @@
               <FilePath>..\Core\UserDev\mssd_can.c</FilePath>
             </File>
             <File>
+              <FileName>can_tx_scheduler.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Core\UserDev\can_tx_scheduler.c</FilePath>
+            </File>
+            <File>
+              <FileName>can_tx_port.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Core\UserDev\can_tx_port.c</FilePath>
+            </File>
+            <File>
               <FileName>odrive_can.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Core\UserDev\odrive_can.c</FilePath>
@@ -695,11 +705,6 @@
               <FileName>blade_hil_uart_debug.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Core\UserDev\blade_hil_uart_debug.c</FilePath>
-            </File>
-            <File>
-              <FileName>mower_mode_control.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\Core\UserDev\mower_mode_control.c</FilePath>
             </File>
             <File>
               <FileName>remote_authorization.c</FileName>
@@ -757,6 +762,11 @@
               <FilePath>..\Core\UserApp\blade_manual_control.c</FilePath>
             </File>
             <File>
+              <FileName>app_imu.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Core\UserApp\app_imu.c</FilePath>
+            </File>
+            <File>
               <FileName>app_Motion.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Core\UserApp\app_Motion.c</FilePath>
@@ -780,6 +790,11 @@
               <FileName>app_SerialTX.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Core\UserApp\app_SerialTX.c</FilePath>
+            </File>
+            <File>
+              <FileName>battery_monitor.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Core\UserApp\battery_monitor.c</FilePath>
             </File>
             <File>
               <FileName>telemetry_snapshot.c</FileName>

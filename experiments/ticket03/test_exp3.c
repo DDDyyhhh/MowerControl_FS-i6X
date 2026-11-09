@@ -249,8 +249,8 @@ static void link_faults(void) {
 }
 int main(void) {
     assert(sizeof(Exp3Mailbox) == 36 && offsetof(Exp3Mailbox, command) == 32);
-    assert(offsetof(Exp3Hil, log_write) == 228 && offsetof(Exp3Hil, events) == 240);
-    assert(sizeof(Exp3Hil) == 244 + 16 * EXP3_LOG_COUNT);
+    assert(offsetof(Exp3Hil, log_write) == 236 && offsetof(Exp3Hil, events) == 248);
+    assert(sizeof(Exp3Hil) == 252 + 16 * EXP3_LOG_COUNT);
     link_faults();
     hil();
     transport();

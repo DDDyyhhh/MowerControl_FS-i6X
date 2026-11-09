@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include "can.h"
+#include "can_tx_scheduler.h"
 
 // --- 配置参数 ---
 #define ODRIVE_MAX_MOTORS 5 // 最大支持的电机数量 (Node ID: 0~4)
@@ -35,30 +36,14 @@ typedef struct
 {
     uint32_t stdId;
     uint32_t extId;
-    uint8_t ide;
-    uint8_t dlc;
-    uint8_t rtr;
-    uint8_t data[8];
-} CAN_TxMsg_t;
-
-typedef struct
-{
-    uint32_t stdId;
-    uint32_t extId;
     uint8_t dlc;
     uint8_t rtr;
     uint8_t ide;
     uint8_t data[8];
+    uint32_t rx_tick;
 } CAN_RxMsg_t;
 
-uint8_t CAN_Enqueue_Message(uint32_t id, uint8_t *data, uint8_t len, uint8_t is_remote);
-uint8_t CAN_Enqueue_Ext_Message(uint32_t id, uint8_t *data, uint8_t len, uint8_t is_remote);
-uint8_t CAN_Enqueue_Control_Message(uint32_t id, uint8_t *data, uint8_t len, uint8_t is_remote);
-uint8_t CAN_TryGet_Control_Message(CAN_TxMsg_t *msg);
-uint8_t CAN_Enqueue_Telemetry_Message(uint32_t id, uint8_t *data, uint8_t len, uint8_t is_remote);
-uint8_t CAN_TryGet_Telemetry_Message(CAN_TxMsg_t *msg);
-
-extern volatile uint32_t g_can_tx_enqueue_failures;
+extern volatile uint32_t g_can_rx_queue_full;
 
 // --- 全局变量声明 ---
 // 使用数组管理所有电机，索引即为 Node ID

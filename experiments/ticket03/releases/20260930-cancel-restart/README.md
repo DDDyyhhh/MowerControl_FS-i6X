@@ -4,7 +4,6 @@
 
 - 遥控器：`openi6x-exp3-pwm-restart.bin`，128732 B。
 - 底盘：`control-chassis-exp3-pwm-restart.hex`，227714 B。
-- 校验：在本目录运行 `sha256sum -c SHA256SUMS`。
 
 修复：Cancel 回执等待期间显示 `WAIT CANCEL`，不再显示不能执行的 OK；等待期间仍记录 CH4 边沿；旧 Cancel 不清除更新的 CH4 启动请求；底盘用当前 CH4 代数拒绝过期事件。串口增加 `deny` 拒绝原因。
 

@@ -94,12 +94,6 @@
 #endif
 // ============================================================================
 
-#if MOWER_BLADE_OK_ENABLED
-void chassis_control_advance_host(void);
-void chassis_control_apply_host_targets(void);
-void chassis_control_discard_host(void);
-uint32_t chassis_control_host_sequence(void);
-#endif
 extern uint8_t Ctrl_Mode; // 0: 遥控模式, 1: API模式
 typedef struct
 {

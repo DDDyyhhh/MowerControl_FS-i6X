@@ -69,7 +69,6 @@ virtualFolder:
                     - path: ../Core/UserDev/chassis_control.c
                     - path: ../Core/UserDev/oid_can.c
                     - path: ../Core/UserDev/flipsky_can.c
-                    - path: ../Core/UserDev/mower_mode_control.c
                     - path: ../Core/UserDev/remote_authorization.c
                     - path: ../Core/UserDev/blade_confirm_ch6_adapter.c
                   folders: []
@@ -77,12 +76,14 @@ virtualFolder:
                   files:
                     - path: ../Core/UserApp/app_context.c
                     - path: ../Core/UserApp/app_Motion.c
+                    - path: ../Core/UserApp/app_imu.c
                     - path: ../Core/UserApp/app_Comm.c
                     - path: ../Core/UserApp/app_BMS_Sensor.c
                     - path: ../Core/UserApp/app_Report.c
                     - path: ../Core/UserApp/app_SerialTX.c
                     - path: ../Core/UserApp/safety_ownership_gate.c
                     - path: ../Core/UserApp/telemetry_snapshot.c
+                    - path: ../Core/UserApp/battery_monitor.c
                     - path: ../Core/UserApp/blade_manual_control.c
                   folders: []
     - name: Drivers

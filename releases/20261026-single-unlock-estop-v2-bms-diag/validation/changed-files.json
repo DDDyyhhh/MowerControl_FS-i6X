@@ -1,0 +1,15 @@
+[
+  "OpenI6X/FS-I6X/opentx/radio/src/gui/128x64/mower_user_ui.h",
+  "OpenI6X/FS-I6X/opentx/radio/src/gui/128x64/view_main.cpp",
+  "control_chassis/Core/Inc/battery_monitor.h",
+  "control_chassis/Core/UserApp/app_Motion.c",
+  "control_chassis/Core/UserApp/battery_monitor.c",
+  "control_chassis/docs/battery_monitor.md",
+  "control_chassis/host/battery_monitor_harness.c",
+  "docs/protocols/ch4-fast-wheel-feedback.md",
+  "experiments/ticket03/mower_fast_status.h",
+  "experiments/ticket03/test_fast_status.c",
+  "tools/test_battery_protection.py",
+  "tools/test_blade_ok_ui.py",
+  "tools/test_unlock_dispatch.py"
+]

@@ -1,0 +1,38 @@
+[1m====================================================[0m
+[1m         SVN Preflight & Hygiene Check              [0m
+[1m====================================================[0m
+
+[1m[1/5] Checking SVN Working Copy Status...[0m
+  [[0;32mPASS[0m] No merge conflicts detected in SVN working copy.
+      Tracked modified files: [0;36m89[0m, Unversioned items: [0;36m555[0m
+
+[1m[2/5] Checking for Temporary and Build Artifacts...[0m
+  [[0;33mWARN[0m] Found 395 build/temporary artifacts in working tree (keilkill.bat or clean recommended before commit):
+        ?       control_chassis/Eide/build/concrol/.obj/__/Core/Src/adc.d
+        ?       control_chassis/Eide/build/concrol/.obj/__/Core/Src/can.d
+        ?       control_chassis/Eide/build/concrol/.obj/__/Core/Src/dma.d
+        ?       control_chassis/Eide/build/concrol/.obj/__/Core/Src/flash_storage.d
+        ?       control_chassis/Eide/build/concrol/.obj/__/Core/Src/freertos.d
+        ?       control_chassis/Eide/build/concrol/.obj/__/Core/Src/gpio.d
+        ?       control_chassis/Eide/build/concrol/.obj/__/Core/Src/main.d
+        ?       control_chassis/Eide/build/concrol/.obj/__/Core/Src/spi.d
+        ?       control_chassis/Eide/build/concrol/.obj/__/Core/Src/stm32f4xx_hal_msp.d
+        ?       control_chassis/Eide/build/concrol/.obj/__/Core/Src/stm32f4xx_hal_timebase_tim.d
+        ... and 385 more items.
+
+[1m[3/5] Checking Line Ending (CRLF/LF) Shifts in Modified Text Files...[0m
+  [[0;33mWARN[0m] Possible whole-file line ending / whitespace churn in: control_chassis/Core/UserDev/icm42688.c (diff lines: 773, total lines: 192)
+
+[1m[4/5] Inspecting Modifications to High-Risk Architecture Files...[0m
+  [[0;33mWARN[0m] Modifications detected in high-risk files (BSP core entry, ISR, pinout, or linker):
+        M       control_chassis/Core/Src/freertos.c
+        M       control_chassis/Core/Src/main.c
+        M       control_chassis/MDK-ARM/concrol.uvprojx
+        M       control_chassis/concrol.ioc
+        [0;33m-> Please ensure changes in these files are intentional and peer-reviewed.[0m
+
+[1m[5/5] Verifying Production .c Integration in CMake and Keil Manifests...[0m
+  [[0;32mPASS[0m] All production .c files are properly registered in both CMake and Keil manifests.
+
+[1m====================================================[0m
+[0;33m[1mPREFLIGHT CHECK PASSED WITH WARNINGS: 3 warning item(s).[0m

@@ -2,6 +2,12 @@ cmake_minimum_required(VERSION 3.20)
 
 project(control_chassis LANGUAGES C ASM)
 
+set(MOWER_IBUS_TIMEOUT_MS "300" CACHE STRING "i-BUS valid-frame timeout in milliseconds (100 or 300)")
+set_property(CACHE MOWER_IBUS_TIMEOUT_MS PROPERTY STRINGS 100 300)
+if(NOT "${MOWER_IBUS_TIMEOUT_MS}" MATCHES "^(100|300)$")
+    message(FATAL_ERROR "MOWER_IBUS_TIMEOUT_MS must be 100 or 300")
+endif()
+
 option(MOWER_BLADE_OK "Build mower OK blade control release candidate" OFF)
 if(MOWER_BLADE_OK AND (TICKET03_EXP3_HIL OR TICKET03_EXP3_PWM_HIL))
     message(FATAL_ERROR "MOWER_BLADE_OK is separate from bench profiles")
@@ -40,12 +46,14 @@ set(USER_APP_SOURCES
     Core/UserApp/app_BMS_Sensor.c
     Core/UserApp/app_Comm.c
     Core/UserApp/app_Motion.c
+    Core/UserApp/app_imu.c
     Core/UserApp/app_Report.c
     Core/UserApp/app_SerialTX.c
     Core/UserApp/app_context.c
     Core/UserApp/blade_manual_control.c
     Core/UserApp/safety_ownership_gate.c
     Core/UserApp/telemetry_snapshot.c
+    Core/UserApp/battery_monitor.c
 )
 
 set(USER_DEVICE_SOURCES
@@ -59,6 +67,8 @@ set(USER_DEVICE_SOURCES
     Core/UserDev/bsp_imu_solver.c
     Core/UserDev/buzzer.c
     Core/UserDev/car_Control.c
+    Core/UserDev/can_tx_scheduler.c
+    Core/UserDev/can_tx_port.c
     Core/UserDev/chassis_control.c
     Core/UserDev/connet_check.c
     Core/UserDev/cruise_control.c
@@ -74,7 +84,6 @@ set(USER_DEVICE_SOURCES
     Core/UserDev/oid_can.c
     Core/UserDev/pairing_receiver.c
     Core/UserDev/read_adc.c
-    Core/UserDev/mower_mode_control.c
     Core/UserDev/remote_authorization.c
     Core/UserDev/remote_backend.c
     Core/UserDev/rs485.c
@@ -173,6 +182,7 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE
     STM32F407xx
     REMOTE_BACKEND_A28_E34=0
     REMOTE_BACKEND_FLYSKY_IBUS=1
+    REMOTE_IBUS_TIMEOUT_MS=${MOWER_IBUS_TIMEOUT_MS}U
     BLADE_HIL_UART_DEBUG_ENABLED=0
     SENS_IBUS_ELECTRICAL_OUTPUT_ENABLED=1
     SENS_IBUS_INTERNAL_PULLUP_EXPERIMENT=0
@@ -192,7 +202,7 @@ target_compile_options(${PROJECT_NAME} PRIVATE
     ${MCU_FLAGS}
     $<$<COMPILE_LANGUAGE:C>:-Wall;-ffunction-sections;-fdata-sections;-funsigned-char>
     $<$<CONFIG:Debug>:-Og;-g3>
-    $<$<CONFIG:Release>:-Os>
+    $<$<CONFIG:Release>:-Os;-g3>
 )
 
 target_link_options(${PROJECT_NAME} PRIVATE

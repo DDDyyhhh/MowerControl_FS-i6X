@@ -5,7 +5,7 @@
 
 static uint8_t checksum(const uint8_t bytes[4], uint8_t role)
 {
-    uint8_t value = (uint8_t)(0x5aU ^ role);
+    uint8_t value = (uint8_t)(0x5aU ^ role ^ (MOWER_BLADE_OK_ENABLED ? EXP3_WIRE_VERSION : 0U));
     unsigned i, bit;
     for (i = 0U; i < 4U; ++i) {
         value ^= bytes[i];
@@ -58,6 +58,33 @@ uint16_t exp3_auto_word(Exp3AutoSession *session, uint32_t now, uint32_t dwell,
             checksum(bytes, session->role);
     return (uint16_t)(0xc000U | ((uint16_t)session->role << 11) |
                       ((uint16_t)session->tx_index << 8) | value);
+}
+
+uint32_t exp3_auto_hmi_interval(Exp3AutoPace *pace, bool bound, bool link_fresh)
+{
+    if (pace->link_was_fresh && !link_fresh)
+        pace->settled = 0U; /* The chassis may have rebooted: its session is unknown. */
+    pace->link_was_fresh = link_fresh ? 1U : 0U;
+    return (!bound || (!link_fresh && !pace->settled)) ?
+        EXP3_AUTO_HMI_FAST_ROUND_MS : EXP3_AUTO_ROUND_MS;
+}
+
+void exp3_auto_hmi_settled(Exp3AutoPace *pace)
+{
+    pace->settled = 1U;
+}
+
+void exp3_auto_controller_bound(Exp3AutoPace *pace, uint32_t now)
+{
+    pace->settled = 1U;
+    pace->bound_at = now;
+}
+
+uint32_t exp3_auto_controller_interval(Exp3AutoPace *pace, uint32_t now)
+{
+    if (pace->settled && (uint32_t)(now - pace->bound_at) >= EXP3_AUTO_CONTROLLER_FAST_WINDOW_MS)
+        pace->settled = 0U; /* Hand the idle SENS slot back to battery diagnostics. */
+    return pace->settled ? EXP3_AUTO_CONTROLLER_FAST_ROUND_MS : EXP3_AUTO_ROUND_MS;
 }
 
 int exp3_auto_receive(Exp3AutoSession *session, uint16_t word, uint32_t now,

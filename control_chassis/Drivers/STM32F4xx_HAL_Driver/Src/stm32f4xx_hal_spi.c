@@ -3502,8 +3502,12 @@ static HAL_StatusTypeDef SPI_WaitFlagStateUntilTimeout(SPI_HandleTypeDef *hspi, 
   uint32_t tmp_tickstart;
 
   /* Adjust Timeout value  in case of end of transfer */
-  tmp_timeout   = Timeout - (HAL_GetTick() - Tickstart);
+  /* Local fix: an expired shared transaction deadline must not underflow.
+     Preserve HAL_MAX_DELAY semantics for unrelated callers. */
   tmp_tickstart = HAL_GetTick();
+  tmp_timeout = tmp_tickstart - Tickstart;
+  tmp_timeout = (Timeout == HAL_MAX_DELAY) ? HAL_MAX_DELAY :
+                ((tmp_timeout >= Timeout) ? 0U : Timeout - tmp_timeout);
 
   /* Calculate Timeout based on a software loop to avoid blocking issue if Systick is disabled */
   count = tmp_timeout * ((SystemCoreClock * 32U) >> 20U);
@@ -3512,7 +3516,7 @@ static HAL_StatusTypeDef SPI_WaitFlagStateUntilTimeout(SPI_HandleTypeDef *hspi, 
   {
     if (Timeout != HAL_MAX_DELAY)
     {
-      if (((HAL_GetTick() - tmp_tickstart) >= tmp_timeout) || (tmp_timeout == 0U))
+      if (((HAL_GetTick() - Tickstart) >= Timeout) || (tmp_timeout == 0U))
       {
         /* Disable the SPI and reset the CRC: the CRC value should be cleared
            on both master and slave sides in order to resynchronize the master

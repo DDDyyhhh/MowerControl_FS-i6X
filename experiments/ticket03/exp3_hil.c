@@ -43,8 +43,12 @@ void exp3_hil_bind_session(Exp3Hil *h, Exp3Endpoint *endpoint, uint32_t controll
     h->waiting = 0U;
 #if MOWER_BLADE_OK_ENABLED
     h->cancel_failed = h->cancel_retries = 0U;
+    h->token = h->authority = 0U;
+    h->token_active = h->token_armed = h->restart_requested = 0U;
 #endif
     h->published_word = 0U;
+    h->link.controller = controller;
+    h->link.hmi = hmi;
     h->controller = controller;
     h->hmi = hmi;
     h->bound = 1U;
@@ -108,6 +112,31 @@ void exp3_hil_channels(Exp3Hil *h, Exp3Endpoint *endpoint, uint16_t a, uint16_t 
         word = 0;
     exp3_hil_receive(h, endpoint, word, now);
 }
+bool exp3_hil_apply_result(Exp3Hil *h, const Exp3Message *m, uint32_t now) {
+    if (!h || !m || !h->bound || !h->waiting || m->kind != EXP3_RESULT ||
+        m->sender != 2U || m->command != h->pending.kind ||
+        m->status < EXP3_ACCEPTED || m->status > EXP3_SESSION ||
+        m->controller != h->pending.controller || m->hmi != h->pending.hmi ||
+        m->request != h->pending.request || m->action != h->pending.action ||
+        m->target != h->pending.target || m->context != h->pending.context ||
+        m->generation != h->pending.generation) return false;
+#if MOWER_BLADE_OK_ENABLED
+    if (h->pending.kind == EXP3_CANCEL && m->status != EXP3_CANCELLED) {
+        h->last_result = *m;
+        h->cancel_failed = 1U;
+        return false;
+    }
+#endif
+    h->last_result = *m;
+    h->rtt_ms = now - h->link.sent_at;
+    ++h->matches;
+    h->waiting = 0U;
+#if MOWER_BLADE_OK_ENABLED
+    h->cancel_failed = 0U;
+#endif
+    exp3_hil_trace(h, now, E3_RTT, h->rtt_ms, m->action);
+    return true;
+}
 void exp3_hil_receive(Exp3Hil *h, Exp3Endpoint *endpoint, uint16_t word, uint32_t now) {
     Exp3Message m;
     int rc;
@@ -129,10 +158,6 @@ void exp3_hil_receive(Exp3Hil *h, Exp3Endpoint *endpoint, uint16_t word, uint32_
             exp3_hil_trace(h, now, E3_REJECT, m.kind, 0);
             return;
         }
-#if MOWER_BLADE_OK_ENABLED
-        if (result.context != 0x424c4144UL && result.context != MOWER_CHASSIS_CONTEXT)
-            result.status=EXP3_UNKNOWN;
-#endif
         h->last_result = result;
         log_identity(h, now, &result);
 #if MOWER_BLADE_OK_ENABLED
@@ -147,27 +172,7 @@ void exp3_hil_receive(Exp3Hil *h, Exp3Endpoint *endpoint, uint16_t word, uint32_
             exp3_hil_trace(h, now, E3_BUSY, result.action, 0);
         else
             exp3_hil_trace(h, now, E3_TX, h->link.transfer, result.command);
-    } else if (h->waiting && m.kind == EXP3_RESULT && m.command == h->pending.kind &&
-               m.controller == h->pending.controller && m.hmi == h->pending.hmi &&
-               m.request == h->pending.request && m.action == h->pending.action &&
-               m.target == h->pending.target && m.context == h->pending.context &&
-               m.generation == h->pending.generation) {
-#if MOWER_BLADE_OK_ENABLED
-        if (h->pending.kind == EXP3_CANCEL && m.status != EXP3_CANCELLED) {
-            h->last_result = m;
-            h->cancel_failed = 1U;
-            return; // matching identity alone is not a successful stop acknowledgement
-        }
-#endif
-        h->last_result = m;
-        h->rtt_ms = now - h->link.sent_at;
-        ++h->matches;
-        h->waiting = 0;
-#if MOWER_BLADE_OK_ENABLED
-        h->cancel_failed = 0U;
-#endif
-        exp3_hil_trace(h, now, E3_RTT, h->rtt_ms, m.action);
-    } else
+    } else if (!exp3_hil_apply_result(h, &m, now))
         exp3_hil_trace(h, now, E3_REJECT, m.action, m.kind);
 }
 #endif

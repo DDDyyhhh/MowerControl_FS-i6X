@@ -29,6 +29,14 @@ info() {
 }
 
 run_host_harnesses() {
+    info "=== Running Battery Protection Harnesses ==="
+    local battery_log="${LOG_DIR}/host_battery_protection.log"
+    python3 "${REPO_ROOT}/tools/test_battery_protection.py" >"$battery_log" 2>&1 || {
+        fail "Battery Protection Harnesses"
+        cat "$battery_log" >&2
+        return 1
+    }
+    pass "Battery Protection (BMS publication, Motion recovery, full-speed wheel adapters and LOW latch)"
     info "=== [1/9] Running Blade Driver Selection Harness ==="
     local log="${LOG_DIR}/host_blade_driver_selection.log"
     local cc=${CC:-gcc}
@@ -40,9 +48,11 @@ run_host_harnesses() {
     )
 
     {
-        "$cc" "${common[@]}" "${sources[@]}" -lm -o "${WORK_DIR}/blade_driver_pwm" || return 1
+        "$cc" "${common[@]}" -DEXPECTED_BLADE_DRIVER=2U "${sources[@]}" -lm -o "${WORK_DIR}/blade_driver_default" || return 1
+        "${WORK_DIR}/blade_driver_default" || return 1
+        "$cc" "${common[@]}" -DBLADE_MOTOR_DRIVER_USED=1U -DEXPECTED_BLADE_DRIVER=1U "${sources[@]}" -lm -o "${WORK_DIR}/blade_driver_pwm" || return 1
         "${WORK_DIR}/blade_driver_pwm" || return 1
-        "$cc" "${common[@]}" -DBLADE_MOTOR_DRIVER_USED=2U "${sources[@]}" -lm -o "${WORK_DIR}/blade_driver_ftesc" || return 1
+        "$cc" "${common[@]}" -DBLADE_MOTOR_DRIVER_USED=2U -DEXPECTED_BLADE_DRIVER=2U "${sources[@]}" -lm -o "${WORK_DIR}/blade_driver_ftesc" || return 1
         "${WORK_DIR}/blade_driver_ftesc" || return 1
 
         # Negative checks: invalid driver ID
@@ -181,7 +191,7 @@ run_host_harnesses() {
         cat "$log" >&2
         return 1
     }
-    pass "Blade Driver Selection (PWM, FTESC CAN, negative compile guards)"
+    pass "Blade Driver Selection (default FTESC CAN, explicit PWM/FTESC CAN, negative compile guards)"
 
     info "=== [2/9] Running Blade Manual Control Harness ==="
     log="${LOG_DIR}/host_blade_manual_control.log"
@@ -192,10 +202,10 @@ run_host_harnesses() {
         "${REPO_ROOT}/control_chassis/Core/UserApp/safety_ownership_gate.c"
     )
     {
-        "$cc" "${bmc_common[@]}" "${bmc_sources[@]}" -lm -o "${WORK_DIR}/bmc_pwm"
-        "${WORK_DIR}/bmc_pwm"
-        "$cc" "${bmc_common[@]}" -DBLADE_MOTOR_DRIVER_USED=2U "${bmc_sources[@]}" -lm -o "${WORK_DIR}/bmc_ftesc"
-        "${WORK_DIR}/bmc_ftesc"
+        "$cc" "${bmc_common[@]}" -DBLADE_MOTOR_DRIVER_USED=1U "${bmc_sources[@]}" -lm -o "${WORK_DIR}/bmc_pwm" || return 1
+        "${WORK_DIR}/bmc_pwm" || return 1
+        "$cc" "${bmc_common[@]}" -DBLADE_MOTOR_DRIVER_USED=2U "${bmc_sources[@]}" -lm -o "${WORK_DIR}/bmc_ftesc" || return 1
+        "${WORK_DIR}/bmc_ftesc" || return 1
     } >"$log" 2>&1 || {
         fail "Blade Manual Control Harness"
         cat "$log" >&2
@@ -222,6 +232,15 @@ run_host_harnesses() {
     }
     pass "Blade Confirm CH6 Adapter (Baseline, edge debounce, duplicate rejection & BMC integration)"
 
+    info "=== Running CAN TX scheduler failure/interleaving harness (-O0/-O2) ==="
+    log="${LOG_DIR}/host_can_tx_scheduler.log"
+    python3 "${REPO_ROOT}/tools/test_can_tx_scheduler.py" >"$log" 2>&1 || {
+        fail "CAN TX scheduler"
+        cat "$log" >&2
+        return 1
+    }
+    pass "CAN TX scheduler (stop retention, completion and mailbox ordering)"
+
     info "=== [4/9] Running FTESC Realtime Feedback Harness ==="
     log="${LOG_DIR}/host_ftesc_feedback.log"
     {
@@ -229,6 +248,7 @@ run_host_harnesses() {
             -I"${REPO_ROOT}/control_chassis/Core/Inc" \
             "${REPO_ROOT}/control_chassis/host/ftesc_realtime_feedback_harness.c" \
             "${REPO_ROOT}/control_chassis/Core/UserDev/flipsky_can.c" \
+            "${REPO_ROOT}/control_chassis/Core/UserApp/telemetry_snapshot.c" \
             -lm -o "${WORK_DIR}/ftesc_feedback"
         "${WORK_DIR}/ftesc_feedback"
     } >"$log" 2>&1 || {
@@ -287,6 +307,21 @@ run_host_harnesses() {
     }
     pass "Remote Authorization (CH8 dual-edge unlock state machine)"
 
+    info "=== Running i-BUS Snapshot Concurrency Harness ==="
+    python3 "${REPO_ROOT}/tools/test_remote_rx_queue.py" >"${LOG_DIR}/host_remote_rx_queue.log" 2>&1 || {
+        fail "Remote timestamped UART queue regression"
+        cat "${LOG_DIR}/host_remote_rx_queue.log" >&2
+        return 1
+    }
+    pass "Remote receive timestamps, stale queue rejection and stream continuity"
+
+    python3 "${REPO_ROOT}/tools/test_ibus_snapshot.py" >"${LOG_DIR}/host_ibus_snapshot.log" 2>&1 || {
+        fail "i-BUS Snapshot Concurrency Harness"
+        cat "${LOG_DIR}/host_ibus_snapshot.log" >&2
+        return 1
+    }
+    pass "i-BUS Snapshot (single writer, preemption, independent timeout, IRQ restore; O0/O2)"
+
     info "=== [8/9] Running Remote Backend Harness ==="
     log="${LOG_DIR}/host_remote_backend.log"
     {
@@ -296,7 +331,6 @@ run_host_harnesses() {
             -DREMOTE_BACKEND_A28_E34=1 -DREMOTE_BACKEND_FLYSKY_IBUS=0 \
             -I"${REPO_ROOT}/control_chassis/Core/Inc" \
             "${REPO_ROOT}/control_chassis/host/remote_backend_harness.c" \
-            "${REPO_ROOT}/control_chassis/Core/UserDev/mower_mode_control.c" \
             "${REPO_ROOT}/control_chassis/Core/UserDev/remote_backend.c" \
             "${REPO_ROOT}/control_chassis/Core/UserDev/grass_bag_control.c" \
             "${REPO_ROOT}/control_chassis/Core/UserDev/remote_authorization.c" \
@@ -304,41 +338,59 @@ run_host_harnesses() {
             -lm -o "${WORK_DIR}/remote_backend_a28" || return 1
         "${WORK_DIR}/remote_backend_a28" || return 1
 
-        # FlySky i-BUS Backend Test
-        "$cc" -std=c99 -Wall -Wextra -Werror \
-            -DREMOTE_BACKEND_HOST \
-            -DREMOTE_BACKEND_A28_E34=0 -DREMOTE_BACKEND_FLYSKY_IBUS=1 \
-            -I"${REPO_ROOT}/control_chassis/Core/Inc" \
-            "${REPO_ROOT}/control_chassis/host/remote_backend_harness.c" \
-            "${REPO_ROOT}/control_chassis/Core/UserDev/mower_mode_control.c" \
-            "${REPO_ROOT}/control_chassis/Core/UserDev/remote_backend.c" \
-            "${REPO_ROOT}/control_chassis/Core/UserDev/grass_bag_control.c" \
-            "${REPO_ROOT}/control_chassis/Core/UserDev/remote_authorization.c" \
-            "${REPO_ROOT}/control_chassis/Core/UserDev/flysky_ibus_servo.c" \
-            "${REPO_ROOT}/control_chassis/Core/UserDev/blade_confirm_ch6_adapter.c" \
-            -lm -o "${WORK_DIR}/remote_backend_flysky" || return 1
-        "${WORK_DIR}/remote_backend_flysky" || return 1
-        # Exercise the production CH6 bag + explicit OK blade configuration.
-        "$cc" -std=c99 -Wall -Wextra -Werror \
-            -DREMOTE_BACKEND_HOST -DMOWER_BLADE_OK_ENABLED=1 -DMOWER_GRASS_BAG_CH6_ENABLED=1 \
-            -DREMOTE_BACKEND_A28_E34=0 -DREMOTE_BACKEND_FLYSKY_IBUS=1 \
-            -I"${REPO_ROOT}/control_chassis/Core/Inc" \
-            "${REPO_ROOT}/control_chassis/host/mower_backend_harness.c" \
-            "${REPO_ROOT}/control_chassis/Core/UserDev/mower_mode_control.c" \
-            "${REPO_ROOT}/control_chassis/Core/UserDev/remote_backend.c" \
-            "${REPO_ROOT}/control_chassis/Core/UserDev/grass_bag_control.c" \
-            "${REPO_ROOT}/control_chassis/Core/UserDev/remote_authorization.c" \
-            "${REPO_ROOT}/control_chassis/Core/UserDev/flysky_ibus_servo.c" \
-            "${REPO_ROOT}/control_chassis/Core/UserDev/blade_confirm_ch6_adapter.c" \
-            -lm -o "${WORK_DIR}/remote_backend_bag_release" || return 1
-        "${WORK_DIR}/remote_backend_bag_release" || return 1
+        local timeout_ms
+        local timeout_defs=()
+        for timeout_ms in default 100 300; do
+            timeout_defs=()
+            if [[ "$timeout_ms" != default ]]; then
+                timeout_defs=(-DREMOTE_IBUS_TIMEOUT_MS="${timeout_ms}U")
+            fi
+            # FlySky i-BUS Backend Test
+            "$cc" -std=c99 -Wall -Wextra -Werror \
+                -DREMOTE_BACKEND_HOST ${timeout_defs[@]+"${timeout_defs[@]}"} \
+                -DREMOTE_BACKEND_A28_E34=0 -DREMOTE_BACKEND_FLYSKY_IBUS=1 \
+                -I"${REPO_ROOT}/control_chassis/Core/Inc" \
+                "${REPO_ROOT}/control_chassis/host/remote_backend_harness.c" \
+                "${REPO_ROOT}/control_chassis/Core/UserDev/remote_backend.c" \
+                "${REPO_ROOT}/control_chassis/Core/UserDev/grass_bag_control.c" \
+                "${REPO_ROOT}/control_chassis/Core/UserDev/remote_authorization.c" \
+                "${REPO_ROOT}/control_chassis/Core/UserDev/flysky_ibus_servo.c" \
+                "${REPO_ROOT}/control_chassis/Core/UserDev/blade_confirm_ch6_adapter.c" \
+                -lm -o "${WORK_DIR}/remote_backend_flysky_${timeout_ms}" || return 1
+            "${WORK_DIR}/remote_backend_flysky_${timeout_ms}" || return 1
+            # Exercise the production CH6 bag + explicit OK blade configuration.
+            "$cc" -std=c99 -Wall -Wextra -Werror \
+                -DREMOTE_BACKEND_HOST ${timeout_defs[@]+"${timeout_defs[@]}"} -DMOWER_BLADE_OK_ENABLED=1 -DMOWER_GRASS_BAG_CH6_ENABLED=1 \
+                -DREMOTE_BACKEND_A28_E34=0 -DREMOTE_BACKEND_FLYSKY_IBUS=1 \
+                -I"${REPO_ROOT}/control_chassis/Core/Inc" \
+                "${REPO_ROOT}/control_chassis/host/remote_backend_harness.c" \
+                "${REPO_ROOT}/control_chassis/Core/UserDev/remote_backend.c" \
+                "${REPO_ROOT}/control_chassis/Core/UserDev/grass_bag_control.c" \
+                "${REPO_ROOT}/control_chassis/Core/UserDev/remote_authorization.c" \
+                "${REPO_ROOT}/control_chassis/Core/UserDev/flysky_ibus_servo.c" \
+                "${REPO_ROOT}/control_chassis/Core/UserDev/blade_confirm_ch6_adapter.c" \
+                -lm -o "${WORK_DIR}/remote_backend_bag_release_${timeout_ms}" || return 1
+            "${WORK_DIR}/remote_backend_bag_release_${timeout_ms}" || return 1
+        done
         "$cc" -std=c99 -Wall -Wextra -Werror \
             -I"${REPO_ROOT}/control_chassis/Core/Inc" \
             "${REPO_ROOT}/control_chassis/host/grass_bag_control_harness.c" \
             "${REPO_ROOT}/control_chassis/Core/UserDev/grass_bag_control.c" \
             -o "${WORK_DIR}/grass_bag_control" || return 1
         "${WORK_DIR}/grass_bag_control" || return 1
+        # Default soft start, exercised against the real lifter.c ramp.
         "$cc" -std=c99 -Wall -Wextra -Werror \
+            -DMOWER_GRASS_BAG_CH6_ENABLED=1 -DMOWER_BLADE_OK_ENABLED=1 \
+            -DREMOTE_BACKEND_A28_E34=0 -DREMOTE_BACKEND_FLYSKY_IBUS=1 \
+            -include "${REPO_ROOT}/control_chassis/host/lifter_fakes/main.h" \
+            -I"${REPO_ROOT}/control_chassis/host/lifter_fakes" \
+            -I"${REPO_ROOT}/control_chassis/Core/Inc" \
+            "${REPO_ROOT}/control_chassis/host/actuator_soft_start_harness.c" \
+            "${REPO_ROOT}/control_chassis/Core/UserDev/lifter.c" \
+            "${REPO_ROOT}/control_chassis/Core/UserDev/grass_bag_control.c" \
+            -lm -o "${WORK_DIR}/actuator_soft_start" || return 1
+        "${WORK_DIR}/actuator_soft_start" || return 1
+        "$cc" -std=c99 -Wall -Wextra -Werror -DACTUATOR_SOFT_START_MS=0 \
             -DMOWER_GRASS_BAG_CH6_ENABLED=1 -DMOWER_BLADE_OK_ENABLED=1 \
             -DREMOTE_BACKEND_A28_E34=0 -DREMOTE_BACKEND_FLYSKY_IBUS=1 \
             -include "${REPO_ROOT}/control_chassis/host/lifter_fakes/main.h" \
@@ -357,6 +409,14 @@ run_host_harnesses() {
             echo "Expected CH6 bag/legacy blade confirmation conflict to fail compilation" >&2
             exit 1
         fi
+        for timeout_ms in 0 200 301; do
+            if "$cc" -std=c99 -DREMOTE_BACKEND_A28_E34=0 -DREMOTE_BACKEND_FLYSKY_IBUS=1 \
+                -DREMOTE_IBUS_TIMEOUT_MS="${timeout_ms}U" -I"${REPO_ROOT}/control_chassis/Core/Inc" \
+                -c "${WORK_DIR}/bag_conflict.c" -o "${WORK_DIR}/invalid_timeout.o" 2>/dev/null; then
+                echo "Expected unsupported i-BUS timeout ${timeout_ms}ms to fail compilation" >&2
+                return 1
+            fi
+        done
     } >"$log" 2>&1 || {
         fail "Remote Backend Harness"
         cat "$log" >&2
@@ -364,12 +424,78 @@ run_host_harnesses() {
     }
     pass "Remote Backend (A28/E34 & FlySky i-BUS stream/framing isolation)"
 
+    python3 "${REPO_ROOT}/tools/test_actuator_pwm.py" >"${LOG_DIR}/host_actuator_pwm.log" 2>&1 || {
+        fail "Actuator PWM clock, timer and H-bridge regression"
+        cat "${LOG_DIR}/host_actuator_pwm.log" >&2
+        return 1
+    }
+    pass "Actuator PWM (actual RCC/TIM/EG2104, bag 10kHz / height 10kHz, +/-50%, startup and stop zero)"
+
+    info "=== Running Lifter Height Homing Harness (both remote backends) ==="
+    log="${LOG_DIR}/host_lifter_height.log"
+    {
+        for backend in a28 flysky; do
+            local height_defs=(-DREMOTE_BACKEND_A28_E34=1 -DREMOTE_BACKEND_FLYSKY_IBUS=0)
+            if [[ "$backend" == flysky ]]; then
+                height_defs=(-DREMOTE_BACKEND_A28_E34=0 -DREMOTE_BACKEND_FLYSKY_IBUS=1
+                    -DMOWER_GRASS_BAG_CH6_ENABLED=1 -DMOWER_BLADE_OK_ENABLED=1)
+            fi
+            "$cc" -std=c99 -Wall -Wextra -Werror -DACTUATOR_SOFT_START_MS=0 "${height_defs[@]}" \
+                -include "${REPO_ROOT}/control_chassis/host/lifter_fakes/main.h" \
+                -I"${REPO_ROOT}/control_chassis/host/lifter_fakes" \
+                -I"${REPO_ROOT}/control_chassis/Core/Inc" \
+                "${REPO_ROOT}/control_chassis/host/lifter_height_harness.c" \
+                "${REPO_ROOT}/control_chassis/Core/UserDev/lifter.c" \
+                "${REPO_ROOT}/control_chassis/Core/UserDev/grass_bag_control.c" \
+                -lm -o "${WORK_DIR}/lifter_height_${backend}" || return 1
+            "${WORK_DIR}/lifter_height_${backend}" || return 1
+        done
+    } >"$log" 2>&1 || {
+        fail "Lifter Height Homing Harness"
+        cat "$log" >&2
+        return 1
+    }
+    pass "Lifter Height (interruptible 10s homing, reversed PWM, latest target wins)"
+
     python3 "${REPO_ROOT}/tools/check_i6x_calibration.py" >"${LOG_DIR}/host_i6x_calibration.log" 2>&1 || {
         cat "${LOG_DIR}/host_i6x_calibration.log" >&2
         return 1
     }
     pass "i6X stick calibration validation and neutral fallback"
 
+    python3 "${REPO_ROOT}/tools/check_i6x_startup_warning.py" >"${LOG_DIR}/host_i6x_startup_warning.log" 2>&1 || {
+        cat "${LOG_DIR}/host_i6x_startup_warning.log" >&2
+        return 1
+    }
+    pass "i6X mower direct startup, native throttle/switch warnings and calibration isolation"
+
+
+    info "=== Running IMU Fault / Runtime / SPI Deadline Harnesses ==="
+    for imu_test in imu_fault imu_runtime imu_spi_deadline; do
+        python3 "${REPO_ROOT}/tools/test_${imu_test}.py" >"${LOG_DIR}/host_${imu_test}.log" 2>&1 || {
+            cat "${LOG_DIR}/host_${imu_test}.log" >&2
+            return 1
+        }
+    done
+    pass "IMU fault propagation, runtime diagnostics and bounded HAL deadlines"
+
+    info "=== Running IMU Numeric Harness (optimized strict aliasing) ==="
+    local imu_log="${LOG_DIR}/host_imu_solver.log"
+    printf '#ifndef __MAIN_H\n#define __MAIN_H\n#include <stdint.h>\n#endif\n' > "${WORK_DIR}/imu_main.h"
+    {
+        "$cc" -std=c99 -O2 -fstrict-aliasing -Wall -Wextra -Werror \
+            -Wno-missing-field-initializers -Wstrict-aliasing=2 \
+            -fsanitize=address,undefined -include "${WORK_DIR}/imu_main.h" \
+            -I"${REPO_ROOT}/control_chassis/Core/Inc" \
+            "${REPO_ROOT}/control_chassis/host/imu_solver_harness.c" -lm \
+            -o "${WORK_DIR}/imu_solver" || return 1
+        ASAN_OPTIONS=detect_leaks=0 "${WORK_DIR}/imu_solver" || return 1
+    } >"$imu_log" 2>&1 || {
+        fail "IMU Numeric harness failed"
+        cat "$imu_log" >&2
+        return 1
+    }
+    pass "IMU Numeric (accuracy, pose and strict-aliasing optimization)"
 
     info "=== [9/9] Running Safety Ownership Gate Harness ==="
     log="${LOG_DIR}/host_safety_ownership_gate.log"
@@ -413,8 +539,8 @@ run_chassis_build() {
     local log="${LOG_DIR}/chassis_build.log"
     local chassis_dir="${REPO_ROOT}/control_chassis"
 
-    if ! command -v arm-none-eabi-gcc >/dev/null 2>&1; then
-        fail "arm-none-eabi-gcc not found in PATH"
+    if ! source "${REPO_ROOT}/tools/gcc15_env.sh"; then
+        fail "Pinned GCC 15.3 toolchain is unavailable"
         return 1
     fi
 
@@ -433,8 +559,8 @@ run_chassis_build() {
         echo "Using Toolchain: $(which arm-none-eabi-gcc)"
         (
             cd "$chassis_dir"
-            cmake --preset debug
-            cmake --build --preset debug
+            cmake --preset debug || exit 1
+            cmake --build --preset debug || exit 1
         )
     } >"$log" 2>&1 || {
         fail "Chassis build failed"
@@ -442,7 +568,7 @@ run_chassis_build() {
         return 1
     }
 
-    if [[ ! -f "${chassis_dir}/build/debug/control_chassis.elf" || ! -f "${chassis_dir}/build/debug/control_chassis.hex" || ! -f "${chassis_dir}/build/debug/control_chassis.bin" ]]; then
+    if [[ ! -f "${chassis_dir}/build/gcc15/debug/control_chassis.elf" || ! -f "${chassis_dir}/build/gcc15/debug/control_chassis.hex" || ! -f "${chassis_dir}/build/gcc15/debug/control_chassis.bin" ]]; then
         fail "Build finished without creating target binary"
         cat "$log" >&2
         return 1
@@ -471,7 +597,7 @@ main() {
             run_chassis_build
             ;;
         all)
-            run_host_harnesses
+            run_host_harnesses || return 1
             echo ""
             run_chassis_build
             ;;

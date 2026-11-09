@@ -1,0 +1,6 @@
+PASS CAN blade stop: retained until TXOK, isolated mailbox, supersession, deferred preemption, abort/success race, expiry/clock/generation wrap and protocol guards
+PASS actual CAN scheduler -O0
+PASS CAN blade stop: retained until TXOK, isolated mailbox, supersession, deferred preemption, abort/success race, expiry/clock/generation wrap and protocol guards
+PASS actual CAN scheduler -O2
+PASS production STM32 TX adapter: exact mailbox registers, result decoding, W1C/abort isolation and state guards
+PASS production STM32 TX adapter: exact mailbox registers, result decoding, W1C/abort isolation and state guards

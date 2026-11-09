@@ -3,6 +3,9 @@
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
+#if MOWER_BLADE_OK_ENABLED
+bool exp3_board_defer_result(const Exp3Message *m) { (void)m; return false; }
+#endif
 
 static Exp3Message result(void)
 {
@@ -49,15 +52,19 @@ static void lossless_results_and_corrupt_frames(void)
     uint16_t w[90], other[90], damaged[90];
     uint8_t expected[36], actual[36];
     /* Independently generated with Python struct.pack and zlib.crc32. */
+    #if MOWER_BLADE_OK_ENABLED
+    const uint16_t golden[18] = {0xe044U,0xe133U,0xe222U,0xe311U,0xe488U,0xe577U,0xe666U,0xe755U,0xe841U,0xe901U,0xea8eU,0xeb02U,0xec11U,0xed00U,0xeeb0U,0xef8eU,0xf08cU,0xf1d4U};
+#else
     const uint16_t golden[17] = {
         0xe044U, 0xe133U, 0xe222U, 0xe311U, 0xe488U, 0xe577U,
         0xe666U, 0xe755U, 0xe841U, 0xe901U, 0xea8eU, 0xeb02U,
         0xec11U, 0xed87U, 0xee14U, 0xef3bU, 0xf0fcU
     };
+    #endif
     unsigned n, i;
     Exp3Link rx = {0};
     n = words(&m, w);
-    assert(n == 17U);
+    assert(n == (MOWER_BLADE_OK_ENABLED ? 18U : 17U));
     assert(!memcmp(w, golden, sizeof(golden)));
     assert(receive(w, n, &decoded) == EXP3_COMPLETE);
     assert(exp3_encode(&m, expected) && exp3_encode(&decoded, actual));
@@ -87,6 +94,13 @@ static void lossless_results_and_corrupt_frames(void)
     m.status = EXP3_CANCELLED;
     assert(words(&m, w) == n && receive(w, n, &decoded) == EXP3_COMPLETE);
     assert(decoded.command == EXP3_CANCEL && decoded.status == EXP3_CANCELLED);
+#if MOWER_BLADE_OK_ENABLED
+    m.context = EXP3_UNLOCK_CONTEXT;
+    assert(words(&m, w) == n && receive(w, n, &decoded) == EXP3_COMPLETE);
+    assert(decoded.context == EXP3_UNLOCK_CONTEXT);
+    memcpy(damaged, w, sizeof(w)); damaged[13] ^= 1U;
+    assert(receive(damaged, n, &decoded) != EXP3_COMPLETE);
+#endif
     m.action = m.request = 65536U; /* Full-width identity never gets truncated. */
     n = words(&m, w);
     assert(n == 90U && receive(w, n, &decoded) == EXP3_COMPLETE);
@@ -108,12 +122,13 @@ static void stale_result_cannot_complete_current_wait(void)
     box.command = EXP3_SEND;
     exp3_hil_poll(&hmi, &box, NULL, 1U, 20U);
     assert(hmi.waiting);
-    for (scenario = 0U; scenario < 4U; ++scenario) {
+    for (scenario = 0U; scenario < 5U; ++scenario) {
         Exp3Message old = m;
         if (scenario == 0U) old.hmi++;
         if (scenario == 1U) old.generation++;
         if (scenario == 2U) old.action = ++old.request;
         if (scenario == 3U) { old.command = EXP3_CANCEL; old.status = EXP3_CANCELLED; }
+        if (scenario == 4U) old.context = EXP3_UNLOCK_CONTEXT;
         n = words(&old, w);
         for (i = 0U; i < n; ++i)
             exp3_hil_receive(&hmi, NULL, w[i], scenario * 5000U + i * 250U + 10U);
@@ -121,7 +136,7 @@ static void stale_result_cannot_complete_current_wait(void)
     }
     n = words(&m, w);
     for (i = 0U; i < n; ++i)
-        exp3_hil_receive(&hmi, NULL, w[i], 20010U + i * 250U);
+        exp3_hil_receive(&hmi, NULL, w[i], 45010U + i * 250U);
     assert(!hmi.waiting && hmi.matches == 1U);
 }
 

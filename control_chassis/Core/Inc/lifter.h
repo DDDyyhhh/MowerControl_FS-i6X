@@ -56,20 +56,19 @@ void Lifter_Init(void);
 void Lifter_Task_Update(void); // 周期调用 (建议50ms)
 void Lifter_Stop(void);
 
-#if MOWER_BLADE_OK_ENABLED
-/* Motion publishes permission; false also cancels the previous height target. */
-void Lifter_SetHeightPermission(bool permitted);
-#endif
-// 设置目标档位 (1-5)
+// 设置目标档位 (1=最低, 5=最高)。请求由周期任务处理；进入5档完整归位10秒。
+// 重复5档不重启计时；归位期间切换1~4档，下一次周期更新立即执行新目标。
 void Lifter_SetTargetLevel(uint8_t level);
 
 // 获取当前高度 (cm) - 用于发送给遥控器
 float Lifter_GetCurrentHeight_cm(void);
+// Atomic read-only estimate + lifter-task heartbeat for SENS telemetry.
+uint16_t Lifter_GetHeightFeedback(void);
 
 // 获取当前状态
 Lifter_MachineState Lifter_GetState(void);
 
-//用户自己初始化高度到最高
+// 用户请求初始化到最高；重复请求不重置计时，普通档位可中途打断。
 void Lifter_User_Init(void);
 
 

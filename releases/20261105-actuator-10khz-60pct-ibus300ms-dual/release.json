@@ -1,0 +1,187 @@
+{
+  "release": "20261105-actuator-10khz-60pct-ibus300ms-dual",
+  "release_date": "2026-11-05",
+  "status": "software verified; full dual firmware; not flashed",
+  "reference_release": "20261104-actuator-15khz-40pct-ibus300ms-dual",
+  "identical_chassis_reference": "20261104-actuator-60pct-ibus300ms-dual",
+  "protocol": "0x36 unchanged",
+  "configuration": {
+    "pwm_frequency_hz": 10000,
+    "lifter_duty_percent": 60,
+    "grass_bag_duty_percent": 60,
+    "stop_duty_percent": 0,
+    "timer_input_hz": 84000000,
+    "prescaler": 0,
+    "auto_reload": 8399,
+    "compare_at_60pct": 5040,
+    "period_us": 100,
+    "high_us": 60,
+    "low_us": 40,
+    "nominal_bus_v": 48,
+    "ideal_average_v": 28.8,
+    "ibus_timeout_ms": 300,
+    "homing_ms": 10000,
+    "grass_bag_run_ms": 20000,
+    "up_speed_factor": 0.8,
+    "height_time_table_ms": [
+      9500,
+      6500,
+      4500,
+      2800,
+      0
+    ],
+    "bag_close_blanking_ms": 14000,
+    "mechanical_calibration": "unchanged; field operation and noise confirmation pending",
+    "blade_driver": "FTESC CAN; legacy TIM2 PWM channel shares restored 10kHz period",
+    "500ns_deadtime": "not implemented"
+  },
+  "build": {
+    "entrypoint": "tools/build_blade_ok.sh",
+    "toolchain": "Arm GNU Toolchain 15.3.Rel1 / GCC 15.3.1",
+    "chassis_preset": "mower-ok-release",
+    "radio": "PCB=I6X; TRANSLATIONS=EN; PCBI6X_MOWER_BLADE_OK=ON",
+    "base_address_both": "0x08000000"
+  },
+  "validation": {
+    "canonical_dual_entrypoint": "PASS",
+    "actual_clock_timer_hbridge_O0_O2": "PASS 10kHz, +/-60%, startup/stop zero, IOC agrees",
+    "host_and_production_builds": "PASS",
+    "actual_radio_thumb": "PASS 0/1234/65535",
+    "new_warning_types": 0,
+    "reader_dwarf": "PASS real ARM ELF/GDB; target memory/RPC simulated",
+    "svn_preflight": "PASS with 3 workspace warning categories",
+    "chassis_bin_identical_to_original_10khz60pct": true,
+    "hardware_flash_waveform_readback_and_noise": "NOT_RUN"
+  },
+  "identity": {
+    "source_scope_verified": true,
+    "clock_hbridge_ibus_and_blade_config_unchanged": true,
+    "original_line_endings_preserved": true,
+    "historical_10khz60pct_and_15khz40pct_releases_unchanged": true,
+    "radio_source_files_unchanged": 921,
+    "new_build_warning_types": 0,
+    "pwm": {
+      "timer_input_hz": 84000000,
+      "prescaler": 0,
+      "auto_reload": 8399,
+      "frequency_hz": 10000,
+      "duty_percent": 60,
+      "compare": 5040,
+      "period_us": 100,
+      "high_us": 60,
+      "low_us": 40
+    },
+    "images": {
+      "chassis": {
+        "bytes": 90412,
+        "sha256": "4469331b6dcff4514dfb095670c205833775336c2d30a5a38ddc62b00ff82fe5",
+        "base_address": "0x08000000",
+        "flash_capacity": 524288,
+        "initial_stack": "0x20020000",
+        "reset_handler": "0x8010465"
+      },
+      "radio": {
+        "bytes": 130872,
+        "sha256": "a50063c822cccd9f0018e774742d207b58d4d0e03cdde09e9e372eb34338b4b4",
+        "base_address": "0x08000000",
+        "flash_capacity": 131072,
+        "initial_stack": "0x20004000",
+        "reset_handler": "0x801c1bd"
+      }
+    },
+    "chassis_bin_identical_to_original_10khz60pct": true,
+    "chassis_translation_units_timeout_300ms": 99,
+    "radio_changes_only_build_timestamp": true
+  },
+  "radio": {
+    "source_modified": false,
+    "only_build_timestamp_differs_from_previous": true,
+    "existing_matching_radio_may_be_retained": true
+  },
+  "rollback": {
+    "directory": "rollback-15khz-40pct",
+    "pwm_frequency_hz": 15000,
+    "duty_percent": 40,
+    "ibus_timeout_ms": 300,
+    "original_both_images_unchanged": true
+  },
+  "changed_files": [
+    "control_chassis/CONTEXT.md",
+    "control_chassis/Core/Src/tim.c",
+    "control_chassis/Core/UserDev/lifter.c",
+    "control_chassis/concrol.ioc",
+    "control_chassis/host/grass_bag_lifter_harness.c",
+    "control_chassis/host/lifter_height_harness.c",
+    "docs/releases/actuator-10khz-60pct-ibus300ms-dual.md",
+    "tools/test_actuator_pwm.py",
+    "tools/verify.sh"
+  ],
+  "source_snapshot_files": 174,
+  "source_snapshot": "key audit files; not standalone checkout",
+  "files": {
+    "control-chassis-actuator-10khz-60pct-ibus300ms.bin": {
+      "bytes": 90412,
+      "sha256": "4469331b6dcff4514dfb095670c205833775336c2d30a5a38ddc62b00ff82fe5"
+    },
+    "control-chassis-actuator-10khz-60pct-ibus300ms.elf": {
+      "bytes": 2289036,
+      "sha256": "b55eee3bcca7346ea1596ed65203bcd63d58601f353b527d07224de53a205fb5"
+    },
+    "control-chassis-actuator-10khz-60pct-ibus300ms.hex": {
+      "bytes": 254378,
+      "sha256": "5e15b330ee2624f93a2fe44f6a842885fccd414c6ff1375086e88eebd2bce4b0"
+    },
+    "control-chassis-actuator-10khz-60pct-ibus300ms.map": {
+      "bytes": 1797572,
+      "sha256": "cee40b40c2a6d3fb353ec0871e746cc282e0713ae7058608473969e54196a0e9"
+    },
+    "fs-i6x-actuator10khz60pct-paired.bin": {
+      "bytes": 130872,
+      "sha256": "a50063c822cccd9f0018e774742d207b58d4d0e03cdde09e9e372eb34338b4b4"
+    },
+    "fs-i6x-actuator10khz60pct-paired.elf": {
+      "bytes": 2130060,
+      "sha256": "c31022b18cf01d0d52e1e063a44c783e0c5db0fba5a7a9355ef5f616dd52688d"
+    },
+    "fs-i6x-actuator10khz60pct-paired.hex": {
+      "bytes": 368191,
+      "sha256": "3623163977651eae7cfef9e8b02150cf5a31d13f54390c18f4ae9c2e3da401b1"
+    },
+    "fs-i6x-actuator10khz60pct-paired.map": {
+      "bytes": 1070864,
+      "sha256": "8e964c38ecacf5cccb0180c7a994b0a39008979a8acd2f75d3ee9fcf1f4bbf1d"
+    },
+    "rollback-15khz-40pct/control-chassis-actuator-15khz-40pct-ibus300ms.bin": {
+      "bytes": 90412,
+      "sha256": "13daafbeb0519d11d30a56d73d58459b3e478672aa62db0c300485744d5f361e"
+    },
+    "rollback-15khz-40pct/control-chassis-actuator-15khz-40pct-ibus300ms.elf": {
+      "bytes": 2289036,
+      "sha256": "0ffb87f423b93704c5e144ded87867b6be9bf0bcf346427cac748b15311f7aef"
+    },
+    "rollback-15khz-40pct/control-chassis-actuator-15khz-40pct-ibus300ms.hex": {
+      "bytes": 254378,
+      "sha256": "fd85cdc9edebea258c2cf037c10e90ffac929b599d2ceced2b5ddd95849462a5"
+    },
+    "rollback-15khz-40pct/control-chassis-actuator-15khz-40pct-ibus300ms.map": {
+      "bytes": 1797572,
+      "sha256": "cee40b40c2a6d3fb353ec0871e746cc282e0713ae7058608473969e54196a0e9"
+    },
+    "rollback-15khz-40pct/fs-i6x-actuator15khz40pct-paired.bin": {
+      "bytes": 130872,
+      "sha256": "8747efa4fbc2142c49aabda7235fe7f30a7ec119ad0c89a772d9ffeb4d41fd37"
+    },
+    "rollback-15khz-40pct/fs-i6x-actuator15khz40pct-paired.elf": {
+      "bytes": 2130060,
+      "sha256": "5fc162a7d16ce1f036c0bf05351aab1497aecf8d7f7db6e75d0b3cc2b2f4d103"
+    },
+    "rollback-15khz-40pct/fs-i6x-actuator15khz40pct-paired.hex": {
+      "bytes": 368191,
+      "sha256": "4f5aca3689e69c4267eac97596f2ff9044364d2605bbedbf9b265f3680c0ff98"
+    },
+    "rollback-15khz-40pct/fs-i6x-actuator15khz40pct-paired.map": {
+      "bytes": 1070864,
+      "sha256": "05ef7a69a4ac33434ad70c6aa9a7318bef8a4c8cac73633b935790dc0bb70807"
+    }
+  }
+}

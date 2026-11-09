@@ -2,12 +2,11 @@
 
 工程类 skills 在浏览代码前，按本文件读取领域文档。
 
-本仓库采用 multi-context 布局：`control_chassis` 为底盘；`OpenI6X/FS-I6X` 为当前 FS-i6X 遥控器；`remote_lvgl` 为独立旧遥控器。跨板通信协议形成共享契约。
+本仓库采用 multi-context 布局：`control_chassis` 与 `remote_lvgl` 是两套独立固件，通过通信协议形成共享契约。
 
 ## 探索前读取
 
 - `control_chassis/CONTEXT.md`：底盘控制板核心子系统、架构边界与路径导航
-- FS-i6X 遥控器或 CH11/CH12 确认协议改动：同时读取 `OpenI6X/FS-I6X/CONTEXT.md`
 - 根 `docs/adr/`：跨板级协议、报文 ID、时序、安全状态机等共享决策（按需创建/读取）
 - `<context>/docs/adr/`：仅影响单块板的局部决策
 
@@ -18,8 +17,6 @@
 ```text
 /
 ├── docs/adr/
-├── OpenI6X/FS-I6X/
-│   └── CONTEXT.md
 ├── control_chassis/
 │   ├── CONTEXT.md
 │   └── docs/adr/

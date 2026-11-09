@@ -1,0 +1,3 @@
+PASS independent source: 7030 files; exactly 5 presentation/document/test changes; protected functions unchanged
+PASS original Chinese workspace: 9456 file hashes unchanged
+PASS delivered SHA256 checksums, capacity and release metadata

@@ -41,7 +41,7 @@
 
 本次 `tools/build_blade_ok.sh` 成功，包含全套host、底盘debug构建及双端发布构建；SVN preflight生产清单通过，保留3类既有工作区告警。源码和日志见build-verification。
 
-在包目录运行 `sha256sum -c SHA256SUMS` 核对文件。遥控器DFU刷写使用顶层 `fs-i6x-mower-v1.bin`，对应Internal Flash起始地址0x08000000；底盘ST-Link刷写使用顶层 `control-chassis-mower-v1.elf`。沿用随包刷写复测说明中的连接、校准和安全恢复步骤，说明中的旧固件名应替换为本包顶层名称。已通过复测的设备无需重复刷写。
+遥控器DFU刷写使用顶层 `fs-i6x-mower-v1.bin`，对应Internal Flash起始地址0x08000000；底盘ST-Link刷写使用顶层 `control-chassis-mower-v1.elf`。连接、校准和安全恢复步骤见随包刷写复测说明。已通过复测的设备无需重复刷写。
 
 ## 版本控制范围
 

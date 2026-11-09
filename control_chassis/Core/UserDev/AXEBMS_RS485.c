@@ -20,6 +20,7 @@
 
 #include "AXEBMS_RS485.h"
 #include "main.h"
+#include "rs485.h"
 #include "modbus_rtu_bus.h" // <<<--- 关键：包含新的总线头文件
 #include <string.h>     // 包含 memcpy
 #define AXEBMS_RS485_TICK_MS      500
@@ -40,6 +41,7 @@ static void BMS_ModbusCallback(uint8_t* pdu, uint16_t pdu_len) {
     
     if (pdu != NULL && pdu_len == 32) {
         my_bms.sample_sequence++;
+        __DMB();
         my_bms.data.Voltage = (pdu[0] << 8) | pdu[1];
         my_bms.data.CurCadc = ((int16_t)((pdu[2] << 8) | pdu[3])) - 10000;
         my_bms.data.Temp1 = (pdu[4] << 8) | pdu[5];
@@ -59,6 +61,7 @@ static void BMS_ModbusCallback(uint8_t* pdu, uint16_t pdu_len) {
         my_bms.last_good_tick = HAL_GetTick();
         my_bms.sample_valid = true;
         my_bms.validCnt = 1;
+        __DMB();
         my_bms.sample_sequence++;
     }
 }
@@ -66,6 +69,9 @@ static void BMS_ModbusCallback(uint8_t* pdu, uint16_t pdu_len) {
 
 
 void AXEBMS_RS485_Init(AXEBMS_RS485* bms, uint8_t devAddr) {
+    bms->sample_valid = false;
+    bms->last_good_tick = 0U;
+    bms->sample_sequence = 0U;
     bms->devAddr = devAddr;
     
     bms->warmingVoltage = 0;
@@ -232,7 +238,6 @@ static void parseResponseData(AXEBMS_RS485* bms) {
 void AXEBMS_RS485_Process(AXEBMS_RS485* bms) {
     uint32_t currentTime = HAL_GetTick();
     
-    static uint32_t lastRequestTime = 0;
     
     // **重要**：总线的Process函数需要一直被调用，以处理接收和超时
     ModbusRtuBus_Process();
@@ -319,21 +324,23 @@ bool AXEBMS_RS485_ReadTelemetry(const AXEBMS_RS485* bms,
         return false;
     }
 
-    do
+    /* Motion can preempt the lower-priority BMS writer: never spin on odd. */
+    for (unsigned retry=0U; retry<3U; ++retry)
     {
         sequence_before = bms->sample_sequence;
         if ((sequence_before & 1U) != 0U)
         {
-            continue;
+            return false;
         }
+        __DMB();
         *data = bms->data;
         *last_good_tick = bms->last_good_tick;
         *sample_valid = bms->sample_valid;
+        __DMB();
         sequence_after = bms->sample_sequence;
-    } while ((sequence_before != sequence_after) ||
-             ((sequence_after & 1U) != 0U));
-
-    return true;
+        if (sequence_before == sequence_after) return true;
+    }
+    return false;
 }
 int8_t AXEBMS_RS485_GetState(AXEBMS_RS485* bms) {
     return bms->state;

@@ -1,0 +1,82 @@
+[1m=== Running Battery Protection Harnesses ===[0m
+  [[0;32mPASS[0m] Battery Protection (BMS publication, Motion recovery, full-speed wheel adapters and LOW latch)
+[1m=== [1/9] Running Blade Driver Selection Harness ===[0m
+  [[0;32mPASS[0m] Blade Driver Selection (default FTESC CAN, explicit PWM/FTESC CAN, negative compile guards)
+[1m=== [2/9] Running Blade Manual Control Harness ===[0m
+  [[0;32mPASS[0m] Blade Manual Control (PWM & FTESC CAN confirmation state machine)
+[1m=== [3/9] Running Blade Confirm CH6 Adapter Harness ===[0m
+  [[0;32mPASS[0m] Blade Confirm CH6 Adapter (Baseline, edge debounce, duplicate rejection & BMC integration)
+[1m=== Running CAN TX scheduler failure/interleaving harness (-O0/-O2) ===[0m
+  [[0;32mPASS[0m] CAN TX scheduler (stop retention, completion and mailbox ordering)
+[1m=== [4/9] Running FTESC Realtime Feedback Harness ===[0m
+  [[0;32mPASS[0m] FTESC Realtime Feedback (CAN packet parsing & CRC validation)
+[1m=== [5/9] Running SENS i-BUS Responder Harness ===[0m
+  [[0;32mPASS[0m] SENS i-BUS Responder (Discovery, measurement request & packet packing)
+[1m=== [6/9] Running Telemetry Snapshot Harness ===[0m
+  [[0;32mPASS[0m] Telemetry Snapshot (BMS, odometry, fault bitfield & atomic exchange)
+[1m=== [7/9] Running Remote Authorization Harness ===[0m
+  [[0;32mPASS[0m] Remote Authorization (CH8 dual-edge unlock state machine)
+[1m=== Running i-BUS Snapshot Concurrency Harness ===[0m
+  [[0;32mPASS[0m] Remote receive timestamps, stale queue rejection and stream continuity
+  [[0;32mPASS[0m] i-BUS Snapshot (single writer, preemption, independent timeout, IRQ restore; O0/O2)
+[1m=== [8/9] Running Remote Backend Harness ===[0m
+  [[0;32mPASS[0m] Remote Backend (A28/E34 & FlySky i-BUS stream/framing isolation)
+  [[0;32mPASS[0m] Actuator PWM (actual RCC/TIM/EG2104, bag 10kHz / height 15kHz, +/-60%, startup and stop zero)
+[1m=== Running Lifter Height Homing Harness (both remote backends) ===[0m
+  [[0;32mPASS[0m] Lifter Height (interruptible 10s homing, reversed PWM, latest target wins)
+  [[0;32mPASS[0m] i6X stick calibration validation and neutral fallback
+  [[0;32mPASS[0m] i6X mower direct startup, native throttle/switch warnings and calibration isolation
+[1m=== Running IMU Fault / Runtime / SPI Deadline Harnesses ===[0m
+  [[0;32mPASS[0m] IMU fault propagation, runtime diagnostics and bounded HAL deadlines
+[1m=== Running IMU Numeric Harness (optimized strict aliasing) ===[0m
+  [[0;32mPASS[0m] IMU Numeric (accuracy, pose and strict-aliasing optimization)
+[1m=== [9/9] Running Safety Ownership Gate Harness ===[0m
+  [[0;32mPASS[0m] Safety Ownership Gate (Arbitration, latching, zero-intent enforcement)
+
+  [[0;32mPASS[0m] Ticket03 Experiment3 protocol and transport
+  [[0;32mPASS[0m] Mower OK release flow, controller runtime and home display
+  [[0;32mPASS[0m] Production API ownership and safety boundaries
+[0;32m[1mALL HOST HARNESSES PASSED![0m
+
+[1m=== Building Chassis Firmware (CMake / ARM GCC) ===[0m
+  [[0;32mPASS[0m] Chassis CMake build succeeded (ELF, HEX and BIN generated)
+-- Configuring done (0.0s)
+-- Generating done (0.0s)
+-- Build files have been written to: /Users/dyh/phld/MowerControl_FS-i6X/control_chassis/build/gcc15/mower-ok-release
+ninja: no work to do.
+-- Git repository not found, revision number not available.
+-- OpenI6X 2.3.0 @0
+-- Python executable: /usr/bin/python3
+-- Python bin directory: /usr/bin
+TARGET simu/libsimulator: cpp compiler /Applications/ArmGNUToolchain/15.3.rel2/arm-none-eabi/bin/arm-none-eabi-g++ v15.3.1
+CMake Warning at radio/src/tests/CMakeLists.txt:45 (message):
+  WARNING: gtests target will not be available (check that GTEST_INCDIR,
+  GTEST_SRCDIR, and Qt5Widgets are configured).
+
+
+TARGET firmware: cpp compiler arm-none-eabi-g++ v15.3.1
+-- Configuring done (0.1s)
+-- Generating done (0.1s)
+-- Build files have been written to: /Users/dyh/phld/MowerControl_FS-i6X/OpenI6X/FS-I6X/opentx/build-mower-ok-gcc15
+[  3%] Built target 9x_xbm_1bit
+[ 11%] Built target firmware_translations
+[ 27%] Built target 9x_fonts_1bit
+[ 29%] Built target 9x_bitmaps
+[ 30%] Building CXX object radio/src/CMakeFiles/firmware.dir/stamp.cpp.obj
+[ 30%] Building CXX object radio/src/CMakeFiles/firmware.dir/gui/128x64/view_about.cpp.obj
+[ 30%] Building CXX object radio/src/CMakeFiles/firmware.dir/debug.cpp.obj
+[ 30%] Building CXX object radio/src/CMakeFiles/firmware.dir/targets/common/arm/stm32/usbd_storage_msd.cpp.obj
+[ 30%] Linking CXX executable ../../firmware.elf
+/Applications/ArmGNUToolchain/15.3.rel2/arm-none-eabi/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/bin/ld: warning: ../../firmware.elf has a LOAD segment with RWX permissions
+Flash used: 130864 / 131072 (99%), left: 208
+RAM used: 15856 / 16384 (96%), left: 528
+[100%] Built target firmware
+PASS actual Thumb live voltage=0; snapshot=0
+PASS actual Thumb live voltage=1234; snapshot=1234
+PASS actual Thumb live voltage=65535; snapshot=65535
+   text	   data	    bss	    dec	    hex	filename
+ 130792	     72	  15784	 146648	  23cd8	/Users/dyh/phld/MowerControl_FS-i6X/OpenI6X/FS-I6X/opentx/build-mower-ok-gcc15/firmware.elf
+  89624	    764	  54132	 144520	  23488	/Users/dyh/phld/MowerControl_FS-i6X/control_chassis/build/gcc15/mower-ok-release/control_chassis.elf
+f8807075337d99642a845fbb7c3bbc245ef5ff6625eada83a1255c98724bd66c  /Users/dyh/phld/MowerControl_FS-i6X/OpenI6X/FS-I6X/opentx/build-mower-ok-gcc15/firmware.bin
+e5b6f8b8589e79f889c5d06e862df91a3ea39b7de52c0d70ae273af8bc25450a  /Users/dyh/phld/MowerControl_FS-i6X/control_chassis/build/gcc15/mower-ok-release/control_chassis.bin
+5633a6f13e79db34f7021afab7de93300e5aa1afc4555c5446b12d0b74dcc559  /Users/dyh/phld/MowerControl_FS-i6X/control_chassis/build/gcc15/mower-ok-release/control_chassis.hex

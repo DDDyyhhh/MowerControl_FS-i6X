@@ -120,8 +120,11 @@ static HAL_StatusTypeDef BladeMotor_SetSpeedRaw(float speed_erpm)
 
     if (!isfinite(speed_erpm) || speed_erpm < 0.0f)
     {
-        (void)Flipsky_CAN_SetSpeedErpm(0.0f);
-        s_last_can_erpm = 0.0f;
+        if (Flipsky_CAN_SetSpeedErpm(0.0f) != 0U)
+        {
+            s_last_can_erpm = 0.0f;
+            s_last_send_tick = HAL_GetTick();
+        }
         return HAL_ERROR;
     }
 
@@ -152,9 +155,11 @@ void BladeMotor_Start(void)
 
 void BladeMotor_Stop(void)
 {
-    (void)Flipsky_CAN_SetSpeedErpm(0.0f);
-    s_last_can_erpm = 0.0f;
-    s_last_send_tick = HAL_GetTick();
+    if (Flipsky_CAN_SetSpeedErpm(0.0f) != 0U)
+    {
+        s_last_can_erpm = 0.0f;
+        s_last_send_tick = HAL_GetTick();
+    }
 }
 
 #else
@@ -165,7 +170,7 @@ HAL_StatusTypeDef BladeMotor_SetSpeedForOwner(ExecutionOwner_t owner, float spee
 {
     bool nonzero_intent = isfinite(speed) && (speed > 0.0f);
 
-    if (!SafetyOwnershipGate_Authorize(owner, nonzero_intent))
+    if (!SafetyOwnershipGate_AuthorizeBlade(owner, nonzero_intent))
     {
         speed = 0.0f;
     }

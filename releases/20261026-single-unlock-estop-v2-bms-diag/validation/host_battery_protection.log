@@ -1,0 +1,6 @@
+PASS LOW: 19/20/21%, 47.99/48/48.01V, 2s, sag, frozen/gap/wrap, reboot, unlock retains blade latch, travel unchanged
+PASS actual BMS decoder -> Motion -> gate: absent/stale/invalid feedback is diagnostic only; recovery never unlocks; LOW remains blade-only
+PASS real final wheel adapter 0: absent feedback and LOW retain RC/API/cruise full speed; explicit safety stop zeros output
+PASS real final wheel adapter 1: absent feedback and LOW retain RC/API/cruise full speed; explicit safety stop zeros output
+PASS real final wheel adapter 2: absent feedback and LOW retain RC/API/cruise full speed; explicit safety stop zeros output
+PASS low-battery blade-only protection integration

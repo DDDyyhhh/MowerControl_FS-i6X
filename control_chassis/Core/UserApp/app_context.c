@@ -17,6 +17,7 @@
   */
 
 #include "app_context.h"
+#include <string.h>
 // #include "mower_config.h" // 引入宏定义
 
 
@@ -28,6 +29,8 @@ AppContext_t g_app = {
     .Unlock_tips = 0,
     .g_collision_latched = 1,
     .physical_safety_latched = 0,
+    .collision_reason_latched = 0,
+    .emergency_reason_latched = 0,
     .unlock_stage1_complete = false,
     .g_system_report_state = REPORT_INIT_SUCCESS, // 初始化成功，等待解锁
     
@@ -69,3 +72,13 @@ AppContext_t g_app = {
     .trigger_cruise_req = 0
 
 };
+
+void AppContext_RecordBootReset(uint32_t reset_flags)
+{
+    RemoteStopDiagnostics_t *diag = &g_app.remote_stop_diag;
+    memset(diag, 0, sizeof(*diag));
+    diag->magic = REMOTE_STOP_DIAG_MAGIC;
+    diag->version = REMOTE_STOP_DIAG_VERSION;
+    diag->record_size = sizeof(*diag);
+    diag->boot_reset_flags = reset_flags;
+}

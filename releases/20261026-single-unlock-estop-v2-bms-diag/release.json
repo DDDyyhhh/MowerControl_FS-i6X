@@ -1,0 +1,65 @@
+{
+  "release": "20261026-single-unlock-estop-v2-bms-diag",
+  "date": "2026-10-26 America/Los_Angeles",
+  "inherits": "20261026-single-unlock-estop-v2",
+  "baseline_archive_sha256": "1b110d3b0299f0ba503d8fd0dfbbc69b9056b7777f7c672d9762e89fe1e16e1a",
+  "protocol": {
+    "logical_version": "0x33",
+    "type": "E9",
+    "address": 10,
+    "bytes": 2,
+    "profile": 2
+  },
+  "behavior": {
+    "bms_feedback_diagnostic_only": true,
+    "real_low_battery_blade_inhibit": true,
+    "low_soc_below_percent": 20,
+    "low_pack_below_cv": 4800,
+    "low_confirm_ms": 2000,
+    "confirmed_low_retained_after_feedback_loss": true,
+    "blade_separate_confirmation": true,
+    "startup_v34_reverted": true
+  },
+  "validation": {
+    "host": "PASS",
+    "chassis_debug_release": "PASS",
+    "radio": "PASS",
+    "clean_source_rebuild": "PASS",
+    "source_manifest_sha256": "9e7d6589c56ccaa1c0861d2d717d4d3f8a39c675159899f58f150ce89c27ac61",
+    "compiler": "Arm GNU 15.3.1",
+    "new_warnings": 0,
+    "warning_compilation_pairs": 15,
+    "preflight": "PASS with 3 existing warning categories",
+    "hardware_tested": false
+  },
+  "source_files": 5206,
+  "source_archive_sha256": "f6f8cbfc2c87c69e505c010a7b393cea804b10a487c71aa277fcd1b569559a7a",
+  "artifacts": {
+    "control-chassis-bms-diag.bin": {
+      "bytes": 85976,
+      "sha256": "47d222f74b84837f2f1fd1335b22020fd78d724a160723b260dc5f19fd2f363c",
+      "flash_start": "0x08000000",
+      "elf_hex_bin_equal": true,
+      "flash_used": 85968,
+      "flash_capacity": 1048576,
+      "static_ram": 54224,
+      "ram_capacity": 131072,
+      "vector_stack": "0x20020000",
+      "vector_reset": "0x800f555"
+    },
+    "fs-i6x-bms-diag.bin": {
+      "bytes": 130872,
+      "sha256": "98b326a240a215f6d8fb0128d568a808a9bc2fb974dfa6f096e680f1c5137d99",
+      "flash_start": "0x08000000",
+      "elf_hex_bin_equal": true,
+      "flash_used": 130872,
+      "flash_capacity": 131072,
+      "static_ram": 15836,
+      "ram_capacity": 16384,
+      "vector_stack": "0x20004000",
+      "vector_reset": "0x801c255"
+    }
+  },
+  "flashed": false,
+  "svn_submitted": false
+}

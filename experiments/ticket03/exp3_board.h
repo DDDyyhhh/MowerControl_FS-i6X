@@ -1,7 +1,8 @@
 #ifndef EXP3_BOARD_H
 #define EXP3_BOARD_H
 #include "exp3_hil.h"
-#include "mower_control_contract.h"
+#include "mower_fast_status.h"
+#include "exp3_completion.h"
 #ifndef EXP3_PWM_PROBE_ENABLED
 #define EXP3_PWM_PROBE_ENABLED 0
 #endif
@@ -49,7 +50,7 @@ typedef struct {
     uint32_t pwm_compare;
     uint32_t confirm_count;
     uint32_t reject_count;
-    uint16_t ch4_raw;
+    uint16_t ch4_raw, steering_raw, throttle_raw, authority;
     uint8_t result_status;
     uint8_t blade_state;
     uint8_t gate_reason;
@@ -70,17 +71,27 @@ bool exp3_board_submit(const Exp3Message *message);
 bool exp3_board_take_pwm_event(Exp3PwmEvent *event);
 #if MOWER_BLADE_OK_ENABLED
 extern volatile uint16_t g_blade_ok_runtime_word;
-extern volatile uint16_t g_mower_unlock_generation, g_mower_control_word;
-bool exp3_board_take_chassis_event(Exp3PwmEvent *event);
-void exp3_board_request_rebind(void);
-bool exp3_board_control(uint32_t now, uint16_t *generation, uint16_t *status);
 void exp3_board_complete_pwm_event(const Exp3PwmEvent *event, bool accepted);
 bool exp3_board_defer_result(const Exp3Message *result);
+/* Nonblocking, atomic 32-bit SENS observation; zero means no completion. */
+uint32_t exp3_board_completion_part(unsigned part);
 bool exp3_board_runtime(uint32_t now, uint16_t *word);
+bool exp3_board_authority(uint32_t now, uint16_t *word);
+void exp3_board_restart_session(uint32_t now);
+/* Motion owns allocation and consumption; RF/SENS only transport snapshots. */
+uint16_t exp3_board_update_intent(unsigned phase, bool unlock, uint32_t request, uint32_t now);
+bool exp3_board_check_intent(const Exp3Message *message, uint32_t now);
 /* True only for a live, progressing PD10 sample; connected is not a position. */
 bool exp3_board_bag_connection(uint32_t now, bool *connected);
+/* Confirmed full state; false for legacy, disconnected or stale feedback. */
+bool exp3_board_bag_full(uint32_t now, bool *full);
+/* Read-only, fresh controller height estimate in millimetres. */
+bool exp3_board_height(uint32_t now, uint16_t *mm);
+/* Idle E1 diagnostics; false when unbound, incomplete or no heartbeat. */
+bool exp3_board_battery(uint32_t now, uint16_t *minimum_mv, uint16_t *reasons);
 #endif
 uint32_t exp3_board_ch4_epoch(void);
+uint32_t exp3_board_unlock_epoch(void);
 void exp3_board_publish_pwm_diag(const Exp3PwmDiag *diag);
 void exp3_board_read_pwm_diag(Exp3PwmDiag *diag);
 #endif
