@@ -4,7 +4,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 仓库组成
 
-遥控割草机的双端固件。版本库是 **SVN**（`^/branches/MowerControl_FS-i6X`），没有 git/GitHub，不要用 `git`、`gh`。
+遥控割草机的双端固件。代码同时放在两处：公司 **SVN**（`^/branches/MowerControl_FS-i6X`，主版本库）和 GitHub `DDDyyhhh/MowerControl_FS-i6X` 的 `main` 分支（镜像）。
+
+- 本目录是 SVN 工作副本，没有 `.git`，日常提交走 SVN。
+- 同步 GitHub 时，在另外的 git 克隆里覆盖内容后再提交，不要强推。
+- GitHub 的 `.gitignore` 不收 `Eide/build`、`*.uvguix.*` 等本地产物。OpenTX 文件在 SVN 中是 CRLF，在 git 中是 LF，只是换行符不同。
+- 旧的 CH8 控制源开发线（协议 0x33）只保存在 GitHub 标签 `ch8-mode-import`，SVN 里没有。
 
 | 目录 | 内容 |
 | --- | --- |
@@ -98,7 +103,7 @@ RK3588 上位机经 CAN 接入（`0x005` 控制，`0x507` 状态，见 `control_
 
 - 探索或修改领域术语、架构前，先读 `docs/agents/domain.md` 指定的文档，子系统导航在 `control_chassis/CONTEXT.md`，使用其中定义的术语。
 - 改动跨板契约（报文格式、ID、超时、时序）时，同时检查两端实现，决策记入根目录 `docs/adr/`；与现有 ADR 冲突时必须明确指出。
-- issue/spec 写在 `.scratch/<feature>/` 下的本地 Markdown（先读 `docs/agents/issue-tracker.md`，完成标准也在其中），分流标签见 `docs/agents/triage-labels.md`。未经要求不要 `svn add`、设置忽略属性或提交。
+- issue/spec 写在 `.scratch/<feature>/` 下的本地 Markdown（先读 `docs/agents/issue-tracker.md`，完成标准也在其中），分流标签见 `docs/agents/triage-labels.md`。未经要求不要 `svn add`、设置忽略属性、提交 SVN 或推送 GitHub。
 - 新增生产 `.c` 要加入 `control_chassis/CMakeLists.txt` 和 `MDK-ARM/concrol.uvprojx`（preflight 强制检查），按完成标准还要加入 `Eide/.eide/eide.yml`。
 - `main.c`、`freertos.c`、`stm32f4xx_it.c`、`*.ioc`、`*.ld`、`*.uvprojx` 属高危文件，preflight 会告警，改动需有明确理由。
 - 定时器或外设参数要同时改 `Core/Src/*.c` 和 `concrol.ioc`。但 `.ioc` 里的 CAN 仍是过期的 875 kbit/s，实际以 `can.c` 的 500 kbit/s 为准，CubeMX 重新生成前要先核对。
