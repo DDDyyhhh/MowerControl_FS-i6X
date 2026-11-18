@@ -6,7 +6,7 @@ import sys
 import zlib
 actual = subprocess.check_output([sys.argv[1]], text=True).splitlines()
 expected = []
-version = int(sys.argv[2], 0) if len(sys.argv) > 2 else 0x31
+version = int(sys.argv[2], 0) if len(sys.argv) > 2 else 0x39
 for kind in range(1, 5):
     data = bytes([0xe3, version, kind, 2 if kind == 4 else 1])
     data += struct.pack('<6IHBB', 0x11223344, 0x55667788, 0x12345678, 0x90abcdef,

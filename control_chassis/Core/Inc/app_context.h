@@ -4,8 +4,11 @@
 #include "main.h"
 #include "blade_motor_config.h"
 #include <stdbool.h>
+#include "battery_monitor.h"
+#include "app_imu.h"
 #include "icm42688.h" // 引入 IMU 结构体
 #include "heartbeat.h"
+#include "remote_stop_diagnostics.h"
 
 // ==============================================================================
 // 1. 系统配置参数 (来自 mower_config.h)
@@ -170,7 +173,9 @@ typedef struct
     uint8_t lock;                              // 原: lock (0:解锁, 1:上锁)
     uint8_t Unlock_tips;                       // 开锁提示弹窗 0关闭 1开启
     uint8_t g_collision_latched;               // 原: g_collision_latched (0:正常, 1:锁存)
-    uint8_t physical_safety_latched;          // PD1, collision or tilt; recoverable unlock cannot clear
+    uint8_t collision_reason_latched; /* Independent cause; cleared by authorized unlock. */
+    uint8_t emergency_reason_latched; /* Retained after button release until safe unlock. */
+    uint8_t physical_safety_latched;          // Physical stop; explicit safe authorization clears it
     bool unlock_stage1_complete;               // 原: unlock_stage1_complete
     SystemReportState_t g_system_report_state; // 原: g_system_report_state
 
@@ -192,13 +197,16 @@ typedef struct
     uint8_t is_on_slope;        // 原: is_on_slope
 
     // 超声波避障使能标志 (true:开启, false:关闭)
-    bool ultrasonic_enabled;
 
     // --- 传感器数据 ---
     float d1, d2, d3, d4; // 原: d1, d2, d3, d4 (超声波)
     uint8_t voltage_int;  // 原: voltage_int (BMS SOC)
 
+    BatteryMonitor_t battery; /* Single writer: Motion; latest BMS sample and blade LOW latch. */
+    bool battery_seen_locked;
+
     // --- IMU 数据 (直接内嵌) ---
+    AppImu_t imu; /* Motion-owned health and timing diagnostics; no safety latch. */
     icm42688RealData_t accval;  // 原: accval
     icm42688RealData_t gyroval; // 原: gyroval
 
@@ -210,7 +218,6 @@ typedef struct
 
     // --- 驱动/任务内部变量 (不建议放在全局，但为了兼容暂时保留) ---
     uint32_t last_imu_tick;                  // 原: last_imu_tick
-    uint8_t g_lifter_enable_key_was_pressed; // 原: g_lifter_enable_key_was_pressed
 
     // --- ODrive/MSSD   4 个轴的 FET 温度 ---
     // 索引映射: [0]右前(UART1_Ax0), [1]右后(UART1_Ax1), [2]左前(UART2_Ax0), [3]左后(UART2_Ax1)
@@ -243,10 +250,12 @@ typedef struct
     // <<<---  草袋真实物理标志位 --->>>
     // ==========================================
     uint8_t is_bag_full;       // 1: 满载, 0: 未满
+    uint8_t is_bag_full_valid; // 首次检测完成且连接有效
     uint8_t is_bag_connected;  // 1: 已连接, 0: 未连接
 
     
 
+    RemoteStopDiagnostics_t remote_stop_diag;
 } AppContext_t;
 
 // ==============================================================================
@@ -254,5 +263,6 @@ typedef struct
 // ==============================================================================
 
 extern AppContext_t g_app; // 全局运行时数据实例
+void AppContext_RecordBootReset(uint32_t reset_flags);
 
 #endif // APP_CONTEXT_H

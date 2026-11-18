@@ -87,8 +87,10 @@ echo ""
 info "[3/5] Checking Line Ending (CRLF/LF) Shifts in Modified Text Files..."
 CRLF_SHIFT_DETECTED=0
 
-MODIFIED_FILES=$(echo "$SVN_STATUS" | grep '^M' | awk '{print $NF}' || true)
-for file in $MODIFIED_FILES; do
+# Read one path per line so file names containing spaces stay intact.
+MODIFIED_FILES=$(echo "$SVN_STATUS" | grep '^M' | sed -E 's/^.{7} +//' || true)
+while IFS= read -r file; do
+    [[ -n "$file" ]] || continue
     # Only inspect source and text documentation files
     if [[ "$file" =~ \.(hex|map.*|log|s19|db.*|params|json)$ ]]; then
         continue
@@ -107,7 +109,7 @@ for file in $MODIFIED_FILES; do
             TOTAL_ISSUES=$((TOTAL_ISSUES + 1))
         fi
     fi
-done
+done <<< "$MODIFIED_FILES"
 
 if [[ $CRLF_SHIFT_DETECTED -eq 0 ]]; then
     pass "No whole-file CRLF/LF line-ending churn detected in modified files."
@@ -134,12 +136,13 @@ echo ""
 # ---------------------------------------------------------------------------
 # Check 5: Production .c Manifest Completeness (CMake & Keil)
 # ---------------------------------------------------------------------------
-info "[5/5] Verifying Production .c Integration in CMake and Keil Manifests..."
+info "[5/5] Verifying Production .c Integration in CMake, Keil and EIDE Manifests..."
 CMAKE_LIST="control_chassis/CMakeLists.txt"
 KEIL_UVPROJX="control_chassis/MDK-ARM/concrol.uvprojx"
+EIDE_YML="control_chassis/Eide/.eide/eide.yml"
 
-if [[ ! -f "$CMAKE_LIST" || ! -f "$KEIL_UVPROJX" ]]; then
-    fail "Project manifest files missing: $CMAKE_LIST or $KEIL_UVPROJX"
+if [[ ! -f "$CMAKE_LIST" || ! -f "$KEIL_UVPROJX" || ! -f "$EIDE_YML" ]]; then
+    fail "Project manifest files missing: $CMAKE_LIST, $KEIL_UVPROJX or $EIDE_YML"
     FATAL_ERRORS=$((FATAL_ERRORS + 1))
 else
     MISSING_MANIFEST_COUNT=0
@@ -163,10 +166,17 @@ else
             MISSING_MANIFEST_COUNT=$((MISSING_MANIFEST_COUNT + 1))
             FATAL_ERRORS=$((FATAL_ERRORS + 1))
         fi
+
+        # Check in EIDE project
+        if ! grep -q "$c_basename" "$EIDE_YML"; then
+            fail "Production file $c_path is MISSING from EIDE manifest ($EIDE_YML)"
+            MISSING_MANIFEST_COUNT=$((MISSING_MANIFEST_COUNT + 1))
+            FATAL_ERRORS=$((FATAL_ERRORS + 1))
+        fi
     done
 
     if [[ $MISSING_MANIFEST_COUNT -eq 0 ]]; then
-        pass "All production .c files are properly registered in both CMake and Keil manifests."
+        pass "All production .c files are properly registered in the CMake, Keil and EIDE manifests."
     fi
 fi
 echo ""

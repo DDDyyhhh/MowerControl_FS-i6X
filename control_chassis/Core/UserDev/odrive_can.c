@@ -7,6 +7,7 @@
 #include "serial_port.h" // 用于调试打印
 #include "cmsis_os.h"
 #include "FreeRTOS.h"
+#include "task.h"
 #include "chassis_control.h"
 // 全局变量定义
 volatile ODrive_Data_t g_odrive_motors[ODRIVE_MAX_MOTORS];
@@ -24,135 +25,7 @@ volatile uint32_t g_can_rx_queue_full = 0;
 volatile uint8_t g_host_cmd_pending = 0;
 volatile uint8_t g_host_cmd_len = 0;
 volatile uint8_t g_host_cmd_data[8] = {0};
-volatile uint32_t g_can_tx_enqueue_failures = 0;
-extern CAN_HandleTypeDef hcan1; // 声明外部 CAN 句柄，实际定义在 main.c 中
-extern osMessageQueueId_t Queue_CanTxHandle;
 extern osMessageQueueId_t Queue_CanRxHandle;
-
-static CAN_TxMsg_t g_latest_control[5];
-static volatile uint8_t g_latest_control_pending[5] = {0};
-static CAN_TxMsg_t g_latest_telemetry;
-static volatile uint8_t g_latest_telemetry_pending = 0U;
-
-static void CAN_Build_Message(CAN_TxMsg_t *msg, uint32_t id, uint8_t ide,
-                              uint8_t *data, uint8_t len, uint8_t is_remote)
-{
-    memset(msg, 0, sizeof(*msg));
-    msg->ide = ide;
-    msg->stdId = (ide == CAN_ID_EXT) ? 0U : (id & 0x7FFU);
-    msg->extId = (ide == CAN_ID_EXT) ? (id & 0x1FFFFFFFU) : 0U;
-    msg->rtr = is_remote;
-    msg->dlc = (len > 8U) ? 8U : len;
-
-    if (data != NULL && !is_remote)
-    {
-        memcpy(msg->data, data, msg->dlc);
-    }
-}
-
-static uint8_t CAN_Enqueue_MessageEx(uint32_t id,
-                                     uint8_t ide,
-                                     uint8_t *data,
-                                     uint8_t len,
-                                     uint8_t is_remote)
-{
-    CAN_TxMsg_t msg = {0};
-    CAN_Build_Message(&msg, id, ide, data, len, is_remote);
-
-    if (osMessageQueuePut(Queue_CanTxHandle, &msg, 0U, 0U) != osOK)
-    {
-        g_can_tx_enqueue_failures++;
-        return 0U;
-    }
-
-    return 1U;
-}
-
-uint8_t CAN_Enqueue_Message(uint32_t id, uint8_t *data, uint8_t len, uint8_t is_remote)
-{
-    return CAN_Enqueue_MessageEx(id, CAN_ID_STD, data, len, is_remote);
-}
-
-uint8_t CAN_Enqueue_Ext_Message(uint32_t id, uint8_t *data, uint8_t len, uint8_t is_remote)
-{
-    return CAN_Enqueue_MessageEx(id, CAN_ID_EXT, data, len, is_remote);
-}
-
-uint8_t CAN_Enqueue_Control_Message(uint32_t id, uint8_t *data, uint8_t len, uint8_t is_remote)
-{
-    uint8_t node_id = (uint8_t)(id & 0xFFU);
-    CAN_TxMsg_t msg;
-
-    if (node_id == 0U || node_id >= 5U)
-    {
-        return 0U;
-    }
-
-    CAN_Build_Message(&msg, id, CAN_ID_STD, data, len, is_remote);
-
-    taskENTER_CRITICAL();
-    g_latest_control[node_id] = msg;
-    g_latest_control_pending[node_id] = 1U;
-    taskEXIT_CRITICAL();
-    return 1U;
-}
-
-uint8_t CAN_TryGet_Control_Message(CAN_TxMsg_t *msg)
-{
-    uint8_t node_id;
-
-    if (msg == NULL)
-    {
-        return 0U;
-    }
-
-    taskENTER_CRITICAL();
-    for (node_id = 1U; node_id < 5U; node_id++)
-    {
-        if (g_latest_control_pending[node_id] != 0U)
-        {
-            *msg = g_latest_control[node_id];
-            g_latest_control_pending[node_id] = 0U;
-            taskEXIT_CRITICAL();
-            return 1U;
-        }
-    }
-    taskEXIT_CRITICAL();
-    return 0U;
-}
-
-uint8_t CAN_Enqueue_Telemetry_Message(uint32_t id, uint8_t *data, uint8_t len, uint8_t is_remote)
-{
-    CAN_TxMsg_t msg;
-    uint8_t was_pending;
-
-    CAN_Build_Message(&msg, id, CAN_ID_STD, data, len, is_remote);
-    taskENTER_CRITICAL();
-    was_pending = g_latest_telemetry_pending;
-    g_latest_telemetry = msg;
-    g_latest_telemetry_pending = 1U;
-    taskEXIT_CRITICAL();
-    return was_pending ? 0U : 1U;
-}
-
-uint8_t CAN_TryGet_Telemetry_Message(CAN_TxMsg_t *msg)
-{
-    if (msg == NULL)
-    {
-        return 0U;
-    }
-
-    taskENTER_CRITICAL();
-    if (g_latest_telemetry_pending != 0U)
-    {
-        *msg = g_latest_telemetry;
-        g_latest_telemetry_pending = 0U;
-        taskEXIT_CRITICAL();
-        return 1U;
-    }
-    taskEXIT_CRITICAL();
-    return 0U;
-}
 // =================================================================
 // 1. 底层发送函�?
 // =================================================================
@@ -479,7 +352,7 @@ static void CAN_Process_Rx_Message(const CAN_RxMsg_t *msg)
             return;
         }
 
-        chassis_control_parse_host_frame(msg->stdId, msg->data, msg->dlc);
+        chassis_control_parse_host_frame(msg->stdId, msg->data, msg->dlc, msg->rx_tick);
         return;
     }
 
@@ -547,7 +420,7 @@ static void CAN_Process_Rx_Message(const CAN_RxMsg_t *msg)
 #elif MOTOR_DRIVER_USED == DRIVER_TYPE_MSSD
     MSSD_Parse_Rx_Message(msg->stdId, (uint8_t *)msg->data, msg->dlc);
 #elif MOTOR_DRIVER_USED == DRIVER_TYPE_OID
-    OID_Parse_Rx_Message(msg->stdId, (uint8_t *)msg->data, msg->dlc);
+    OID_Parse_Rx_MessageAt(msg->stdId, (uint8_t *)msg->data, msg->dlc, msg->rx_tick);
 #endif
 }
 
@@ -579,6 +452,7 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
     g_can_rx_ok++;
 
     CAN_RxMsg_t msg;
+    msg.rx_tick = HAL_GetTick();
     msg.stdId = (RxHeader.IDE == CAN_ID_EXT) ? 0U : RxHeader.StdId;
     msg.extId = (RxHeader.IDE == CAN_ID_EXT) ? RxHeader.ExtId : 0U;
     msg.dlc = RxHeader.DLC;
@@ -591,113 +465,6 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
         g_can_rx_queue_full++;
     }
     return;
-
-#if 0
-
-    // 格式校验
-    if (RxHeader.IDE == CAN_ID_STD) {
-        g_can_rx_std++;
-    } else {
-        g_can_rx_ext++;
-        return;
-    }
-
-    if (RxHeader.RTR != CAN_RTR_DATA) {
-        g_can_rx_rtr++;
-        return;
-    }
-
-    // ============================================================
-    // 1. 上位机 (API Host) 命令解析 (各平台通用)
-    // ============================================================
-    if (RxHeader.StdId == HOST_CMD_FRAME_ID)
-    {
-        g_can_rx_host_cmd++;
-        if (RxHeader.DLC < HOST_CMD_PAYLOAD_LEN)
-        {
-            g_can_rx_host_bad_dlc++;
-            return;
-        }
-
-        chassis_control_parse_host_frame(RxHeader.StdId, rx_data, RxHeader.DLC);
-        return;
-    }
-
-    // ============================================================
-    // 2. 底层驱动器反馈解析 (按宏隔离)
-    // ============================================================
-#if MOTOR_DRIVER_USED == DRIVER_TYPE_ODRIVE
-
-    // ODrive 协议解析 (Node_ID << 5 | CMD_ID)
-    uint8_t node_id = RxHeader.StdId >> 5;
-    uint8_t cmd_id = RxHeader.StdId & 0x1F;
-
-    if (node_id >= ODRIVE_MAX_MOTORS)
-    {
-        g_can_rx_node_oob++;
-        return;
-    }
-
-    volatile ODrive_Data_t *motor = &g_odrive_motors[node_id];
-    motor->is_connected = 1;
-
-    switch (cmd_id)
-    {
-    case ODRIVE_MSG_HEARTBEAT:
-        if (RxHeader.DLC >= 4)
-        {
-            uint32_t error;
-            uint8_t state;
-            memcpy(&error, rx_data, 4);
-            memcpy(&state, rx_data + 4, 1);
-            motor->axis_error = error;
-            motor->axis_state = state;
-        }
-        break;
-
-    case ODRIVE_MSG_GET_ENCODER_ESTIMATES:
-        if (RxHeader.DLC >= 8)
-        {
-            memcpy((void *)&motor->encoder_pos, rx_data, 4);
-            memcpy((void *)&motor->encoder_vel, rx_data + 4, 4);
-        }
-        break;
-
-    case ODRIVE_MSG_GET_BUS_VOLTAGE_CURRENT:
-        if (RxHeader.DLC >= 8)
-        {
-            memcpy((void *)&motor->vbus_voltage, rx_data, 4);
-            memcpy((void *)&motor->vbus_current, rx_data + 4, 4);
-        }
-        break;
-
-    case ODRIVE_MSG_GET_IQ:
-        if (RxHeader.DLC >= 8)
-        {
-            memcpy((void *)&motor->iq_setpoint, rx_data, 4);
-            memcpy((void *)&motor->iq_measured, rx_data + 4, 4);
-        }
-        break;
-
-    case ODRIVE_MSG_GET_MOTOR_ERROR:
-        if (RxHeader.DLC >= 4)
-            memcpy((void *)&motor->motor_error, rx_data, 4);
-        break;
-
-    case ODRIVE_MSG_GET_ENCODER_ERROR:
-        if (RxHeader.DLC >= 4)
-            memcpy((void *)&motor->encoder_error, rx_data, 4);
-        break;
-    }
-
-#elif MOTOR_DRIVER_USED == DRIVER_TYPE_MSSD
-
-    // 美思固 MSSD 协议解析
-    // 美思固的 CAN ID 直接就是 Node ID，因此把 StdId 直接传进去即可
-    MSSD_Parse_Rx_Message(RxHeader.StdId, rx_data, RxHeader.DLC);
-
-#endif
-#endif
 }
 
 // =================================================================
@@ -705,6 +472,7 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 // =================================================================
 void User_CAN_Init(void)
 {
+    CAN_TxScheduler_Init();
     CAN_FilterTypeDef canFilterConfig;
 
     // 列表模式或掩码模式。为了简单，我们接受所�?ODrive 消息

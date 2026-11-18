@@ -15,12 +15,9 @@
  */
 
 #include "lifter.h"
-#if MOWER_BLADE_OK_ENABLED
+#include "cmsis_os.h"
 #include "FreeRTOS.h"
 #include "task.h"
-static volatile bool g_height_permitted;
-#endif
-#include "cmsis_os.h"
 #include "grass_bag_control.h"
 #include "remote_backend_config.h"
 #include "EG2104.h"
@@ -30,6 +27,7 @@ static volatile bool g_height_permitted;
 #include "connet_check.h"
 #include "math.h"
 #include "app_context.h"
+#include "../../../experiments/ticket03/height_feedback.h"
 // =================================================================
 // 1. 硬件定义
 // =================================================================
@@ -49,10 +47,12 @@ EG2104_HBridge_t grass_bag_bridge = {
 // =================================================================
 // 2. 核心参数与数据表
 // =================================================================
+// 推杆10kHz/50%PWM版（草袋TIM2、高度TIM3）：48V母线下约为24V平均输出，脉冲幅度仍接近母线电压。
+// Height is estimated from effective travel after soft-start compensation.
 // --- 刀盘高度参数 ---
-#define LIFTER_SPEED 20.0f      // 你的设定速度
-#define HOMING_TIMEOUT_MS 10000 // 归位超时 (最长行程约6秒，设8秒足够)
-#define DEAD_BAND_MS 100        // 死区：误差小于100ms(约2mm)认为到位
+#define LIFTER_SPEED 50.0f      // 刀盘升降PWM占空比 (%)
+#define HOMING_TIMEOUT_MS 10000U // 每次最高档归位完整上升10秒
+#define DEAD_BAND_MS 30         // Within half a displayed millimetre at 700 ms/cm
 
 // 上升速度补偿系数 (0.0 ~ 1.0)
 // 假设上升比下降慢 (克服重力)。如果下降用6s，上升用8s，系数约为 0.75
@@ -60,41 +60,26 @@ EG2104_HBridge_t grass_bag_bridge = {
 #define UP_SPEED_FACTOR 0.80f
 
 // --- 草袋开合参数 ---
-#define GRASS_BAG_SPEED 60.0f      // 草袋电机速度 (根据实际机械阻力调整)
+#define GRASS_BAG_SPEED 50.0f      // 草袋开合PWM占空比 (%)
 /* Run time is shared with the deterministic grass bag actuator model. */
 
-// --- 【核心】实测数据点 (时间 ms -> 高度 cm) ---
-// 基于你提供的数据：0s=11.3, 1s=10.0, 2s=7.2, 3s=5.7, 4s=4.4, 5s=3.2, 6s=2.1
+// Measured clearance: 8 cm at home and 4 cm at 2800 effective ms.
+#define HOME_HEIGHT_CM 8.0f
+#define TRAVEL_MS_PER_CM 700.0f
+static const uint8_t LEVEL_HEIGHT_CM[] = {0, 2, 4, 6, 7, 8};
+
+// Inverse curve for settings saved by older firmware.
 typedef struct
 {
     uint32_t time_ms;
     float height_cm;
 } HeightMap_t;
 
-static const HeightMap_t HEIGHT_MAP[] = {
-    {0, 11.0f},   // 0ms = 5档 = 11cm
-    {2800, 9.0f}, // 2800 = 4档 = 9cm
-    {4500, 7.0f}, // 4500 = 3档 = 7cm
-    {6500, 5.0f}, // 6500ms = 2档 = 5cm
-    {9500, 2.0f}, // 9500 = 1档 = 2cm
-    {10000, 1.0f} // 预留一个极限值，防止计算越界
+static const HeightMap_t LEGACY_HEIGHT_MAP[] = {
+    {0, 11.0f}, {2800, 9.0f}, {4500, 7.0f}, {6500, 5.0f},
+    {9500, 2.0f}, {10000, 1.0f}
 };
-#define MAP_SIZE (sizeof(HEIGHT_MAP) / sizeof(HeightMap_t))
-
-// --- 【核心】档位目标时间表 (根据要求计算) ---
-// 5档(11cm) -> 约 230ms
-// 4档(9cm)  -> 约 1360ms (在10.0和7.2之间插值)
-// 3档(7cm)  -> 约 2130ms (在7.2和5.7之间插值)
-// 2档(5cm)  -> 约 3540ms (在5.7和4.4之间插值)
-// 1档(2cm)  -> 约 6100ms (在2.1附近外推)
-static const uint32_t LEVEL_TARGET_MS[6] = {
-    0,    // 0档占位
-    9500, // 1档: 目标 2cm (最低) - 大幅增加时间
-    6500, // 2档: 目标 5cm
-    4500, // 3档: 目标 7cm
-    2800, // 4档: 目标 9cm
-    0     // 5档: 目标 11cm (最高，基准点)
-};
+#define MAP_SIZE (sizeof(LEGACY_HEIGHT_MAP) / sizeof(HeightMap_t))
 
 // =================================================================
 // 3. 内部变量
@@ -103,9 +88,28 @@ static Lifter_MachineState g_state = LIFTER_STATE_IDLE;
 static uint32_t g_last_tick = 0;
 static uint32_t g_homing_start_ts = 0;
 
+/* Task-to-task mailbox. Only Lifter_Task_Update changes motion state/targets. */
+typedef struct
+{
+    uint8_t level;
+    bool target_pending;
+    bool home_pending;
+} LifterHeightRequest_t;
+
+static LifterHeightRequest_t g_height_request;
+static osMutexId_t g_height_mutex;
+#if MOWER_BLADE_OK_ENABLED
+static bool g_height_permitted;
+#else
+static bool g_height_permitted = true;
+#endif
+static bool g_height_stop_pending;
+static volatile uint16_t g_height_feedback_word; // atomic publication for Motion/SENS
+static uint8_t g_last_requested_level; // 0: no command received since initialization
+
 static float g_current_pos_ms = 0.0f;     // 当前虚拟位置 (ms)
 static float g_target_pos_ms = 0.0f;      // 目标位置 (ms)
-static float g_current_height_cm = 11.0f; // 对外显示的CM值
+static float g_current_height_cm = HOME_HEIGHT_CM; // 对外显示的CM值
 
 static int8_t g_dir = 0; // 1:Up(向0ms), -1:Down(向6000ms), 0:Stop
 
@@ -119,6 +123,52 @@ static uint32_t g_dump_done_timer = 0;   // 用于倒草完成显示的计时
 static GrassBagActuator_t g_bag;
 static osMutexId_t g_bag_mutex;
 static bool g_bag_permitted = !MOWER_GRASS_BAG_CH6_ENABLED;
+
+/* Soft start limits the inrush step; every stop path still zeroes the bridge at once. */
+#ifndef ACTUATOR_SOFT_START_MS
+#define ACTUATOR_SOFT_START_MS 400U
+#endif
+#define ACTUATOR_SOFT_START_DUTY 10.0f
+
+typedef struct {
+    EG2104_HBridge_t *bridge;
+    float target;
+    uint32_t start_ms;
+    bool active;
+} ActuatorRamp_t;
+
+/* Height ramp is owned by Lifter_Task_Update; bag ramp is guarded by g_bag_mutex. */
+static ActuatorRamp_t g_height_ramp = {.bridge = &blade_height_bridge};
+static ActuatorRamp_t g_bag_ramp = {.bridge = &grass_bag_bridge};
+
+static float ActuatorRamp_Fraction(const ActuatorRamp_t *ramp, uint32_t now)
+{
+    uint32_t elapsed = now - ramp->start_ms;
+    if (!ramp->active || elapsed >= ACTUATOR_SOFT_START_MS)
+        return 1.0f;
+    float full = fabsf(ramp->target);
+    float progress = (float)elapsed / (float)ACTUATOR_SOFT_START_MS;
+    return (ACTUATOR_SOFT_START_DUTY + (full - ACTUATOR_SOFT_START_DUTY) * progress) / full;
+}
+
+static void ActuatorRamp_Start(ActuatorRamp_t *ramp, float target, uint32_t now)
+{
+    ramp->target = target;
+    ramp->start_ms = now;
+    ramp->active = ACTUATOR_SOFT_START_MS > 0U;
+    EG2104_HBridge_SetSpeed(ramp->bridge,
+        !ramp->active ? target : (target > 0.0f ? ACTUATOR_SOFT_START_DUTY : -ACTUATOR_SOFT_START_DUTY));
+}
+
+static void ActuatorRamp_Advance(ActuatorRamp_t *ramp, uint32_t now)
+{
+    if (!ramp->active)
+        return;
+    float fraction = ActuatorRamp_Fraction(ramp, now);
+    if (fraction >= 1.0f)
+        ramp->active = false;
+    EG2104_HBridge_SetSpeed(ramp->bridge, ramp->target * fraction);
+}
 
 static bool GrassBag_Lock(void)
 {
@@ -134,52 +184,43 @@ HAL_StatusTypeDef EG2104_HBridge_SetSpeed(EG2104_HBridge_t *bridge, float speed)
 
 static void Motor_Up(void)
 { // 物理向上 (高度增加，时间减小)
-    EG2104_HBridge_SetSpeed(&blade_height_bridge, LIFTER_SPEED);
+    Lifter_Stop(); // 先关闭两路PWM，再施加反向后的上升输出
+    ActuatorRamp_Start(&g_height_ramp, -LIFTER_SPEED, g_last_tick);
     g_dir = 1;
     g_flash_save_pending = 0; // 只要电机动了，就取消未执行的保存计划
 }
 
 static void Motor_Down(void)
 { // 物理向下 (高度减小，时间增加)
-    EG2104_HBridge_SetSpeed(&blade_height_bridge, -LIFTER_SPEED);
+    Lifter_Stop(); // 换向前先关闭两路PWM
+    ActuatorRamp_Start(&g_height_ramp, LIFTER_SPEED, g_last_tick);
     g_dir = -1;
     g_flash_save_pending = 0; // 只要电机动了，就取消未执行的保存计划
 }
 
 void Lifter_Stop(void)
 {
+    g_height_ramp.active = false;
     EG2104_HBridge_Stop(&blade_height_bridge);
     g_dir = 0;
     // 停止时不改变 g_state，由调用者决定
 }
 
-#if MOWER_BLADE_OK_ENABLED
-void Lifter_SetHeightPermission(bool permitted)
-{
-    taskENTER_CRITICAL();
-    g_height_permitted=permitted;
-    if (!permitted) {
-        Lifter_Stop();
-        g_state=LIFTER_STATE_IDLE;
-        g_target_pos_ms=g_current_pos_ms;
-    }
-    taskEXIT_CRITICAL();
-}
-#endif
 // --- 草袋控制驱动 (【新增】) ---
 static void GrassBag_Motor_Open(void)
 {
     // 假设正转是打开草袋，如果实际相反，改为 -GRASS_BAG_SPEED 即可
-    EG2104_HBridge_SetSpeed(&grass_bag_bridge, GRASS_BAG_SPEED);
+    ActuatorRamp_Start(&g_bag_ramp, GRASS_BAG_SPEED, HAL_GetTick());
 }
 
 static void GrassBag_Motor_Close(void)
 {
-    EG2104_HBridge_SetSpeed(&grass_bag_bridge, -GRASS_BAG_SPEED);
+    ActuatorRamp_Start(&g_bag_ramp, -GRASS_BAG_SPEED, HAL_GetTick());
 }
 
 static void GrassBag_Motor_Stop(void)
 {
+    g_bag_ramp.active = false;
     EG2104_HBridge_Stop(&grass_bag_bridge);
 }
 
@@ -188,58 +229,32 @@ static void GrassBag_Motor_Stop(void)
  */
 static void Update_Height_CM_From_MS(float current_ms)
 {
-    // 1. 边界处理
-    if (current_ms <= 0)
-    {
-        g_current_height_cm = HEIGHT_MAP[0].height_cm;
-        return;
-    }
-    if (current_ms >= HEIGHT_MAP[MAP_SIZE - 1].time_ms)
-    {
-        g_current_height_cm = HEIGHT_MAP[MAP_SIZE - 1].height_cm;
-        return;
-    }
-
-    // 2. 线性插值
-    for (uint32_t i = 0; i < MAP_SIZE - 1; i++)
-    {
-        if (current_ms >= HEIGHT_MAP[i].time_ms && current_ms < HEIGHT_MAP[i + 1].time_ms)
-        {
-            float t1 = (float)HEIGHT_MAP[i].time_ms;
-            float t2 = (float)HEIGHT_MAP[i + 1].time_ms;
-            float h1 = HEIGHT_MAP[i].height_cm;
-            float h2 = HEIGHT_MAP[i + 1].height_cm;
-
-            // 线性公式: y = y1 + (x - x1) * (y2 - y1) / (x2 - x1)
-            float ratio = (current_ms - t1) / (t2 - t1);
-            g_current_height_cm = h1 + ratio * (h2 - h1);
-            return;
-        }
-    }
+    float height = HOME_HEIGHT_CM - current_ms / TRAVEL_MS_PER_CM;
+    g_current_height_cm = height > 0.0f ? height : 0.0f;
 }
 
 /**
  * @brief 反向插值：根据 CM 计算 MS (用于开机恢复位置)
  */
-static float Get_MS_From_Height_CM(float height_cm)
+static float Legacy_MS_From_Height_CM(float height_cm)
 {
     // 保护范围
-    if (height_cm >= HEIGHT_MAP[0].height_cm)
+    if (height_cm >= LEGACY_HEIGHT_MAP[0].height_cm)
         return 0.0f; // >11cm -> 0ms
-    if (height_cm <= HEIGHT_MAP[MAP_SIZE - 1].height_cm)
-        return (float)HEIGHT_MAP[MAP_SIZE - 1].time_ms;
+    if (height_cm <= LEGACY_HEIGHT_MAP[MAP_SIZE - 1].height_cm)
+        return (float)LEGACY_HEIGHT_MAP[MAP_SIZE - 1].time_ms;
 
     // 遍历查找区间 (注意高度是递减的)
     for (uint32_t i = 0; i < MAP_SIZE - 1; i++)
     {
-        float h_high = HEIGHT_MAP[i].height_cm;    // 如 11.0
-        float h_low = HEIGHT_MAP[i + 1].height_cm; // 如 9.0
+        float h_high = LEGACY_HEIGHT_MAP[i].height_cm;    // 如 11.0
+        float h_low = LEGACY_HEIGHT_MAP[i + 1].height_cm; // 如 9.0
 
         // 如果目标高度在这个区间内
         if (height_cm <= h_high && height_cm > h_low)
         {
-            float t1 = (float)HEIGHT_MAP[i].time_ms;
-            float t2 = (float)HEIGHT_MAP[i + 1].time_ms;
+            float t1 = (float)LEGACY_HEIGHT_MAP[i].time_ms;
+            float t2 = (float)LEGACY_HEIGHT_MAP[i + 1].time_ms;
 
             // 线性插值
             float ratio = (h_high - height_cm) / (h_high - h_low);
@@ -255,13 +270,20 @@ static float Get_MS_From_Height_CM(float height_cm)
 
 void Lifter_Init(void)
 {
-#if MOWER_BLADE_OK_ENABLED
-    g_height_permitted=false;
-#endif
     const osMutexAttr_t bag_mutex_attr = {
         .name = "GrassBag", .attr_bits = osMutexPrioInherit
     };
     g_bag_mutex = osMutexNew(&bag_mutex_attr);
+    const osMutexAttr_t height_mutex_attr = {
+        .name = "BladeHeight", .attr_bits = osMutexPrioInherit
+    };
+    g_height_mutex = osMutexNew(&height_mutex_attr);
+#if MOWER_BLADE_OK_ENABLED
+    g_height_permitted = false;
+#else
+    g_height_permitted = true;
+#endif
+    g_height_stop_pending = false;
     HAL_TIM_PWM_Start(blade_height_bridge.left_timer, blade_height_bridge.left_in_channel);
     HAL_TIM_PWM_Start(blade_height_bridge.right_timer, blade_height_bridge.right_in_channel);
 
@@ -272,6 +294,17 @@ void Lifter_Init(void)
     Lifter_Stop();
     GrassBag_Motor_Stop();
 
+    taskENTER_CRITICAL();
+    g_height_request = (LifterHeightRequest_t){0};
+    g_last_requested_level = 0U;
+    taskEXIT_CRITICAL();
+    g_current_pos_ms = 0.0f;
+    g_target_pos_ms = 0.0f;
+    g_current_height_cm = HOME_HEIGHT_CM;
+    g_homing_start_ts = 0U;
+    g_height_feedback_word = 0U;
+    g_flash_save_pending = 0U;
+
     // 初始化草袋状态为关闭
     g_bag = (GrassBagActuator_t){0};
     g_app.grass_bag_status = 0; // 全局标志位
@@ -281,12 +314,13 @@ void Lifter_Init(void)
     bool load_ok = FlashStorage_LoadSettings(&settings);
 
     // 3. 判断是否有效
-    if (load_ok && settings.lifter_current_height_cm >= 1.0f && settings.lifter_current_height_cm <= 13.0f)
+    bool legacy = load_ok && settings.magic_number == APP_SETTINGS_LEGACY_MAGIC;
+    if (load_ok && settings.lifter_current_height_cm >= (legacy ? 1.0f : 0.0f) &&
+        settings.lifter_current_height_cm <= (legacy ? 13.0f : HOME_HEIGHT_CM))
     {
-        // === 成功读取：恢复状态，跳过归位 ===
-        g_current_height_cm = settings.lifter_current_height_cm;
-        // 反算当前的时间位置 (ms)
-        g_current_pos_ms = Get_MS_From_Height_CM(g_current_height_cm);
+        g_current_pos_ms = legacy ? Legacy_MS_From_Height_CM(settings.lifter_current_height_cm)
+            : (HOME_HEIGHT_CM - settings.lifter_current_height_cm) * TRAVEL_MS_PER_CM;
+        Update_Height_CM_From_MS(g_current_pos_ms);
         // 目标设为当前，保持静止
         g_target_pos_ms = g_current_pos_ms;
 
@@ -310,39 +344,94 @@ void Lifter_Init(void)
  */
 void Lifter_User_Init(void)
 {
-#if MOWER_BLADE_OK_ENABLED
-    if (!g_height_permitted) return;
-#endif
-    // 强制把状态机切到归位起点
-    g_state = LIFTER_STATE_HOMING_START;
-
-    // 可选：重置一下目标位置，防止归位完成后乱跑
-    g_target_pos_ms = 0.0f;
-
-    //  设置系统状态，让遥控器弹窗
-    g_app.g_system_report_state = REPORT_BLADE_INITIALIZING;
-
-    // Serial_Printf(SERIAL_PORT_2, "[LIFTER] User forced homing to MAX height!\r\n");
+    taskENTER_CRITICAL();
+    if (!g_height_permitted) { taskEXIT_CRITICAL(); return; }
+    g_height_request.level = 5U;
+    g_height_request.target_pending = true;
+    g_height_request.home_pending = true;
+    g_last_requested_level = 5U;
+    taskEXIT_CRITICAL();
 }
 
 void Lifter_SetTargetLevel(uint8_t level)
 {
-#if MOWER_BLADE_OK_ENABLED
-    if (!g_height_permitted) return;
-#endif
     if (level < 1)
         level = 1;
     if (level > 5)
         level = 5;
 
-    // 查表获取目标时间位置
-    g_target_pos_ms = (float)LEVEL_TARGET_MS[level];
+    taskENTER_CRITICAL();
+    if (!g_height_permitted) { taskEXIT_CRITICAL(); return; }
+    if (level != 5U)
+        g_height_request.home_pending = false; // 最新的普通档位取消尚未执行的归位请求
+    else if (g_last_requested_level != 5U)
+        g_height_request.home_pending = true;
+    g_height_request.level = level;
+    g_height_request.target_pending = true;
+    g_last_requested_level = level;
+    taskEXIT_CRITICAL();
+}
 
-    // 如果不在归位中，启动自动调节
-    if (g_state != LIFTER_STATE_HOMING_START && g_state != LIFTER_STATE_HOMING_RUNNING)
-    {
-        g_state = LIFTER_STATE_AUTO_ADJUST;
+void Lifter_SetHeightPermission(bool permitted)
+{
+    if (!g_height_mutex || osMutexAcquire(g_height_mutex, osWaitForever) != osOK) return;
+    taskENTER_CRITICAL();
+    g_height_permitted = permitted;
+    if (!permitted) {
+        g_height_request = (LifterHeightRequest_t){0};
+        g_last_requested_level = 0U;
+        g_height_stop_pending = true;
     }
+    taskEXIT_CRITICAL();
+    if (!permitted) Lifter_Stop();
+    osMutexRelease(g_height_mutex);
+}
+
+/* Called only after the upward PWM has run for the full homing interval. */
+static void Lifter_CompleteHoming(uint32_t now)
+{
+    Lifter_Stop();
+    g_current_pos_ms = 0.0f;
+    Update_Height_CM_From_MS(g_current_pos_ms);
+    g_state = LIFTER_STATE_HOMING_DONE;
+    if (g_app.g_system_report_state == REPORT_BLADE_INITIALIZING)
+        g_app.g_system_report_state = REPORT_NONE;
+    g_flash_save_pending = 1;
+    g_flash_save_timer = now;
+}
+
+/* Latest target wins, including a normal target that interrupts homing. */
+static void Lifter_ApplyHeightRequest(uint32_t now)
+{
+    LifterHeightRequest_t request;
+    taskENTER_CRITICAL();
+    request = g_height_request;
+    g_height_request.target_pending = false;
+    g_height_request.home_pending = false;
+    taskEXIT_CRITICAL();
+
+    if (!request.target_pending)
+        return;
+
+    g_target_pos_ms = (HOME_HEIGHT_CM - LEVEL_HEIGHT_CM[request.level]) * TRAVEL_MS_PER_CM;
+    if (g_state == LIFTER_STATE_HOMING_START || g_state == LIFTER_STATE_HOMING_RUNNING)
+    {
+        if (request.level == 5U)
+            return; // 重复最高档不重置归位计时
+        if (g_state == LIFTER_STATE_HOMING_RUNNING &&
+            (uint32_t)(now - g_homing_start_ts) >= HOMING_TIMEOUT_MS)
+        {
+            // 已完整运行10秒：先完成校准，再在本周期执行新目标。
+            Lifter_CompleteHoming(now);
+        }
+        else if (g_app.g_system_report_state == REPORT_BLADE_INITIALIZING)
+        {
+            // 未完成的归位直接取消，不强制清零位置。
+            g_app.g_system_report_state = REPORT_NONE;
+        }
+    }
+
+    g_state = request.home_pending ? LIFTER_STATE_HOMING_START : LIFTER_STATE_AUTO_ADJUST;
 }
 
 void Lifter_SaveHeightToFlash(void)
@@ -366,6 +455,7 @@ void Lifter_SaveHeightToFlash(void)
 }
 
 float Lifter_GetCurrentHeight_cm(void) { return g_current_height_cm; }
+uint16_t Lifter_GetHeightFeedback(void) { return g_height_feedback_word; }
 Lifter_MachineState Lifter_GetState(void) { return g_state; }
 
 /**
@@ -421,24 +511,24 @@ void Lifter_SetGrassBagPermission(bool permitted)
  */
 void Lifter_Task_Update(void)
 {
+    /* Bounded motor-state section; never hold this mutex across flash or bag I/O. */
     uint32_t now = HAL_GetTick();
+    if (g_height_mutex && osMutexAcquire(g_height_mutex, osWaitForever) == osOK) {
+    now = HAL_GetTick();
     uint32_t dt = now - g_last_tick;
+    /* Open-loop position: travel during the ramp scales with the mean applied duty. */
+    float ramp_fraction = (ActuatorRamp_Fraction(&g_height_ramp, g_last_tick) +
+                           ActuatorRamp_Fraction(&g_height_ramp, now)) * 0.5f;
     g_last_tick = now;
     // =================================================================
     //  A. 刀盘高度逻辑
     // =================================================================
 
-#if MOWER_BLADE_OK_ENABLED
-    /* Height updates and permission revocation cannot interleave a PWM write. */
-    taskENTER_CRITICAL();
-    if (!g_height_permitted) {
-        Lifter_Stop(); g_state=LIFTER_STATE_IDLE; g_target_pos_ms=g_current_pos_ms;
-    } else {
-#endif
     // --- 1. 位置积分 ---
-    if (g_dir != 0 && g_state != LIFTER_STATE_HOMING_RUNNING)
+    // 归位期间也累计位移，确保中途换档使用的是当前估算位置。
+    if (g_dir != 0)
     {
-        float change = (float)dt;
+        float change = (float)dt * ramp_fraction;
         if (g_dir == 1)
         {
             g_current_pos_ms -= (change * UP_SPEED_FACTOR);
@@ -453,35 +543,31 @@ void Lifter_Task_Update(void)
             g_current_pos_ms = 15000.0f;
     }
 
+    if (g_height_stop_pending || !g_height_permitted) {
+        g_state = LIFTER_STATE_IDLE;
+        g_target_pos_ms = g_current_pos_ms;
+        g_height_stop_pending = false;
+        g_flash_save_pending = 0U;
+        if (g_app.g_system_report_state == REPORT_BLADE_INITIALIZING)
+            g_app.g_system_report_state = REPORT_NONE;
+    }
+    ActuatorRamp_Advance(&g_height_ramp, now);
     Update_Height_CM_From_MS(g_current_pos_ms);
+    if (g_height_permitted) Lifter_ApplyHeightRequest(now);
 
     // --- 2. 状态机 ---
     switch (g_state)
     {
     case LIFTER_STATE_HOMING_START:
         Motor_Up();
-        g_homing_start_ts = now;
+        g_homing_start_ts = HAL_GetTick(); // 从实际开始输出上升PWM后计时
+        g_app.g_system_report_state = REPORT_BLADE_INITIALIZING;
         g_state = LIFTER_STATE_HOMING_RUNNING;
         break;
 
     case LIFTER_STATE_HOMING_RUNNING:
-        if (now - g_homing_start_ts > HOMING_TIMEOUT_MS)
-        {
-            Lifter_Stop();
-            g_current_pos_ms = 0.0f;
-            g_target_pos_ms = 0.0f;
-            g_state = LIFTER_STATE_HOMING_DONE;
-
-            //  归位时间到（约10-11s），清除弹窗状态
-            if (g_app.g_system_report_state == REPORT_BLADE_INITIALIZING)
-            {
-                g_app.g_system_report_state = REPORT_NONE;
-            }
-
-            // 【修改】归位完成，不立刻保存，而是触发 10 秒倒计时
-            g_flash_save_pending = 1;
-            g_flash_save_timer = now;
-        }
+        if ((uint32_t)(now - g_homing_start_ts) >= HOMING_TIMEOUT_MS)
+            Lifter_CompleteHoming(now);
         break;
 
     case LIFTER_STATE_HOMING_DONE:
@@ -519,16 +605,29 @@ void Lifter_Task_Update(void)
         break;
     }
 
-    // =================================================================
-#if MOWER_BLADE_OK_ENABLED
+    /* Publish after integration/homing completion. SENS must not invent a new
+     * heartbeat when this task stops advancing its height estimate. */
+    if (g_current_height_cm >= 1.0f && g_current_height_cm <= HOME_HEIGHT_CM)
+    {
+        uint16_t mm = (uint16_t)(g_current_height_cm * 10.0f + 0.5f);
+        g_height_feedback_word = (uint16_t)(
+            (((now / MOWER_HEIGHT_HEARTBEAT_MS) & MOWER_HEIGHT_HEARTBEAT_MASK) << 8) |
+            MOWER_HEIGHT_SAMPLE_VALID | mm);
     }
-    taskEXIT_CRITICAL();
-#endif
+    else
+    {
+        g_height_feedback_word = 0U;
+    }
+
+    osMutexRelease(g_height_mutex);
+
+    // =================================================================
     //  <<<---  3. 延时保存 Flash (Lazy Save) 机制 ---<<<
     // =================================================================
 
     // 只有当有保存任务，且电机确实停稳了，才进行倒计时判定
-    if (g_flash_save_pending && g_dir == 0)
+    if (g_flash_save_pending && g_dir == 0 &&
+        fabsf(g_target_pos_ms - g_current_pos_ms) <= DEAD_BAND_MS)
     {
         // 检查是否已经停稳超过 10 秒 (FLASH_SAVE_DELAY_MS)
         if (now - g_flash_save_timer >= FLASH_SAVE_DELAY_MS)
@@ -541,6 +640,8 @@ void Lifter_Task_Update(void)
             // Serial_Printf(SERIAL_PORT_2, "[LIFTER] Lazy Save Executed after 10s stop.\r\n");
         }
     }
+
+    } /* Height allocation/failure must not suppress the independent bag watchdog. */
 
     // =================================================================
     //  B. 草袋开合状态机 (被动等待接口触发，处理超时)
@@ -556,6 +657,7 @@ void Lifter_Task_Update(void)
             if (g_bag_permitted) g_app.g_system_report_state = REPORT_DUMPING_DONE;
         }
     }
+    ActuatorRamp_Advance(&g_bag_ramp, now);
     if (g_bag_permitted) {
         switch (g_bag.state) {
         case GRASS_BAG_OPENING:

@@ -1,17 +1,13 @@
 #include "exp3_hil.h"
-#if MOWER_BLADE_OK_ENABLED
 #include "exp3_board.h"
-#endif
 #if EXP3_ENABLED
 /* Experiment dwell/deadline only; not a production loss or safety policy. */
 #define EXP3_TIMEOUT 60000UL
 void exp3_hil_trace(Exp3Hil *h, uint32_t now, uint32_t event, uint32_t a, uint32_t b) {
     volatile Exp3Event *e;
-#if MOWER_BLADE_OK_ENABLED
     (void)h; (void)now; (void)event; (void)a; (void)b;
     (void)e;
     return; /* Release candidate has no unconsumed debugger trace ring. */
-#endif
     if (!h->bound) return;
     if ((uint32_t)(h->log_write - h->log_read) >= EXP3_LOG_COUNT) {
         if (h->log_overflow != UINT32_MAX)
@@ -41,10 +37,12 @@ void exp3_hil_bind_session(Exp3Hil *h, Exp3Endpoint *endpoint, uint32_t controll
     h->pending = (Exp3Message){0};
     h->last_result = (Exp3Message){0};
     h->waiting = 0U;
-#if MOWER_BLADE_OK_ENABLED
     h->cancel_failed = h->cancel_retries = 0U;
-#endif
+    h->token = h->authority = 0U;
+    h->token_active = h->token_armed = h->restart_requested = 0U;
     h->published_word = 0U;
+    h->link.controller = controller;
+    h->link.hmi = hmi;
     h->controller = controller;
     h->hmi = hmi;
     h->bound = 1U;
@@ -66,10 +64,8 @@ void exp3_hil_poll(Exp3Hil *h, volatile Exp3Mailbox *box, Exp3Endpoint *endpoint
                    exp3_link_send(&h->link, &m, now)) {
             h->pending = m;
             h->waiting = 1;
-#if MOWER_BLADE_OK_ENABLED
             h->request_started = now;
             h->cancel_failed = h->cancel_retries = 0U;
-#endif
             exp3_hil_trace(h, now, E3_TX, h->link.transfer, m.kind);
             log_identity(h, now, &m);
         } else
@@ -77,7 +73,6 @@ void exp3_hil_poll(Exp3Hil *h, volatile Exp3Mailbox *box, Exp3Endpoint *endpoint
     }
     if (exp3_expire(&h->link.rx, now, EXP3_TIMEOUT))
         exp3_hil_trace(h, now, E3_TIMEOUT, 1, 0);
-#if MOWER_BLADE_OK_ENABLED
     if (h->waiting && h->pending.kind == EXP3_CANCEL) {
         if ((uint32_t)(now - h->request_started) >= EXP3_TIMEOUT)
             h->cancel_failed = 1U; // fail closed; only matching receipt/rebind clears busy
@@ -90,12 +85,6 @@ void exp3_hil_poll(Exp3Hil *h, volatile Exp3Mailbox *box, Exp3Endpoint *endpoint
     } else if (h->waiting && (uint32_t)(now - h->request_started) >= EXP3_TIMEOUT) {
         h->waiting = 0U;
     }
-#else
-    if (h->waiting && (uint32_t)(now - h->link.sent_at) >= EXP3_TIMEOUT) {
-        h->waiting = 0;
-        exp3_hil_trace(h, now, E3_TIMEOUT, h->pending.action, 0);
-    }
-#endif
     word = h->bound ? exp3_link_word(&h->link, now, dwell) : 0;
     if (word != h->published_word)
         exp3_hil_trace(h, now, E3_RAW_TX, word, h->link.tx_index);
@@ -107,6 +96,27 @@ void exp3_hil_channels(Exp3Hil *h, Exp3Endpoint *endpoint, uint16_t a, uint16_t 
     if (!exp3_channel_word(a, b, &word))
         word = 0;
     exp3_hil_receive(h, endpoint, word, now);
+}
+bool exp3_hil_apply_result(Exp3Hil *h, const Exp3Message *m, uint32_t now) {
+    if (!h || !m || !h->bound || !h->waiting || m->kind != EXP3_RESULT ||
+        m->sender != 2U || m->command != h->pending.kind ||
+        m->status < EXP3_ACCEPTED || m->status > EXP3_SESSION ||
+        m->controller != h->pending.controller || m->hmi != h->pending.hmi ||
+        m->request != h->pending.request || m->action != h->pending.action ||
+        m->target != h->pending.target || m->context != h->pending.context ||
+        m->generation != h->pending.generation) return false;
+    if (h->pending.kind == EXP3_CANCEL && m->status != EXP3_CANCELLED) {
+        h->last_result = *m;
+        h->cancel_failed = 1U;
+        return false;
+    }
+    h->last_result = *m;
+    h->rtt_ms = now - h->link.sent_at;
+    ++h->matches;
+    h->waiting = 0U;
+    h->cancel_failed = 0U;
+    exp3_hil_trace(h, now, E3_RTT, h->rtt_ms, m->action);
+    return true;
 }
 void exp3_hil_receive(Exp3Hil *h, Exp3Endpoint *endpoint, uint16_t word, uint32_t now) {
     Exp3Message m;
@@ -129,16 +139,10 @@ void exp3_hil_receive(Exp3Hil *h, Exp3Endpoint *endpoint, uint16_t word, uint32_
             exp3_hil_trace(h, now, E3_REJECT, m.kind, 0);
             return;
         }
-#if MOWER_BLADE_OK_ENABLED
-        if (result.context != 0x424c4144UL && result.context != MOWER_CHASSIS_CONTEXT)
-            result.status=EXP3_UNKNOWN;
-#endif
         h->last_result = result;
         log_identity(h, now, &result);
-#if MOWER_BLADE_OK_ENABLED
         if (exp3_board_defer_result(&result))
             return;
-#endif
 #if defined(EXP3_PWM_PROBE_ENABLED) && EXP3_PWM_PROBE_ENABLED
         if (!exp3_link_send_result(&h->link, &result, now))
 #else
@@ -147,27 +151,7 @@ void exp3_hil_receive(Exp3Hil *h, Exp3Endpoint *endpoint, uint16_t word, uint32_
             exp3_hil_trace(h, now, E3_BUSY, result.action, 0);
         else
             exp3_hil_trace(h, now, E3_TX, h->link.transfer, result.command);
-    } else if (h->waiting && m.kind == EXP3_RESULT && m.command == h->pending.kind &&
-               m.controller == h->pending.controller && m.hmi == h->pending.hmi &&
-               m.request == h->pending.request && m.action == h->pending.action &&
-               m.target == h->pending.target && m.context == h->pending.context &&
-               m.generation == h->pending.generation) {
-#if MOWER_BLADE_OK_ENABLED
-        if (h->pending.kind == EXP3_CANCEL && m.status != EXP3_CANCELLED) {
-            h->last_result = m;
-            h->cancel_failed = 1U;
-            return; // matching identity alone is not a successful stop acknowledgement
-        }
-#endif
-        h->last_result = m;
-        h->rtt_ms = now - h->link.sent_at;
-        ++h->matches;
-        h->waiting = 0;
-#if MOWER_BLADE_OK_ENABLED
-        h->cancel_failed = 0U;
-#endif
-        exp3_hil_trace(h, now, E3_RTT, h->rtt_ms, m.action);
-    } else
+    } else if (!exp3_hil_apply_result(h, &m, now))
         exp3_hil_trace(h, now, E3_REJECT, m.action, m.kind);
 }
 #endif

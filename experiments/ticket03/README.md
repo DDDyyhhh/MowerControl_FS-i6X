@@ -1,5 +1,13 @@
 # Ticket 03 Experiment 3 — isolated bidirectional messages
 
+> **2026-11-09: the 0x31 bench / HIL profile has been removed** (see `docs/adr/0004-remove-0x31-bench-profile.md`).
+> These sources now build only as part of the formal `MOWER_BLADE_OK` configuration (wire version 0x39; see [current ultrasonic/CH8 contract](../../docs/protocols/ultrasonic-control-v39.md));
+> `EXP3_ENABLED=1` without `MOWER_BLADE_OK_ENABLED=1` is rejected at compile time. `build_hil.sh`,
+> `run_host.sh`, the `exp3-hil` / `exp3-pwm-hil` presets, `PCBI6X_EXP3` / `PCBI6X_EXP3_PWM_HIL`,
+> `artifacts.json` and `verify_artifacts.py` no longer exist. The text below is the historical bench
+> record and its build commands cannot be run any more. Host tests now run from
+> `tools/verify_blade_ok_host.sh`.
+
 Status: **host PASS; matching ARM images built; PWM bench functional checks and
 6-7 second Confirm/Cancel waits reported PASS by the field operator (2026-09-30)**.
 This is bench evidence, not production release acceptance. Complete detailed-log

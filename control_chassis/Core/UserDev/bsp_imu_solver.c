@@ -18,6 +18,8 @@
  */
 
 #include "bsp_imu_solver.h"
+#include <stdint.h>
+#include <string.h>
 
 /* ================= 参数设置 ================= */
 #define Kp 3.0f  // 比例增益 (控制加速度计修正速度)
@@ -32,9 +34,10 @@ static float invSqrt(float x)
 {
     float halfx = 0.5f * x;
     float y = x;
-    long i = *(long *)&y;
-    i = 0x5f3759df - (i >> 1);
-    y = *(float *)&i;
+    uint32_t bits;
+    memcpy(&bits, &y, sizeof(bits));
+    bits = 0x5f3759dfU - (bits >> 1);
+    memcpy(&y, &bits, sizeof(y));
     y = y * (1.5f - (halfx * y * y));
     return y;
 }
@@ -77,6 +80,11 @@ void IMU_Solver_Init(float ax, float ay, float az)
     imu_data.q1 = cy * cp * sr - sy * sp * cr;
     imu_data.q2 = cy * sp * cr + sy * cp * sr;
     imu_data.q3 = sy * cp * cr - cy * sp * sr;
+
+    /* Publish the reset pose immediately; recovery must not expose old Euler angles. */
+    imu_data.pitch = pitch * 57.29578f;
+    imu_data.roll = roll * 57.29578f;
+    imu_data.yaw = 0.0f;
 
     // 清除积分误差
     exInt = 0;
@@ -165,7 +173,10 @@ void IMU_Solver_Update(float gx, float gy, float gz, float ax, float ay, float a
                           imu_data.q0 * imu_data.q0 + imu_data.q1 * imu_data.q1 - imu_data.q2 * imu_data.q2 - imu_data.q3 * imu_data.q3) *
                    57.29578f;
     // Pitch
-    imu_data.pitch = -asinf(2.0f * (imu_data.q1 * imu_data.q3 - imu_data.q0 * imu_data.q2)) * 57.29578f;
+    float pitch_sine = 2.0f * (imu_data.q1 * imu_data.q3 - imu_data.q0 * imu_data.q2);
+    if (pitch_sine > 1.0f) pitch_sine = 1.0f;
+    if (pitch_sine < -1.0f) pitch_sine = -1.0f;
+    imu_data.pitch = -asinf(pitch_sine) * 57.29578f;
     // Roll
     imu_data.roll = atan2f(2.0f * (imu_data.q0 * imu_data.q1 + imu_data.q2 * imu_data.q3),
                            imu_data.q0 * imu_data.q0 - imu_data.q1 * imu_data.q1 - imu_data.q2 * imu_data.q2 + imu_data.q3 * imu_data.q3) *

@@ -10,6 +10,8 @@ extern "C" {
 
 #define EXP3_PWM_CONTEXT 0x424c4144UL
 #define EXP3_PWM_TARGET 1U
+#define EXP3_UNLOCK_CONTEXT 0x554e4c4bUL
+#define EXP3_UNLOCK_TARGET 1U
 
 typedef enum {
     EXP3_UI_IDLE = 0,
@@ -19,7 +21,10 @@ typedef enum {
     EXP3_UI_REJECTED,
     EXP3_UI_TIMEOUT,
     EXP3_UI_UNBOUND,
-    EXP3_UI_CANCEL_WAIT
+    EXP3_UI_CANCEL_WAIT,
+    EXP3_UI_BATTERY_LOW, /* Local presentation only; never a wire transaction. */
+    EXP3_UI_NOT_READY, EXP3_UI_STICKS_REQUIRED, EXP3_UI_CENTER_REQUIRED,
+    EXP3_UI_SYNCHRONIZING, EXP3_UI_SAFETY, EXP3_UI_OWNER
 } Exp3UiState;
 
 typedef enum {
@@ -30,9 +35,11 @@ typedef enum {
 
 typedef struct {
     uint16_t ch4_us;
-    uint16_t generation;
     uint8_t ok_pressed;
+    uint8_t start_inhibited; /* Observe physical edges, but do not arm a new intent. */
     uint8_t bound;
+    uint8_t authority_valid;
+    uint16_t authority;
     uint8_t transport_waiting;
     uint8_t cancel_ready;
     uint32_t now_ms;
@@ -52,6 +59,7 @@ typedef struct {
     uint8_t cancel_pending;
     uint8_t ch4_start;
     uint8_t start_armed;
+    uint8_t completed;
     uint32_t controller;
     uint32_t hmi;
     uint32_t context;
@@ -59,7 +67,9 @@ typedef struct {
     uint32_t prompt_generation;
     uint32_t next_action;
     uint32_t sent_at;
+    uint32_t edge_at;
     uint32_t seen_matches;
+    uint16_t runtime_baseline;
     uint16_t target;
     Exp3Message pending;
 } Exp3UiProbe;

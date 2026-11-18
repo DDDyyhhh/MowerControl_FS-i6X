@@ -5,7 +5,7 @@
 
 static uint8_t checksum(const uint8_t bytes[4], uint8_t role)
 {
-    uint8_t value = (uint8_t)(0x5aU ^ role);
+    uint8_t value = (uint8_t)(0x5aU ^ role ^ EXP3_WIRE_VERSION);
     unsigned i, bit;
     for (i = 0U; i < 4U; ++i) {
         value ^= bytes[i];
@@ -60,6 +60,33 @@ uint16_t exp3_auto_word(Exp3AutoSession *session, uint32_t now, uint32_t dwell,
                       ((uint16_t)session->tx_index << 8) | value);
 }
 
+uint32_t exp3_auto_hmi_interval(Exp3AutoPace *pace, bool bound, bool link_fresh)
+{
+    if (pace->link_was_fresh && !link_fresh)
+        pace->settled = 0U; /* The chassis may have rebooted: its session is unknown. */
+    pace->link_was_fresh = link_fresh ? 1U : 0U;
+    return (!bound || (!link_fresh && !pace->settled)) ?
+        EXP3_AUTO_HMI_FAST_ROUND_MS : EXP3_AUTO_ROUND_MS;
+}
+
+void exp3_auto_hmi_settled(Exp3AutoPace *pace)
+{
+    pace->settled = 1U;
+}
+
+void exp3_auto_controller_bound(Exp3AutoPace *pace, uint32_t now)
+{
+    pace->settled = 1U;
+    pace->bound_at = now;
+}
+
+uint32_t exp3_auto_controller_interval(Exp3AutoPace *pace, uint32_t now)
+{
+    if (pace->settled && (uint32_t)(now - pace->bound_at) >= EXP3_AUTO_CONTROLLER_FAST_WINDOW_MS)
+        pace->settled = 0U; /* Hand the idle SENS slot back to battery diagnostics. */
+    return pace->settled ? EXP3_AUTO_CONTROLLER_FAST_ROUND_MS : EXP3_AUTO_ROUND_MS;
+}
+
 int exp3_auto_receive(Exp3AutoSession *session, uint16_t word, uint32_t now,
                       uint32_t timeout)
 {
@@ -90,10 +117,7 @@ int exp3_auto_receive(Exp3AutoSession *session, uint16_t word, uint32_t now,
     session->rx_next = 0U;
     if ((uint8_t)word != checksum(session->rx_bytes, peer_role))
         return 0;
-    peer = (uint32_t)session->rx_bytes[0] |
-           ((uint32_t)session->rx_bytes[1] << 8) |
-           ((uint32_t)session->rx_bytes[2] << 16) |
-           ((uint32_t)session->rx_bytes[3] << 24);
+    peer = exp3_get32_le(session->rx_bytes);
     if (!peer || peer == session->peer)
         return 0;
     session->peer = peer;

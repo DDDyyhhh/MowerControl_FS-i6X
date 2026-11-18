@@ -7,7 +7,8 @@
 #include "telemetry_snapshot.h"
 
 #define SENS_IBUS_REQUEST_SIZE       4U
-#define SENS_IBUS_MAX_RESPONSE_SIZE  6U
+#define SENS_IBUS_STANDARD_RESPONSE_SIZE 6U
+#define SENS_IBUS_MAX_RESPONSE_SIZE  8U
 #define SENS_IBUS_FIRST_ADDRESS      1U
 #define SENS_IBUS_LAST_ADDRESS       8U
 

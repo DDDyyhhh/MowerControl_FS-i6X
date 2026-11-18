@@ -1,5 +1,19 @@
-#define ICM42688_TDK_DRIVER 0 // 原厂TDK的驱动 0关闭 1开启
-#define ICM42688_HXY_DRIVER 1 // 国产HXY的驱动 0关闭 1开启
+#ifndef ICM42688_TDK_DRIVER
+#define ICM42688_TDK_DRIVER 0
+#endif
+#ifndef ICM42688_HXY_DRIVER
+#define ICM42688_HXY_DRIVER 1
+#endif
+#if ((ICM42688_TDK_DRIVER != 0) && (ICM42688_TDK_DRIVER != 1)) || \
+    ((ICM42688_HXY_DRIVER != 0) && (ICM42688_HXY_DRIVER != 1)) || \
+    ((ICM42688_TDK_DRIVER + ICM42688_HXY_DRIVER) != 1)
+#error "Select exactly one ICM42688 driver"
+#endif
+/* Public read contract: 0 success; HAL errors 1..3; negative validation errors.
+ * A failed read leaves all caller outputs unchanged. */
+#define ICM_SPI_TIMEOUT_MS 2U
+#define ICM_ERROR_DATA (-1)
+#define ICM_ERROR_ARGUMENT (-2)
 // 原厂TDK的驱动//
 #if ICM42688_TDK_DRIVER
 

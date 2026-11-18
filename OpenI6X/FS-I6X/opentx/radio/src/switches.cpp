@@ -519,6 +519,10 @@ swsrc_t getMovedSwitch()
 #if defined(GUI)
 void checkSwitches()
 {
+#if defined(PCBI6X) && defined(PCBI6X_MOWER_UI_SHELL)
+  // Mower switch positions are handled by chassis authorization, not model startup warnings.
+  return;
+#else
   swarnstate_t last_bad_switches = 0xff;
   swarnstate_t states = g_model.switchWarningState;
 
@@ -738,6 +742,7 @@ void checkSwitches()
   }
 
   LED_ERROR_END();
+#endif
 }
 #endif // GUI
 

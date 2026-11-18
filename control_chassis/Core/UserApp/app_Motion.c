@@ -30,8 +30,8 @@
 #include "cruise_control.h"
 #include "tricolor_led.h"
 #include "lifter.h"
+#include "tim.h"
 #include "BladeMotor.h"
-// #include "car_Control.h"
 #include "sr04_uart.h"
 #include "connet_check.h"
 #include "AXEBMS_RS485.h"
@@ -41,6 +41,9 @@
 #include "safety_ownership_gate.h"
 #include "flipsky_can.h"
 #include "telemetry_snapshot.h"
+#include "../../../experiments/ticket03/battery_status.h"
+#include "../../../experiments/ticket03/ultrasonic_control.h"
+#include "odrive_can.h"
 #include "sens_ibus_usart2.h"
 #include "blade_manual_control.h"
 #include "blade_hil_uart_debug.h"
@@ -50,9 +53,6 @@
 #endif
 #if REMOTE_BACKEND_FLYSKY_IBUS
 static BladeManualControl_t g_blade_manual_control;
-#if MOWER_BLADE_OK_ENABLED
-static uint32_t g_mower_stop_sequence;
-#endif
 #if EXP3_PWM_PROBE_ENABLED
 static Exp3PwmDiag g_exp3_pwm_diag;
 #endif
@@ -61,12 +61,7 @@ static Exp3PwmDiag g_exp3_pwm_diag;
 #include <stdlib.h>
 
 
-#define USE_CHASSIS_CONTROL 1 // 1: 使用chassis_control.c, 0: 使用car_Control.c
-#if USE_CHASSIS_CONTROL
 #include "chassis_control.h"
-#else
-#include "car_Control.h"
-#endif
 #include "tricolor_led.h"
 // #include "chassis_control.h"
 extern AppContext_t g_app;
@@ -74,14 +69,19 @@ extern AXEBMS_RS485 my_bms;
 
 extern uint8_t api_lockout;
 extern uint32_t last_host_cmd_tick;
+#if MOWER_CH8_CONTROL_ENABLED
+static ControlSource_t g_control_source;
+static HostControlSnapshot_t g_host_snapshot;
+static void ApplyControlSourceActuators(void);
+#endif
 /* ============================================================ */
 /*   功能开关配置                                                */
 /* ============================================================ */
-/* Temporary PD1 software bypass requested for bench testing.
- * Set to 1 to restore the vehicle emergency button (active high).
+/* PD1 vehicle emergency button: active high, enabled by default.
+ * Set to 0 only for an explicitly requested bench bypass.
  */
 #ifndef VEHICLE_ESTOP_ENABLED
-#define VEHICLE_ESTOP_ENABLED 0
+#define VEHICLE_ESTOP_ENABLED 1
 #endif
 #if (VEHICLE_ESTOP_ENABLED != 0) && (VEHICLE_ESTOP_ENABLED != 1)
 #error "VEHICLE_ESTOP_ENABLED must be 0 or 1"
@@ -100,6 +100,10 @@ void Check_Unlock_Sequence();
 void App_Init(void);
 void Modules_Init(void);
 void System_Start_Comm(void);
+#if MOWER_BLADE_OK_ENABLED
+static Exp3PwmEvent g_motion_blade_event;
+static bool g_motion_blade_event_ready;
+#endif
 static void RefreshSafetyOwnershipGate(void);
 static void EnforceSafetyOwnershipStop(void);
 static void RefreshTelemetrySnapshot(const RemoteCommand_t *command,
@@ -113,6 +117,43 @@ static void TraceBladeHil(const RemoteCommand_t *command,
                           uint32_t previous_event_sequence,
                           uint32_t compare);
 #endif
+static void RefreshUltrasonicDistances(uint16_t throttle, uint16_t steering)
+{
+  if (g_app.cfg_ultrasonic_en == 1U)
+  {
+#if MOWER_BLADE_OK_ENABLED && REMOTE_BACKEND_FLYSKY_IBUS
+    float distances[SR04_SENSOR_COUNT];
+    if (SR04_ReadLastDistances(distances))
+    {
+      g_app.d1 = distances[0];
+      g_app.d2 = distances[1];
+      g_app.d3 = distances[2];
+      g_app.d4 = distances[3];
+      return;
+    }
+
+    /* A disconnected module must not leave an old stop latched. Keep a
+     * close-range restriction until the operator releases both sticks;
+     * clearing while a stick is held could unexpectedly start motion. */
+    const bool was_near = g_app.d1 <= MOWER_ULTRASONIC_ESCAPE_CM ||
+                          g_app.d2 <= MOWER_ULTRASONIC_ESCAPE_CM ||
+                          g_app.d3 <= MOWER_ULTRASONIC_ESCAPE_CM ||
+                          g_app.d4 <= MOWER_ULTRASONIC_ESCAPE_CM;
+    if (was_near && (abs((int)throttle - 2048) > 2048.0f * RC_DEADZONE ||
+                     abs((int)steering - 2048) > 2048.0f * RC_DEADZONE)) return;
+#else
+    (void)throttle;
+    (void)steering;
+    g_app.d1 = SR04_GetDistance(0);
+    g_app.d2 = SR04_GetDistance(1);
+    g_app.d3 = SR04_GetDistance(2);
+    g_app.d4 = SR04_GetDistance(3);
+    return;
+#endif
+  }
+  g_app.d1 = g_app.d2 = g_app.d3 = g_app.d4 = SR04_NO_DISTANCE_CM;
+}
+
 /* USER CODE BEGIN Header_StartTask_Motion */
 /**
  * @brief Function implementing the Task_Motion thread.
@@ -143,33 +184,15 @@ void StartTask_Motion(void *argument)
   const TickType_t xFrequency = pdMS_TO_TICKS(10); // 10ms 周期
 
   // IMU 时间戳
-  g_app.last_imu_tick = HAL_GetTick();
+  g_app.last_imu_tick = g_app.imu.last_valid_ms;
 
   // 分频计数器
   uint8_t control_divider = 0;
 
-  // 按键状态记录 (用于边沿检测)
-  static bool last_key_state[8] = {0};
-
   // 旋钮状态记录
-  static uint8_t last_blade_knob = 0xFF;
-  static float last_blade_command = -1.0f;
+#if !MOWER_CH8_CONTROL_ENABLED
   static uint8_t last_height_knob = 0xFF;
-
-#if ENABLE_STRESS_TEST_MODE
-  // ==========================================
-  // <<<--- 测试自转模式标志位 --->>>
-  // ==========================================
-  static bool test_spin_mode = false;
-  static uint8_t test_mode_key_lock = 0;
-
 #endif
-  // 定义静态变量防止重复触发
-  static uint8_t us_toggle_lock = 0;
-
-  static uint8_t cruise_key_lock = 0;
-  // 【新增】 巡航切换冷却计时器
-  static uint32_t cruise_toggle_tick = 0;
   /* Infinite loop */
   for (;;)
   {
@@ -179,6 +202,7 @@ void StartTask_Motion(void *argument)
     // Serial_Printf(SERIAL_PORT_2, "user_set_speed: %f\r\n", g_app.user_set_speed);
     // === 1. 绝对延时 (确保严格 10ms 周期) ===
     vTaskDelayUntil(&xLastWakeTime, xFrequency);
+    uint32_t motion_start_ms = HAL_GetTick();
 
 
 #if MOTOR_DRIVER_USED == DRIVER_TYPE_OID
@@ -196,38 +220,36 @@ void StartTask_Motion(void *argument)
 #endif
 
     // === 2. 安全检测 (最高优先级) ===
+    /* Record each physical cause even if another cause has already latched. */
+    const bool collision_now = g_app.cfg_collision_en == 1U &&
+        HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_0) == GPIO_PIN_RESET;
+    const bool emergency_now = VehicleEmergencyActive();
+    if (collision_now) g_app.collision_reason_latched = 1U;
+    if (emergency_now) g_app.emergency_reason_latched = 1U;
     if (g_app.physical_safety_latched == 0U)
     {
       // A. 碰撞杆检测 (PD0)
       if (g_app.cfg_collision_en == 1)
       {
-        if (HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_0) == GPIO_PIN_RESET)
+        if (collision_now)
         {
           g_app.physical_safety_latched = 1U;
           g_app.g_collision_latched = 1;
           g_app.g_system_report_state = REPORT_FAULT_COLLISION;
 
-#if USE_CHASSIS_CONTROL
           chassis_stop();
-#else
-          MotionControl_Parking(g_app.is_on_slope);
-#endif
           BladeMotor_SetSpeed(BLADE_SPEED_OFF);
         }
       }
 
       // B. 急停按钮检测 (PD1)
-      if (VehicleEmergencyActive())
+      if (emergency_now)
       {
         g_app.physical_safety_latched = 1U;
         g_app.g_collision_latched = 1;
         g_app.g_system_report_state = REPORT_FAULT_EMERGENCY_BTN;
 
-#if USE_CHASSIS_CONTROL
         chassis_stop();
-#else
-        MotionControl_Parking(g_app.is_on_slope);
-#endif
         BladeMotor_SetSpeed(BLADE_SPEED_OFF);
       }
 
@@ -292,21 +314,18 @@ void StartTask_Motion(void *argument)
 #endif
 
     // === 3. IMU 姿态解算 (100Hz) ===
-    uint32_t now_tick = HAL_GetTick();
-    float dt = (float)(now_tick - g_app.last_imu_tick) / 1000.0f;
-    g_app.last_imu_tick = now_tick;
-
-    if (dt < 0.001f)
-      dt = 0.001f;
-    if (dt > 0.1f)
-      dt = 0.01f;
-
-    icm42688RealData_t acc, gyro;
-    bsp_IcmGetRawData(&acc, &gyro);
-    IMU_Solver_Update(gyro.x, gyro.y, gyro.z, acc.x, acc.y, acc.z, dt);
+    if (AppImu_Update(&g_app.imu, &g_app.accval, &g_app.gyroval))
+    {
+      g_app.last_imu_tick = g_app.imu.last_valid_ms;
+      g_app.is_on_slope = (fabsf(imu_data.roll) > 4.0f || fabsf(imu_data.pitch) > 4.0f);
+    }
+    /* IMU errors are diagnostic only. Always advance the safety/timeout path. */
     RefreshSafetyOwnershipGate();
     EnforceSafetyOwnershipStop();
-#if MOWER_GRASS_BAG_CH6_ENABLED
+#if MOWER_CH8_CONTROL_ENABLED
+    ApplyControlSourceActuators();
+#endif
+#if MOWER_GRASS_BAG_CH6_ENABLED && !MOWER_CH8_CONTROL_ENABLED
     {
       RemoteCommand_t bag_command = {0};
       GrassBagTarget_t bag_target = GRASS_BAG_TARGET_UNKNOWN;
@@ -321,9 +340,6 @@ void StartTask_Motion(void *argument)
           bag_command.run_permitted && bag_connected && bag_safety_ok &&
           SafetyOwnershipGate_IsOwnerPermitted(EXECUTION_OWNER_MANUAL_REMOTE);
       bool bag_api_allowed = Ctrl_Mode == 2U && bag_connected && bag_safety_ok &&
-#if MOWER_BLADE_OK_ENABLED
-          SafetyOwnershipGate_IsOwnerPermitted(EXECUTION_OWNER_API) &&
-#endif
           (uint32_t)(HAL_GetTick() - last_host_cmd_tick) < API_TIMEOUT_MS;
       /* Stop the outgoing owner's action before enabling the incoming owner. */
       bool mode_changed = bag_previous_mode != Ctrl_Mode;
@@ -333,16 +349,6 @@ void StartTask_Motion(void *argument)
         Lifter_SetGrassBagTarget(bag_target == GRASS_BAG_TARGET_OPEN ? 1U : 0U);
     }
 #endif
-
-#if MOWER_BLADE_OK_ENABLED
-    Lifter_SetHeightPermission(SafetyOwnershipGate_IsOwnerPermitted(
-        Ctrl_Mode==2U ? EXECUTION_OWNER_API : EXECUTION_OWNER_MANUAL_REMOTE));
-    chassis_control_apply_host_targets();
-#endif
-    if (fabsf(imu_data.roll) > 4.0f || fabsf(imu_data.pitch) > 4.0f)
-      g_app.is_on_slope = 1;
-    else
-      g_app.is_on_slope = 0;
 
     // === 4. 运动控制逻辑 (50Hz - 每 50ms 执行一次) ===
     control_divider++;
@@ -391,83 +397,7 @@ void StartTask_Motion(void *argument)
         break;
       }
 
-      // 4. 计算摇杆是否被拨动 (用于打断测试模式等)
-      // 注意：现在只判断“有效映射”后的摇杆，没用到的摇杆乱动也不会误触发
-      bool is_joystick_active = (abs((int)mapped_throttle - 2048) > 200) ||
-                                (abs((int)mapped_steering - 2048) > 200);
-
-#if ENABLE_STRESS_TEST_MODE
-      // ============================================================
-      //      <<<--- 【测试模式】 摇杆行为检测 (防抖死区 200) --->>>
-      // ============================================================
-      // 如果摇杆偏离中心 2048 超过 200，说明用户动手了
-      bool is_joystick_active = (abs((int)local_ly - 2048) > 200) ||
-                                (abs((int)local_rx - 2048) > 200);
-
-      // ============================================================
-      //      <<<--- 【测试模式】 一键自转测试模式状态机 --->>>
-      // ============================================================
-      // 只有在解锁状态下，才允许进入测试模式
-      if (g_app.g_collision_latched == 0)
-      {
-        // 1. 检测长按进入/退出
-        if (g_app.key[KEY_INDEX_GEAR_2] == 2)
-        {
-          if (test_mode_key_lock == 0)
-          {
-            test_mode_key_lock = 1; // 锁住防抖
-
-            if (!test_spin_mode && !is_joystick_active)
-            {
-              test_spin_mode = true;
-              Serial_Printf(SERIAL_PORT_2, "[TEST MODE] ON: Spinning + Blade L1\r\n");
-            }
-            else
-            {
-              test_spin_mode = false;
-              Serial_Printf(SERIAL_PORT_2, "[TEST MODE] OFF: Exited by Key\r\n");
-            }
-          }
-        }
-        else
-        {
-          test_mode_key_lock = 0; // 松手复位
-        }
-
-        // 2. 摇杆打断机制：测试中只要碰到摇杆，立即退出！
-        if (test_spin_mode && is_joystick_active)
-        {
-          test_spin_mode = false;
-          Serial_Printf(SERIAL_PORT_2, "[TEST MODE] OFF: Interrupted by Joystick\r\n");
-        }
-      }
-      else
-      {
-        // 一旦上锁/急停/通信丢失，无条件切断测试模式
-        test_spin_mode = false;
-      }
-#endif
-      //      <<<--- B. 更新超声波数据 (集成遥控器开关拦截) --->>>
-      // ============================================================
-      // 【核心修改】：使用从遥控器发来的配置标志 cfg_ultrasonic_en
-      if (g_app.cfg_ultrasonic_en == 1)
-      {
-        // 开关打开时，读取真实的传感器距离
-        g_app.d1 = SR04_GetDistance(0);
-        g_app.d2 = SR04_GetDistance(1);
-        g_app.d3 = SR04_GetDistance(2);
-        g_app.d4 = SR04_GetDistance(3);
-      }
-      else
-      {
-        // 开关关闭时，强制把所有距离覆写为 250.0f
-        // 这样不仅底层不会触发避障，通过 receiver_resport 发给遥控器的数据也是 250，
-        // 遥控器端的 UI 发现距离 > 200，就会自动把雷达波纹隐藏掉！
-        g_app.d1 = 250.0f;
-        g_app.d2 = 250.0f;
-        g_app.d3 = 250.0f;
-        g_app.d4 = 250.0f;
-      }
+      RefreshUltrasonicDistances(mapped_throttle, mapped_steering);
 
       // ============================================================
       //      <<<--- 【智能版】 草袋满载检测与清理状态机 --->>>
@@ -571,12 +501,14 @@ void StartTask_Motion(void *argument)
         }
 
         g_app.is_bag_full = (bag_fsm_state == 1) ? 1 : 0;
+        g_app.is_bag_full_valid = 1U;
       }
       else
       {
         bag_fsm_state = 0;
         grass_present_tick = 0;
         g_app.is_bag_full = 0;
+        g_app.is_bag_full_valid = 0U;
       }
       // --- C. 状态判断与执行 ---
 
@@ -648,10 +580,6 @@ void StartTask_Motion(void *argument)
 
           // 2. 判断按键状态 (两个解锁键是否都按下了)
           bool is_auto_mode = (Cruise_GetState() != CRUISE_OFF);
-#if ENABLE_STRESS_TEST_MODE
-          if (test_spin_mode)
-            is_auto_mode = true; // 测试模式也算自动状态
-#endif
           bool keys_pressed = g_app.key[KEY_INDEX_UNLOCK_A] && g_app.key[KEY_INDEX_UNLOCK_B];
           bool keys_released = !g_app.key[KEY_INDEX_UNLOCK_A] && !g_app.key[KEY_INDEX_UNLOCK_B];
           uint8_t unlock_confirm = (g_app.key[KEY_INDEX_BLADE_SPEED_3] == 1) ? 1 : 0;
@@ -774,7 +702,7 @@ void StartTask_Motion(void *argument)
             (void)RemoteBackend_GetCommand(&rc_cmd);
 
             blade_input.link_fresh = rc_cmd.link_fresh;
-            blade_input.timeout_latched = rc_cmd.timeout_latched;
+            blade_input.timeout_latched = RemoteCommand_TimeoutStopActive(&rc_cmd);
             blade_input.frame_sequence = rc_cmd.frame_sequence;
 
             blade_input.physical_latched = (g_app.physical_safety_latched != 0U);
@@ -787,7 +715,8 @@ void StartTask_Motion(void *argument)
             blade_input.run_permitted = rc_cmd.run_permitted;
             blade_input.selected_owner = EXECUTION_OWNER_MANUAL_REMOTE;
             blade_input.command_invalidation_sequence = rc_cmd.command_invalidation_sequence;
-            blade_input.gate_stop_requested = !SafetyOwnershipGate_IsOwnerPermitted(EXECUTION_OWNER_MANUAL_REMOTE);
+            blade_input.gate_stop_requested = g_app.battery.blade_inhibited ||
+                !SafetyOwnershipGate_IsOwnerPermitted(EXECUTION_OWNER_MANUAL_REMOTE);
 
             blade_input.ch4_raw = rc_cmd.blade_start_raw;
             blade_input.ch7_raw = rc_cmd.blade_gear_raw;
@@ -817,9 +746,15 @@ void StartTask_Motion(void *argument)
 #if EXP3_PWM_PROBE_ENABLED
             {
               Exp3PwmEvent event;
+#if MOWER_BLADE_OK_ENABLED
+              if (g_motion_blade_event_ready)
+#else
               if (exp3_board_take_pwm_event(&event))
+#endif
               {
 #if MOWER_BLADE_OK_ENABLED
+                event = g_motion_blade_event;
+                g_motion_blade_event_ready = false;
                 completed_event = event;
                 protocol_event = true;
                 protocol_confirm = event.kind == EXP3_PWM_CONFIRM;
@@ -896,9 +831,17 @@ void StartTask_Motion(void *argument)
 #if MOWER_BLADE_OK_ENABLED
           if (Ctrl_Mode != 0) {
             Exp3PwmEvent ignored;
-            if (exp3_board_take_pwm_event(&ignored)) exp3_board_complete_pwm_event(&ignored, false);
+            if (g_motion_blade_event_ready) {
+              ignored = g_motion_blade_event;
+              g_motion_blade_event_ready = false;
+              exp3_board_complete_pwm_event(&ignored, false);
+            }
             BladeManualControl_Reset(&g_blade_manual_control);
           }
+#endif
+#if MOWER_CH8_CONTROL_ENABLED
+          if (Ctrl_Mode == CONTROL_MODE_API_RUN && g_control_source.api_ready)
+            blade_command = BladeMotor_CommandFromGear(g_control_source.command.blade);
 #endif
           BladeMotor_SetSpeedForOwner((Ctrl_Mode == 2) ? EXECUTION_OWNER_API :
                                                            EXECUTION_OWNER_MANUAL_REMOTE,
@@ -919,9 +862,12 @@ void StartTask_Motion(void *argument)
           /* Atomic single word: Motion heartbeat + actual permitted command/gear.
            * It is a display snapshot, never a source of authorization. */
           {
-            bool enabled = Ctrl_Mode == 0 && blade_command > 0.0f &&
-                SafetyOwnershipGate_IsOwnerPermitted(EXECUTION_OWNER_MANUAL_REMOTE);
+            ExecutionOwner_t blade_owner = Ctrl_Mode == 2U ? EXECUTION_OWNER_API : EXECUTION_OWNER_MANUAL_REMOTE;
+            bool enabled = blade_command > 0.0f && SafetyOwnershipGate_IsOwnerPermitted(blade_owner);
             uint16_t gear = enabled ? (uint16_t)rc_cmd.blade_gear : 0U;
+#if MOWER_CH8_CONTROL_ENABLED
+            if (enabled && Ctrl_Mode == CONTROL_MODE_API_RUN) gear = g_control_source.command.blade;
+#endif
             g_blade_ok_runtime_word = (uint16_t)(((HAL_GetTick()/100U & 0xFFFU)<<4) |
                 8U | (enabled ? 1U : 0U) | ((gear & 3U)<<1));
           }
@@ -998,6 +944,7 @@ void StartTask_Motion(void *argument)
 
 #endif
 
+#if !MOWER_CH8_CONTROL_ENABLED
         // 1. 处理刀盘初始化触发
         if (g_app.trigger_blade_init == 1)
         {
@@ -1008,28 +955,14 @@ void StartTask_Motion(void *argument)
         // ============================================================
         //      <<<---  推杆高度控制 (旋钮位置控制版) ---<<<
         // ============================================================
-#if MOWER_BLADE_OK_ENABLED
-        static uint32_t height_stop_seen;
-        if (height_stop_seen!=g_mower_stop_sequence) {
-          height_stop_seen=g_mower_stop_sequence;
-          last_height_knob=0xFFU;
-        }
-#endif
         // 只有当旋钮数值发生变化时，才更新目标高度
-        if (g_app.knob_height != last_height_knob
-#if MOWER_BLADE_OK_ENABLED
-            && SafetyOwnershipGate_IsOwnerPermitted(Ctrl_Mode==2U ? EXECUTION_OWNER_API : EXECUTION_OWNER_MANUAL_REMOTE)
-#endif
-            )
+        if (g_app.knob_height != last_height_knob)
         {
           Lifter_SetTargetLevel(g_app.knob_height);
           last_height_knob = g_app.knob_height;
         }
 
-        // 更新按键历史状态
-        for (int i = 0; i < 8; i++)
-          last_key_state[i] = g_app.key[i];
-
+#endif
         // ============================================================
         //      <<<--- 超声波避障计算 ---<<<
         // ============================================================
@@ -1048,7 +981,7 @@ void StartTask_Motion(void *argument)
           // --- 阶梯式限速逻辑 ---
           if (min_dist <= 50.0f)
           {
-            us_speed_limit = MOWER_UC_1_MAX_SPEED; // 极近距离：强制蠕行
+            us_speed_limit = MOWER_UC_1_MAX_SPEED; // 正式遥控的近障低速移车由末端适配器处理
           }
           else if (min_dist <= 100.0f)
           {
@@ -1099,14 +1032,10 @@ void StartTask_Motion(void *argument)
       else
       {
         // 【修改】将映射后的摇杆值传给手动底盘控制模块
-#if USE_CHASSIS_CONTROL
         Control_Update();
-
-#else
-        MotionControl_Update(mapped_throttle, mapped_steering);
-#endif
       }
     }
+    AppImu_RecordCycle(&g_app.imu, motion_start_ms, HAL_GetTick());
   }
   /* USER CODE END StartTask_Motion */
 }
@@ -1369,6 +1298,291 @@ static void TraceBladeHil(const RemoteCommand_t *command,
 }
 #endif
 
+#if MOWER_BLADE_OK_ENABLED
+static void RefreshRemoteIntent(uint32_t now_ms, const RemoteCommand_t *command,
+                                RemoteSafetyInput_t safety)
+{
+  bool unlock = g_app.lock != 0U || command->remote_recoverable_latched || safety.physical_latched;
+  unsigned phase = MOWER_AUTH_CH4;
+  uint32_t request = command->command_invalidation_sequence;
+  bool center = command->blade_start_raw >= 1400U && command->blade_start_raw <= 1600U;
+  if (!command->connected || !command->link_fresh || !command->stable_online || !g_exp3_hil.bound)
+    phase = MOWER_AUTH_INIT;
+  else if (Ctrl_Mode != 0U
+#if MOWER_CH8_CONTROL_ENABLED
+           || (unlock && !ControlSource_CanUnlock(&g_control_source))
+#endif
+          ) phase = MOWER_AUTH_OWNER;
+  else if (safety.emergency_active || safety.collision_active || safety.tilt_active)
+    phase = MOWER_AUTH_SAFETY;
+  else if (unlock) {
+    unsigned reason = RemoteBackend_UnlockBlockReason();
+    if (reason) phase = reason == 8U ? MOWER_AUTH_INIT : reason;
+    else if (command->authorization_state == REMOTE_AUTH_WAIT_OK) phase = MOWER_AUTH_CONFIRM;
+    else if (center && command->authorization_state == REMOTE_AUTH_STOPPED_LATCHED)
+      phase = MOWER_AUTH_CENTER;
+  } else if (g_app.battery.blade_inhibited) phase = MOWER_AUTH_LOW;
+  else if (!command->run_permitted || safety.physical_latched) phase = MOWER_AUTH_SAFETY;
+  else {
+    request = BladeManualControl_GetRequestSequence(&g_blade_manual_control);
+    if (BladeManualControl_GetState(&g_blade_manual_control) == BLADE_STATE_START_CONFIRM_PENDING &&
+        command->blade_start_raw >= 900U && command->blade_start_raw <= 1100U)
+      phase = MOWER_AUTH_CONFIRM;
+    else if (center && BladeManualControl_IsCenterBaselineObserved(&g_blade_manual_control))
+      phase = MOWER_AUTH_CENTER;
+  }
+  (void)exp3_board_update_intent(phase, unlock, request, now_ms);
+}
+
+static void RecordUnlockDecision(const Exp3PwmEvent *event, const RemoteCommand_t *command, bool accepted)
+{
+  g_exp3_pwm_diag.action = event->message.action;
+  g_exp3_pwm_diag.request = event->message.request;
+  g_exp3_pwm_diag.generation = event->message.generation;
+  g_exp3_pwm_diag.ch4_epoch = g_exp3_hil.token;
+  g_exp3_pwm_diag.pending_sequence = g_exp3_hil.token_request;
+  g_exp3_pwm_diag.ch4_raw = command->blade_start_raw;
+  g_exp3_pwm_diag.steering_raw = command->channels[0];
+  g_exp3_pwm_diag.throttle_raw = command->channels[1];
+  g_exp3_pwm_diag.authority = g_exp3_hil.authority;
+  g_exp3_pwm_diag.result_status = accepted ? EXP3_ACCEPTED : EXP3_UNKNOWN;
+  g_exp3_pwm_diag.decision_reason = accepted ? 0U :
+      event->message.controller != g_exp3_hil.controller || event->message.hmi != g_exp3_hil.hmi ? 1U :
+      event->message.generation != g_exp3_hil.token ? 2U : Ctrl_Mode != 0U ? 5U :
+      g_exp3_hil.intent_reason ? g_exp3_hil.intent_reason : 4U;
+  if (event->kind == EXP3_PWM_CONFIRM) {
+    if (accepted) ++g_exp3_pwm_diag.confirm_count;
+    else ++g_exp3_pwm_diag.reject_count;
+  }
+  exp3_board_publish_pwm_diag(&g_exp3_pwm_diag);
+}
+
+static void DispatchRemoteConfirmation(uint32_t now_ms, RemoteSafetyInput_t safety,
+                                       RemoteCommand_t *command)
+{
+  /* Locked chassis must still consume confirmations. Motion owns permission. */
+  if (g_motion_blade_event_ready &&
+      (Ctrl_Mode != 0U || !command->run_permitted || safety.physical_latched)) {
+    exp3_board_complete_pwm_event(&g_motion_blade_event, false);
+    g_motion_blade_event_ready = false;
+  }
+  Exp3PwmEvent event;
+  static uint8_t previous_mode;
+  if (Ctrl_Mode != previous_mode) RemoteBackend_CancelUnlock();
+  previous_mode = Ctrl_Mode;
+  if (exp3_board_take_pwm_event(&event)) {
+    bool refresh = false;
+    if (event.message.kind == 0U) {
+      g_motion_blade_event_ready = false;
+      RemoteBackend_RevokeAuthorization();
+      BladeManualControl_Reset(&g_blade_manual_control);
+      refresh = true;
+    }
+    else if (event.message.context == EXP3_UNLOCK_CONTEXT) {
+      bool identity = event.message.controller == g_exp3_hil.controller &&
+          event.message.hmi == g_exp3_hil.hmi &&
+          event.message.target == EXP3_UNLOCK_TARGET;
+      bool current = identity &&
+          event.message.generation == exp3_board_unlock_epoch();
+      bool accepted = false;
+      if (event.kind == EXP3_PWM_CANCEL) {
+        if (current) RemoteBackend_CancelUnlock();
+        accepted = identity; /* An obsolete Cancel drains without touching a newer request. */
+      }
+      else if (Ctrl_Mode == 0U &&
+#if MOWER_CH8_CONTROL_ENABLED
+               ControlSource_CanUnlock(&g_control_source) &&
+#endif
+               exp3_board_check_intent(&event.message, now_ms)) {
+        accepted = RemoteBackend_ConfirmUnlock();
+        if (!accepted) g_exp3_hil.intent_reason = 4U;
+      }
+      else if (current) RemoteBackend_CancelUnlock();
+      RecordUnlockDecision(&event, command, accepted);
+      exp3_board_complete_pwm_event(&event, accepted);
+      refresh = true;
+    }
+    else if (event.message.context == EXP3_PWM_CONTEXT && Ctrl_Mode == 0U &&
+             command->run_permitted && !safety.physical_latched &&
+             (!g_app.battery.blade_inhibited || event.kind == EXP3_PWM_CANCEL) &&
+             (event.kind == EXP3_PWM_CANCEL || exp3_board_check_intent(&event.message, now_ms))) {
+      g_motion_blade_event = event;
+      g_motion_blade_event_ready = true;
+    }
+    else exp3_board_complete_pwm_event(&event, event.kind == EXP3_PWM_CANCEL);
+    if (refresh) {
+      RemoteBackend_Advance(now_ms, safety);
+      (void)RemoteBackend_GetCommand(command);
+    }
+  }
+}
+#endif
+
+static void RefreshBatteryMonitor(uint32_t now_ms)
+{
+  AXEBMS_Data raw = {0};
+  uint32_t tick = 0U;
+  bool valid = false;
+  BatterySample_t sample = {0};
+  if (AXEBMS_RS485_ReadTelemetry(&my_bms, &raw, &tick, &valid)) {
+    sample.sample_ms = tick; sample.valid = valid;
+    sample.pack_cv = raw.Voltage; sample.current_da = raw.CurCadc;
+    sample.min_cell_mv = raw.Vmin; sample.max_cell_mv = raw.Vmax;
+    sample.cell_numbers = raw.VmaxminNo; sample.soc_percent = raw.RSOC;
+    sample.fcc_cah = raw.FCC; sample.rc_cah = raw.RC;
+    sample.max_temp_dc = raw.Tmax; sample.min_temp_dc = raw.Tmin;
+    /* Before the first response, a zero-initialized driver is not a sample. */
+    BatteryMonitor_Update(&g_app.battery, valid || raw.Voltage != 0U ? &sample : NULL, now_ms);
+  } else {
+    BatteryMonitor_Update(&g_app.battery, NULL, now_ms);
+  }
+}
+
+static void ApplyBatteryAuthorization(void)
+{
+  SafetyOwnershipGate_SetBatteryPolicy(g_app.battery.stop_required,
+      g_app.battery.blade_inhibited);
+  if (g_app.battery.blade_inhibited) {
+    BladeMotor_SetSpeed(BLADE_SPEED_OFF);
+#if REMOTE_BACKEND_FLYSKY_IBUS
+    BladeManualControl_Reset(&g_blade_manual_control);
+#endif
+#if MOWER_BLADE_OK_ENABLED
+    if (g_motion_blade_event_ready) {
+      exp3_board_complete_pwm_event(&g_motion_blade_event,
+          g_motion_blade_event.kind == EXP3_PWM_CANCEL);
+      g_motion_blade_event_ready = false;
+    }
+#endif
+  }
+}
+
+/* Capture the first manual-permission falling edge of each authorized episode.
+ * No printing, allocation or waiting occurs in this 100Hz path. */
+static void RecordRemoteStop(const RemoteCommand_t *command,
+                             const RemoteSafetyInput_t *safety,
+                             bool permitted, SafetyOwnershipGateReason_t reason,
+                             uint32_t now_ms)
+{
+  RemoteStopDiagnostics_t *diag = &g_app.remote_stop_diag;
+  if (permitted) {
+    if (!diag->armed) {
+      diag->authorized_ms = now_ms;
+      diag->authorized_frame_sequence = command->frame_sequence;
+      diag->authorized_timeout_sequence = command->timeout_sequence;
+      diag->authorized_ch5_stop_sequence = command->ch5_stop_sequence;
+      RemoteBackend_GetRxDiagnostics(&diag->rx_at_authorization);
+      diag->armed = 1U;
+    }
+    return;
+  }
+  if (!diag->armed) return;
+  diag->write_sequence++;
+  __DMB();
+  diag->armed = 0U;
+  diag->captured_ms = now_ms;
+  diag->gate_reason = (uint32_t)reason;
+  diag->authorization_state = (uint32_t)command->authorization_state;
+  diag->latch_reason = (uint32_t)command->recoverable_latch_reason;
+  diag->last_valid_ms = command->last_valid_ms;
+  diag->link_age_ms = now_ms - command->last_valid_ms;
+  diag->frame_sequence = command->frame_sequence;
+  diag->timeout_sequence = command->timeout_sequence;
+  diag->ch5_stop_sequence = command->ch5_stop_sequence;
+  diag->invalidation_sequence = command->command_invalidation_sequence;
+  diag->control_mode = Ctrl_Mode;
+  diag->report_state = g_app.g_system_report_state;
+  diag->input_flags =
+      ((uint32_t)command->connected << 0) |
+      ((uint32_t)command->link_fresh << 1) |
+      ((uint32_t)command->stable_online << 2) |
+      ((uint32_t)command->timeout_latched << 3) |
+      ((uint32_t)RemoteCommand_TimeoutStopActive(command) << 4) |
+      ((uint32_t)command->remote_recoverable_latched << 5) |
+      ((uint32_t)command->run_permitted << 6) |
+      ((uint32_t)(g_app.lock != 0U) << 7) |
+      ((uint32_t)(g_app.physical_safety_latched != 0U) << 8) |
+      ((uint32_t)safety->physical_latched << 9) |
+      ((uint32_t)safety->emergency_active << 10) |
+      ((uint32_t)safety->collision_active << 11) |
+      ((uint32_t)safety->tilt_active << 12) |
+      ((uint32_t)(g_app.g_collision_latched != 0U) << 13) |
+      ((uint32_t)(g_app.cfg_collision_en != 0U) << 14) |
+      ((uint32_t)(g_app.cfg_tilt_sensor_en != 0U) << 15);
+  diag->raw_gpiod = GPIOD->IDR;
+  diag->requested_height_level = g_app.knob_height;
+  diag->remote_height_level = command->height_level;
+  diag->lifter_pwm_ch3 = __HAL_TIM_GET_COMPARE(&htim3, TIM_CHANNEL_3);
+  diag->lifter_pwm_ch4 = __HAL_TIM_GET_COMPARE(&htim3, TIM_CHANNEL_4);
+  diag->lifter_pwm_period = __HAL_TIM_GET_AUTORELOAD(&htim3);
+  diag->pitch = imu_data.pitch;
+  diag->roll = imu_data.roll;
+  memcpy(diag->channels, command->channels, sizeof(diag->channels));
+  RemoteBackend_GetRxDiagnostics(&diag->rx);
+  if (diag->event_count != UINT32_MAX) ++diag->event_count;
+  diag->valid = 1U;
+  __DMB();
+  diag->write_sequence++;
+}
+
+#if MOWER_CH8_CONTROL_ENABLED
+static void RefreshControlSource(uint32_t now_ms, RemoteCommand_t *command, bool available)
+{
+  chassis_control_read_host_snapshot(&g_host_snapshot);
+  now_ms = HAL_GetTick(); /* Compare arrival times after copying the publisher. */
+  ControlSourceInput_t input = {
+      now_ms, command->frame_sequence, command->last_valid_ms,
+      command->channels[7], command->channels[0], command->channels[1],
+      available && command->connected && command->link_fresh && command->stable_online,
+      command->run_permitted && !g_app.lock && !g_app.physical_safety_latched,
+      command->control_source_events};
+  ControlSource_Advance(&g_control_source, &input, &g_host_snapshot);
+  Ctrl_Mode = g_control_source.mode;
+  api_lockout = g_control_source.takeover;
+  last_host_cmd_tick = g_host_snapshot.valid ? g_host_snapshot.received_at_ms : 0U;
+  if (g_control_source.stop) RemoteBackend_CancelUnlock();
+  if (g_control_source.revoke) {
+    RemoteBackend_RevokeAuthorization();
+    (void)RemoteBackend_GetCommand(command);
+  }
+}
+
+static void ApplyControlSourceActuators(void)
+{
+  static bool height_baseline;
+  static uint8_t height_level;
+  static uint32_t applied_host_sequence;
+  bool manual = g_control_source.remote_ready &&
+      SafetyOwnershipGate_IsOwnerPermitted(EXECUTION_OWNER_MANUAL_REMOTE);
+  bool api = g_control_source.api_ready &&
+      SafetyOwnershipGate_IsOwnerPermitted(EXECUTION_OWNER_API);
+  bool bag_connected = HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_10) == GPIO_PIN_RESET;
+  RemoteCommand_t command = {0};
+  GrassBagTarget_t bag_target = GRASS_BAG_TARGET_UNKNOWN;
+  (void)RemoteBackend_GetCommand(&command);
+  Lifter_SetHeightPermission(manual || api);
+  Lifter_SetGrassBagPermission(bag_connected && (manual || api));
+  if (!manual) height_baseline = false;
+  if (manual) {
+    if (height_baseline && command.height_level != height_level)
+      Lifter_SetTargetLevel(command.height_level);
+    height_level = command.height_level;
+    height_baseline = true;
+  }
+  if (RemoteBackend_AdvanceGrassBag(manual && bag_connected, &bag_target))
+    Lifter_SetGrassBagTarget(bag_target == GRASS_BAG_TARGET_OPEN);
+  if (api && g_control_source.command.sequence != applied_host_sequence) {
+    const HostControlSnapshot_t *host = &g_control_source.command;
+    applied_host_sequence = host->sequence;
+    chassis_control_apply_host_snapshot(host);
+    g_app.knob_height = host->height;
+    g_app.knob_blade = host->blade;
+    Lifter_SetTargetLevel(host->height);
+    if (bag_connected) Lifter_SetGrassBagTarget(host->bag);
+  }
+}
+#endif
+
 static void RefreshSafetyOwnershipGate(void)
 {
   RemoteCommand_t command = {0};
@@ -1385,61 +1599,30 @@ static void RefreshSafetyOwnershipGate(void)
   bool manual_run_permitted;
   SafetyOwnershipGateInput_t input;
 
-#if MOWER_BLADE_OK_ENABLED
-  Exp3BoardStatus protocol;
-  MowerModeControl_t *mode=RemoteBackend_ModeControl();
-  static uint32_t invalidation_seen;
-  static bool rebind_pending;
-  exp3_board_status(&protocol);
-  MowerMode_Session(mode,protocol.bound ? protocol.controller : 0U,protocol.bound ? protocol.hmi : 0U);
-#endif
+  RefreshBatteryMonitor(now_ms);
   RemoteBackend_Advance(now_ms, safety);
-#if MOWER_BLADE_OK_ENABLED
-  /* Retire blade events even when the manual blade branch is not executing. */
-  if (!mode->armed || !mode->permitted || !mode->mode_valid || mode->selected!=MOWER_SELECT_RC) {
-    Exp3PwmEvent outgoing;
-    if (exp3_board_take_pwm_event(&outgoing))
-      exp3_board_complete_pwm_event(&outgoing,outgoing.kind==EXP3_PWM_CANCEL);
-  }
-  Exp3PwmEvent unlock_event;
-  if (exp3_board_take_chassis_event(&unlock_event)) {
-    bool accepted=false;
-    if (unlock_event.message.controller==protocol.controller &&
-        unlock_event.message.hmi==protocol.hmi && protocol.bound &&
-        unlock_event.message.context==MOWER_CHASSIS_CONTEXT &&
-        unlock_event.message.target==MOWER_CHASSIS_TARGET) {
-      if (unlock_event.kind==EXP3_PWM_CONFIRM)
-        accepted=MowerMode_Confirm(mode,unlock_event.message.generation);
-      else if (unlock_event.kind==EXP3_PWM_CANCEL) {
-        (void)MowerMode_Cancel(mode,unlock_event.message.generation);
-        accepted=true; /* A stale Cancel is acknowledged without affecting a new grant. */
-      }
-    }
-    exp3_board_complete_pwm_event(&unlock_event,accepted);
-  }
-  if (mode->invalidation_sequence!=invalidation_seen) {
-    invalidation_seen=mode->invalidation_sequence;
-    chassis_control_discard_host();
-  }
-  chassis_control_advance_host();
-  Ctrl_Mode=mode->api_mode;
-  RemoteBackend_Advance(now_ms,safety);
-  if (mode->generation_exhausted && !rebind_pending) {
-    exp3_board_request_rebind(); rebind_pending=true;
-  } else if (!mode->generation_exhausted) rebind_pending=false;
-  g_mower_unlock_generation=mode->generation;
-  g_mower_control_word=MowerMode_Status(mode,now_ms);
-#endif
   command_available = RemoteBackend_GetCommand(&command);
+#if MOWER_CH8_CONTROL_ENABLED
+  RefreshControlSource(now_ms, &command, command_available);
+  now_ms = HAL_GetTick(); /* CANRx may have preempted before the snapshot copy. */
+#endif
+  /* Dispatch may advance again for a duplicate/Cancel on this same frame. */
+  safety.physical_latched = g_app.physical_safety_latched != 0U;
+#if MOWER_BLADE_OK_ENABLED
+  RefreshRemoteIntent(now_ms, &command, safety);
+  DispatchRemoteConfirmation(now_ms, safety, &command);
+#endif
+  ApplyBatteryAuthorization();
+  /* Command application may have cleared the physical latch this tick. */
+  safety.physical_latched = g_app.physical_safety_latched != 0U;
   manual_run_permitted = command.run_permitted;
   bool api_run = Ctrl_Mode == 2U;
   bool api_fresh = (uint32_t)(now_ms - last_host_cmd_tick) < API_TIMEOUT_MS;
   bool owner_run_permitted = manual_run_permitted &&
       (Ctrl_Mode == 0U || (api_run && api_fresh));
-#if MOWER_BLADE_OK_ENABLED
-  owner_run_permitted = owner_run_permitted && command.mode_valid &&
-      ((command.selected_mode==MOWER_SELECT_RC && Ctrl_Mode==0U) ||
-       (command.selected_mode==MOWER_SELECT_API && api_run));
+#if MOWER_CH8_CONTROL_ENABLED
+  owner_run_permitted = manual_run_permitted &&
+      (api_run ? g_control_source.api_ready : g_control_source.remote_ready);
 #endif
   ExecutionOwner_t owner = EXECUTION_OWNER_NONE;
   if (owner_run_permitted)
@@ -1456,14 +1639,29 @@ static void RefreshSafetyOwnershipGate(void)
           (!api_run || api_fresh),
       owner_run_permitted,
       owner,
-#if MOWER_BLADE_OK_ENABLED
-      api_run ? chassis_control_host_sequence() : command.frame_sequence,
-#else
       api_run ? last_host_cmd_tick : command.frame_sequence,
-#endif
       command.command_invalidation_sequence};
+#if MOWER_CH8_CONTROL_ENABLED
+  input.command_sequence = api_run ? g_host_snapshot.sequence : command.frame_sequence;
+  input.command_invalidation_sequence += g_control_source.invalidation_sequence;
+#endif
 
   SafetyOwnershipGate_Update(&input);
+  RecordRemoteStop(&command, &safety,
+      SafetyOwnershipGate_IsOwnerPermitted(EXECUTION_OWNER_MANUAL_REMOTE),
+      SafetyOwnershipGate_GetReason(EXECUTION_OWNER_MANUAL_REMOTE), HAL_GetTick());
+#if MOWER_BLADE_OK_ENABLED
+  /* Locked/faulted cycles skip the normal blade branch. Keep a live OFF
+   * snapshot so the HMI can request unlock; this word grants no permission. */
+  if (!SafetyOwnershipGate_IsOwnerPermitted(EXECUTION_OWNER_MANUAL_REMOTE) &&
+      !SafetyOwnershipGate_IsOwnerPermitted(EXECUTION_OWNER_API))
+  {
+    g_blade_ok_runtime_word = (uint16_t)(((now_ms / 100U & 0xFFFU) << 4) | 8U);
+  }
+#endif
+#if MOWER_BLADE_OK_ENABLED
+  RefreshRemoteIntent(now_ms, &command, safety);
+#endif
   RefreshTelemetrySnapshot(&command, &safety, command_available, now_ms);
 }
 
@@ -1488,12 +1686,19 @@ static void RefreshTelemetrySnapshot(const RemoteCommand_t *command,
   if (AXEBMS_RS485_ReadTelemetry(&my_bms, &bms_data,
                                  &bms_last_good_tick, &bms_sample_valid))
   {
-    sources.bms.valid = bms_sample_valid;
+    sources.bms.valid = bms_sample_valid && g_app.battery.data_fresh;
     sources.bms.last_good_ms = bms_last_good_tick;
     sources.bms.voltage_centivolts = bms_data.Voltage;
     sources.bms.current_deciamps = bms_data.CurCadc;
     sources.bms.soc_percent = bms_data.RSOC;
+    sources.bms.min_cell_mv = bms_data.Vmin;
   }
+
+  sources.battery_reasons = g_app.battery.reasons;
+  if (g_app.battery.low_latched) sources.battery_status |= MOWER_BATTERY_WARNING;
+  if (g_app.battery.low_latched || (g_app.battery.data_fresh && !g_app.battery.startup_checked))
+    sources.battery_status |= MOWER_BATTERY_BLADE_INHIBIT;
+  if (g_app.battery.stop_latched) sources.battery_status |= MOWER_BATTERY_STOP;
 
   if (chassis_control_read_wheel_feedback(wheels))
   {
@@ -1518,21 +1723,59 @@ static void RefreshTelemetrySnapshot(const RemoteCommand_t *command,
                                     command->stable_online;
   sources.final_manual_run_permitted =
       SafetyOwnershipGate_IsOwnerPermitted(EXECUTION_OWNER_MANUAL_REMOTE);
-  sources.emergency_active = safety->emergency_active;
+#if MOWER_CH8_CONTROL_ENABLED
+  sources.control_mode_valid = true;
+  sources.control_mode = g_control_source.display;
+  sources.final_owner_run_permitted = sources.final_manual_run_permitted ||
+      SafetyOwnershipGate_IsOwnerPermitted(EXECUTION_OWNER_API);
+#endif
+  sources.system_locked = g_app.lock != 0U || safety->physical_latched ||
+      command->remote_recoverable_latched;
+  sources.emergency_active = safety->emergency_active ||
+      g_app.emergency_reason_latched != 0U;
   sources.collision_active_or_latched = safety->collision_active ||
+      g_app.collision_reason_latched != 0U ||
       (g_app.g_system_report_state == REPORT_FAULT_COLLISION);
   sources.tilt_active_or_latched = safety->tilt_active ||
       (g_app.g_system_report_state == REPORT_FAULT_TILT);
-  sources.ibus_timeout_latched = command->timeout_latched;
+  sources.ibus_timeout_latched = RemoteCommand_TimeoutStopActive(command);
   sources.remote_stop_latched = command->remote_recoverable_latched &&
       (command->recoverable_latch_reason == REMOTE_LATCH_REASON_REMOTE_STOP);
   sources.ownership_transition_latched =
+#if !MOWER_CH8_CONTROL_ENABLED
       (api_lockout != 0U) ||
+#endif
+      /* Normal CH8/stick takeover is mode 4, not an authorization fault. */
       (command->remote_recoverable_latched &&
        (command->recoverable_latch_reason == REMOTE_LATCH_REASON_OWNERSHIP_TRANSITION));
   /* Sample PD10 in every mode, independent of actuator permission. */
   sources.bag_connected = HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_10) == GPIO_PIN_RESET;
   sources.bag_connection_valid = true;
+#if MOWER_BLADE_OK_ENABLED
+  float ultrasonic_distances[SR04_SENSOR_COUNT];
+  sources.ultrasonic_enabled = g_app.cfg_ultrasonic_en != 0U;
+  sources.ultrasonic_obstacle = sources.ultrasonic_enabled &&
+      SR04_ReadDistances(ultrasonic_distances) &&
+      (ultrasonic_distances[1] < MOWER_ULTRASONIC_NEAR_CM ||
+       ultrasonic_distances[2] < MOWER_ULTRASONIC_NEAR_CM);
+#endif
+  sources.bag_full_valid = g_app.is_bag_full_valid && g_app.is_bag_connected;
+  sources.bag_full = g_app.is_bag_full != 0U;
+  sources.height_feedback = Lifter_GetHeightFeedback();
+#if MOWER_BLADE_OK_ENABLED
+  sources.authorization = g_exp3_hil.authority;
+  sources.blade_output_bits = g_app.battery.blade_inhibited ? 0U :
+      (uint8_t)(g_blade_ok_runtime_word & 7U);
+#endif
+  /* CANRx can preempt after the caller saved now_ms. Evaluate copied samples
+   * against a clock obtained AFTER every producer snapshot has been read. */
+  now_ms = HAL_GetTick();
+#if MOTOR_DRIVER_USED == DRIVER_TYPE_OID
+  sources.transport.query_failures = g_oid_speed_query_failures + g_can_speed_query_expired;
+#endif
+  sources.transport.mailbox_failures = g_can_tx_mailbox_failures;
+  sources.transport.rx_overflows = g_can_rx_queue_full;
+  sources.transport.bus_error_code = g_can_error_code;
   TelemetrySnapshot_Update(&sources, now_ms);
 #if SENS_IBUS_HIL_DIAG_USART1_TX_ENABLED
   if (TelemetrySnapshot_Read(&telemetry_snapshot))
@@ -1561,13 +1804,11 @@ static void RefreshTelemetrySnapshot(const RemoteCommand_t *command,
 
 static void EnforceSafetyOwnershipStop(void)
 {
-  bool requested=SafetyOwnershipGate_TakeStopRequest();
-#if MOWER_BLADE_OK_ENABLED
-  MowerModeControl_t *mode=RemoteBackend_ModeControl();
-  requested=requested || mode->stop_requested;
-  mode->stop_requested=false;
+  bool stop_requested = SafetyOwnershipGate_TakeStopRequest();
+#if MOWER_CH8_CONTROL_ENABLED
+  stop_requested = stop_requested || g_control_source.stop;
 #endif
-  if (!requested)
+  if (!stop_requested)
   {
     return;
   }
@@ -1581,15 +1822,14 @@ static void EnforceSafetyOwnershipStop(void)
   g_app.current_ramped_speed = 0.0f;
   g_app.speed = 0.0f;
   chassis_control_clear_cached_intents();
+#if MOWER_CH8_CONTROL_ENABLED
+  Lifter_SetHeightPermission(false);
+  Lifter_SetGrassBagPermission(false);
+  g_app.trigger_blade_init = 0U;
+#endif
   chassis_stop();
   BladeMotor_SetSpeed(0.0f);
   Cruise_Stop();
-#if MOWER_BLADE_OK_ENABLED
-  ++g_mower_stop_sequence;
-  g_app.trigger_blade_init=0U;
-  Lifter_SetHeightPermission(false);
-  Lifter_SetGrassBagPermission(false);
-#endif
 #if REMOTE_BACKEND_FLYSKY_IBUS
   BladeManualControl_Reset(&g_blade_manual_control);
 #endif
@@ -1601,6 +1841,13 @@ void App_Init(void)
   Serial_Printf(SERIAL_PORT_2, "[INIT] Application initialization...\r\n");
   TelemetrySnapshot_Reset();
   SafetyOwnershipGate_Reset();
+#if MOWER_CH8_CONTROL_ENABLED
+  ControlSource_Reset(&g_control_source);
+  Ctrl_Mode = CONTROL_MODE_REMOTE;
+  api_lockout = 0U;
+#endif
+  BatteryMonitor_Init(&g_app.battery);
+  g_app.battery_seen_locked = true;
 
   // 3. 启动BMS处理逻辑
   AXEBMS_RS485_Start(&my_bms);
@@ -1625,65 +1872,13 @@ void Modules_Init(void)
 
   // Remote backend owns its selected transport initialization.
 
-  // 4. IMU 初始化与校准
-  if (bsp_Icm42688Init() == 0)
-  {
-    Serial_Printf(SERIAL_PORT_2, "IMU Init Success\n");
-  }
-  else
-  {
-    Serial_Printf(SERIAL_PORT_2, "IMU Init Failed\n");
-  }
-
-  // 【关键】在任务中使用 osDelay 替代 HAL_Delay
-  // osDelay 会挂起当前任务，让出 CPU 给其他任务（如串口发送任务），
-  // 这样你的 Serial_Printf 才能发出去！
-  osDelay(100);
-
-  // ... IMU 校准逻辑 ...
-  Serial_Printf(SERIAL_PORT_2, "[IMU] Calibrating... DO NOT MOVE!\r\n");
-
-  // 亮黄灯提示校准中
+  // 4. Startup-only IMU init/calibration. Failure does not grant/revoke authority.
   RGB_LED_SetColor(LED_1, RGB_COLOR_YELLOW);
-  RGB_LED_SetColor(LED_1, RGB_COLOR_YELLOW);
-
-  float gx_sum = 0.0f;
-  float gy_sum = 0.0f;
-  float gz_sum = 0.0f;
-  int sample_count = 200; // 采样200次 (200 * 5ms = 1秒)
-
-  for (int i = 0; i < sample_count; i++)
-  {
-    bsp_IcmGetRawData(&g_app.accval, &g_app.gyroval);
-
-    gx_sum += g_app.gyroval.x;
-    gy_sum += g_app.gyroval.y;
-    gz_sum += g_app.gyroval.z;
-
-    osDelay(5); // 稍微延时，覆盖一段时间
-  }
-
-  // 计算平均值并应用
-  IMU_Solver_SetOffset(gx_sum / sample_count,
-                       gy_sum / sample_count,
-                       gz_sum / sample_count);
-
-  Serial_Printf(SERIAL_PORT_2, "[IMU] Done. Offset X:%.2f Y:%.2f Z:%.2f\r\n",
-                imu_data.gyro_offset_x,
-                imu_data.gyro_offset_y,
-                imu_data.gyro_offset_z);
-
-  // 恢复红灯
+  AppImu_Init(&g_app.imu, &g_app.accval, &g_app.gyroval);
+  g_app.last_imu_tick = g_app.imu.last_valid_ms;
+  if (g_app.imu.pose_available)
+    g_app.is_on_slope = (fabsf(imu_data.roll) > 4.0f || fabsf(imu_data.pitch) > 4.0f);
   RGB_LED_SetColor(LED_1, RGB_COLOR_RED);
-  RGB_LED_SetColor(LED_1, RGB_COLOR_RED);
-  /* ============================================================ */
-
-  bsp_IcmGetRawData(&g_app.accval, &g_app.gyroval);
-  IMU_Solver_Init(g_app.accval.x, g_app.accval.y, g_app.accval.z); // 用加速度立即计算当前倾角
-
-  // 记录当前时间
-  g_app.last_imu_tick = HAL_GetTick();
-  // ...
 
   // 5. 其他模块
 

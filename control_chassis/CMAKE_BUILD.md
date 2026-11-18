@@ -1,27 +1,36 @@
 # control_chassis CMake 编译与烧录
 
-本工程使用 CMake + Ninja + Arm GNU Toolchain 编译 STM32F407 固件，并使用
+本工程使用 CMake + Ninja + Arm GNU Toolchain 15.3.Rel1（GCC 15.3.1）编译 STM32F407 固件，并使用
 ST-Link + OpenOCD 通过 SWD 烧录。EIDE 工程保留作历史参考，CMake 是新的命令行构建入口。
 
 ## 依赖
 
-确保以下命令在 `PATH` 中：
+确保 CMake、Ninja 和可选的 OpenOCD 在 `PATH` 中：
 
 ```bash
 cmake --version
 ninja --version
-arm-none-eabi-gcc --version
 openocd --version
 ```
 
 Ubuntu/Debian 可安装：
 
 ```bash
-sudo apt install cmake ninja-build gcc-arm-none-eabi openocd
+sudo apt install cmake ninja-build openocd
 ```
 
-Windows 可安装 CMake、Ninja、Arm GNU Toolchain 和 OpenOCD，并将各自的 `bin`
-目录加入 `PATH`。后续命令在 PowerShell、CMD 或 Git Bash 中均可执行。
+Linux x86_64 在仓库根目录执行一次：
+
+```bash
+./tools/install_gcc15.sh
+```
+
+安装器下载 Arm 官方 15.3.Rel1 归档并校验固定 SHA256，安装到
+`~/.local/opt/arm-gnu-toolchain-15.3.rel1-x86_64-arm-none-eabi`。重复执行会检查并复用安装；也可将已下载的官方 `.tar.xz` 路径作为第一个参数。构建不会自动联网安装。
+
+底盘与 FS-i6X Linux CMake 工程共享根目录 `cmake/arm-gnu-toolchain.cmake`，固定使用 GCC 15.3.1 及同套 objcopy/size 等工具。脚本自动加载 `tools/gcc15_env.sh`；直接使用 CMake 也会定位默认安装，不需要手动修改系统 PATH。
+
+自定义安装位置可设置 `ARM_GNU_TOOLCHAIN_ROOT` 环境变量，或配置时传入 `-DARM_GNU_TOOLCHAIN_ROOT=/path/to/installation`（指向包含 `bin` 的安装根目录）。Windows 在本机安装对应的 Arm GNU 15.3.Rel1 后，用同一 CMake 参数指定根目录。Keil/ARMCC 和 EIDE 配置沿用各自工具链。
 
 ## 编译
 
@@ -37,7 +46,7 @@ cmake --preset release
 cmake --build --preset release
 ```
 
-Debug 输出位于 `build/debug/`：
+Debug 输出位于 `build/gcc15/debug/`，Release 位于 `build/gcc15/release/`：
 
 - `control_chassis.elf`：调试和推荐烧录文件
 - `control_chassis.hex`：Intel HEX 固件
@@ -51,6 +60,16 @@ Debug 输出位于 `build/debug/`：
 ../tools/verify.sh chassis
 ../tools/verify.sh all
 ```
+
+正式 FS-i6X 双端固件（含 CH4/OK、CH5 双向首帧锁定）在仓库根目录执行：
+
+```bash
+ASAN_OPTIONS=detect_leaks=0 ./tools/build_blade_ok.sh
+```
+
+正式底盘输出为 `control_chassis/build/gcc15/mower-ok-release/control_chassis.{elf,hex,bin,map}`；遥控器为 `OpenI6X/FS-I6X/opentx/build-mower-ok-gcc15/firmware.{elf,bin}`。仅重建遥控器可运行 `tools/build_mower_user_ui.sh`，默认输出到 `build-mower-user-ui-gcc15/`。`MOWER_RADIO_BUILD_DIR` 仍可指定遥控器新构建目录。
+
+旧 `build/debug`、`build/release`、`build/mower-ok-release` 及旧遥控器输出保留，不能当作本次 GCC15 新镜像。切换工具链使用新构建目录；检测到缓存旧编译器时会报错，不会静默复用。Debug/普通 Release 仍是原调试配置，正式车辆交付使用 `mower-ok-release`。
 
 ## ST-Link 接线
 
@@ -75,7 +94,7 @@ cmake --build --preset flash-release
 
 ```bash
 openocd -f interface/stlink.cfg -f target/stm32f4x.cfg \
-  -c "program build/debug/control_chassis.elf verify reset exit"
+  -c "program build/gcc15/debug/control_chassis.elf verify reset exit"
 ```
 
 若连接了多个 ST-Link，可在配置时指定序列号：

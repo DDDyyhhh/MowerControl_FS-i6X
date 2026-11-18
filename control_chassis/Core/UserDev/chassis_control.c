@@ -10,7 +10,7 @@
  * 1. 遥控模式：处理遥控器输入，支持死区处理和转向补偿
  * 2. API模式：基于 (vx, vy, w) 输入计算四个轮子的速度
  * 3. 支持4轮差速底盘运动学（vy 默认忽略）
- * 4. 轮子参数：直径240mm，左右轴距690mm，前后轮距640mm
+ * 4. 轮子参数：直径210mm，轮距（左右）640mm，轴距（前后）690mm，以 chassis_control.h 为准
  *5.最大速度约 2.5 m/s（根据实际测试调整）
  * 注意事项：
  * - vx: 前进速度 (m/s)
@@ -22,9 +22,12 @@
 #include <stdint.h>
 #include "stm32f4xx_hal.h"
 #include "cmsis_os.h"
+#include "FreeRTOS.h"
+#include "task.h"
 #include "chassis_control.h"
 #include "app_context.h" // 包含全局上下文，获取用户设定的速度
 #include "remote_backend.h"
+#include "../../../experiments/ticket03/ultrasonic_control.h"
 #include "serial_port.h"
 #include "cruise_control.h"
 #include "connet_check.h"
@@ -35,81 +38,72 @@
 #include <string.h>
 #include "odrive_can.h" // 包含ODrive CAN通信函数
 #include "tricolor_led.h"
-#if MOWER_BLADE_OK_ENABLED
-static volatile uint32_t host_publication, host_received_tick;
-static volatile uint8_t host_payload[8];
-static uint32_t host_consumed, host_applied;
-static bool host_targets_valid;
-uint32_t chassis_control_host_sequence(void) { return host_applied; }
-void chassis_control_discard_host(void) {
-    uint32_t mask=__get_PRIMASK(); __disable_irq();
-    host_consumed=host_publication;
-    if (!mask) __enable_irq();
-}
-#endif
 uint8_t Ctrl_Mode = 0; // 0: 遥控模式, 1: API模式
 float host_vx = 0.0f;
 static float host_vy = 0.0f;
 float host_omega = 0.0f;
+#if !MOWER_CH8_CONTROL_ENABLED
 static uint8_t host_blade_speed_pct = 0;
 static uint8_t host_lifter_gear = 1;
 static uint8_t host_bag_control = 0;
+#endif
+static HostControlSnapshot_t g_host_control;
 //  API 上位机心跳时间戳
 uint32_t last_host_cmd_tick = 0;
-uint8_t api_lockout = 0; // API 锁存标志位：一旦遥控器摇杆动了，置 1 锁死 API，直到遥控器屏幕下发解除指令
+uint8_t api_lockout = 0; // 正式配置：Motion发布接管锁；CH8回遥控档才可解除
 extern AppContext_t g_app;
 extern volatile ODrive_Data_t g_odrive_motors[ODRIVE_MAX_MOTORS];
 uint16_t mapped_throttle = 2048;
 uint16_t mapped_steering = 2048;
-/**
- * @brief 初始化底盘控制
- */
-void chassis_control_init(void)
-{
-    last_host_cmd_tick = HAL_GetTick();
-}
 
+#if !MOWER_CH8_CONTROL_ENABLED
+/* Leaving API control always re-locks the chassis: the operator must unlock
+ * again with the remote before any further motion. */
+static void chassis_latch_for_manual_unlock(void)
+{
+    g_app.lock = 1;
+    g_app.g_collision_latched = 1;
+    g_app.g_system_report_state = REPORT_INIT_SUCCESS; // 弹窗：请手动解锁
+    g_app.receiver_status[STATUS_INDEX_LOCK] = 0;
+    g_app.receiver_status[STATUS_INDEX_BLADE_SPEED] = 0;
+}
+#endif
 /**
  * @brief 解析上位机控制帧（HOST_CMD_FRAME_ID = 0x005）
  *
  * 控制帧格式（标准帧，DLC=8）：
- * Byte0: ctrl_mode      0=RC模式, 1=API待机, 2=API运行
+ * Byte0: ctrl_mode      正式CH8配置：0=退出到API待机, 1=待机, 2=运行
  * Byte1: vx_raw         int8，线速度指令，单位 0.1 m/s
  * Byte2: vy_raw         int8，预留（差速底盘当前忽略）
  * Byte3: omega_raw      int8，角速度指令，单位 0.1 rad/s
  * Byte4: blade_speed    uint8，割刀挡位 0-3
  * Byte5: lifter_gear    uint8，升降档位 1-5（越界会钳位）
  * Byte6: bag_control    uint8，0=关，非0=开
- * Byte7: magic_key      0xAA=强制解除物理碰撞锁
+ * Byte7: reserved       正式CH8配置忽略，不授予/清除任何安全授权
 
  * 解析规则：
  * host_vx    = vx_raw * 0.1f;      // m/s
  * host_omega = omega_raw * 0.1f;   // rad/s
  * host_vy    = 0.0f;               // 当前不支持侧移
  *
- * 示例1：前进 0.1m/s，无旋转，API模式
- * ID=0x05, DLC=8, DATA=01 01 00 00 00 01 00 AA
- *
- * 示例2：后退 0.5m/s，右转 0.3rad/s
- * ID=0x05, DLC=8, DATA=01 FB 00 03 00 01 00 AA
- * 说明：FB(int8)=-5 => -0.5m/s，03 => +0.3rad/s
+ * 正式配置只发布快照；Motion验证CH8、时序和安全门后应用。
+ * 其它构建保留下面的历史兼容路径。当前契约见RK3588_CAN协议手册.md。
  */
-void chassis_control_parse_host_frame(uint8_t frame_id, const uint8_t *payload, uint8_t len)
+void chassis_control_parse_host_frame(uint32_t frame_id, const uint8_t *payload, uint8_t len, uint32_t received_at_ms)
 {
+#if MOWER_CH8_CONTROL_ENABLED
+    if (frame_id != HOST_CMD_FRAME_ID) return;
+    taskENTER_CRITICAL();
+    (void)HostControl_Publish(&g_host_control, payload, len, received_at_ms);
+    taskEXIT_CRITICAL();
+#else
+    (void)received_at_ms;
+
     if (frame_id != HOST_CMD_FRAME_ID || payload == NULL || len < HOST_CMD_PAYLOAD_LEN)
     {
         return;
     }
 
-#if MOWER_BLADE_OK_ENABLED
-    if (len != HOST_CMD_PAYLOAD_LEN || payload[0] > 2U) return;
-    uint32_t mask=__get_PRIMASK(); __disable_irq();
-    for (uint8_t i=0U; i<8U; ++i) host_payload[i]=payload[i];
-    host_received_tick=HAL_GetTick();
-    ++host_publication;
-    if (!mask) __enable_irq();
-    return;
-#else
     last_host_cmd_tick = HAL_GetTick();
 
     if ((payload[7] == 0xAA) && (g_app.physical_safety_latched == 0U))
@@ -153,11 +147,7 @@ void chassis_control_parse_host_frame(uint8_t frame_id, const uint8_t *payload, 
         if (Ctrl_Mode == 1 || Ctrl_Mode == 2)
         {
             // 只要从 API 模式退出来，必须强制锁死底盘，让操作员双摇杆解锁！
-            g_app.lock = 1;
-            g_app.g_collision_latched = 1;
-            g_app.g_system_report_state = 7; // 弹窗：请手动解锁
-            g_app.receiver_status[STATUS_INDEX_LOCK] = 0;
-            g_app.receiver_status[STATUS_INDEX_BLADE_SPEED] = 0;
+            chassis_latch_for_manual_unlock();
         }
         // --- 动作：主动退回遥控 ---
         Ctrl_Mode = 0;
@@ -195,83 +185,29 @@ void chassis_control_parse_host_frame(uint8_t frame_id, const uint8_t *payload, 
 #endif
 }
 
-#if MOWER_BLADE_OK_ENABLED
-void chassis_control_apply_host_targets(void)
+void chassis_control_read_host_snapshot(HostControlSnapshot_t *out)
 {
-    if (!host_targets_valid || Ctrl_Mode!=2U || !SafetyOwnershipGate_IsOwnerPermitted(EXECUTION_OWNER_API)) return;
-    Lifter_SetGrassBagTarget(host_bag_control);
-    g_app.knob_height=host_lifter_gear;
-    g_app.knob_blade=host_blade_speed_pct;
+    taskENTER_CRITICAL();
+    *out = g_host_control;
+    taskEXIT_CRITICAL();
 }
-void chassis_control_advance_host(void)
+
+/* Motion only, after current-source permission has been checked. */
+void chassis_control_apply_host_snapshot(const HostControlSnapshot_t *command)
 {
-    uint8_t data[8];
-    uint32_t tick, sequence;
-    uint32_t mask=__get_PRIMASK(); __disable_irq();
-    sequence=host_publication; tick=host_received_tick;
-    for (uint8_t i=0U; i<8U; ++i) data[i]=host_payload[i];
-    if (!mask) __enable_irq();
-    if (sequence==host_consumed) return;
-    host_consumed=sequence;
-    MowerModeControl_t *mode=RemoteBackend_ModeControl();
-    if ((uint32_t)(HAL_GetTick()-tick)>=API_TIMEOUT_MS) return;
-    uint8_t previous=mode->api_mode;
-    bool active=MowerMode_Host(mode,data[0],tick);
-    Ctrl_Mode=mode->api_mode;
-    if (previous!=Ctrl_Mode) mode->stop_requested=true;
-    if (!active) return;
-    host_targets_valid=true;
-    host_applied=sequence; last_host_cmd_tick=tick;
-    host_vx=(float)(int8_t)data[1]*0.1f;
-    host_vy=0.0f; host_omega=(float)(int8_t)data[3]*0.1f;
-    host_blade_speed_pct=data[4]>3U ? 3U : data[4];
-    host_lifter_gear=data[5]<1U ? 1U : data[5]>5U ? 5U : data[5];
-    host_bag_control=data[6]!=0U;
-    /* Actuator targets are applied by Motion only after its safety gate refresh. */
+    host_vx = (float)command->vx * 0.1f;
+    host_vy = 0.0f;
+    host_omega = (float)command->omega * 0.1f;
 }
-#endif
+
 void chassis_control_clear_cached_intents(void)
 {
     host_vx = 0.0f;
     host_vy = 0.0f;
     host_omega = 0.0f;
+#if !MOWER_CH8_CONTROL_ENABLED
     host_blade_speed_pct = 0U;
-    host_bag_control = 0U;
-#if MOWER_BLADE_OK_ENABLED
-    host_targets_valid=false;
 #endif
-}
-
-/**
- * @brief 发送底盘状态反馈帧
- * */
-void chassis_control_send_status_feedback(void)
-{
-    static uint32_t last_feedback_tick = 0;
-    uint32_t now_tick = HAL_GetTick();
-    if ((now_tick - last_feedback_tick) < 20U)
-    {
-        return;
-    }
-    last_feedback_tick = now_tick;
-
-    uint8_t tx_data[6];
-    tx_data[0] = Ctrl_Mode;
-    tx_data[1] = g_app.bms_temp;
-    tx_data[2] = (g_app.voltage_int > 100) ? 100 : g_app.voltage_int;
-
-    uint8_t bag_status = 0;
-    if (g_app.grass_bag_status)
-        bag_status |= 0x01;
-    if (g_app.is_bag_connected)
-        bag_status |= 0x02;
-    if (g_app.is_bag_full)
-        bag_status |= 0x04;
-    tx_data[3] = bag_status;
-    tx_data[4] = (g_app.key[0] & 0x03) | ((g_app.key[1] & 0x03) << 2) | ((g_app.key[2] & 0x03) << 4) | ((g_app.key[3] & 0x03) << 6);
-    tx_data[5] = (g_app.key[4] & 0x03) | ((g_app.key[5] & 0x03) << 2) | ((g_app.key[6] & 0x03) << 4) | ((g_app.key[7] & 0x03) << 6);
-
-    odrive_can_send_message(&hcan1, CHASSIS_STATUS_CAN_ID, tx_data, sizeof(tx_data), 0);
 }
 
 /**
@@ -425,34 +361,6 @@ static int16_t chassis_erpm_to_speed_mmps(int32_t erpm, int8_t sign)
     return (int16_t)value;
 }
 
-static void chassis_pack_i16_be(uint8_t *buf, uint8_t offset, int16_t value)
-{
-    buf[offset] = (uint8_t)((uint16_t)value >> 8);
-    buf[offset + 1U] = (uint8_t)((uint16_t)value & 0xFFU);
-}
-
-static void chassis_control_send_oid_wheel_speed_feedback(void)
-{
-    static uint32_t last_speed_tick = 0;
-    uint32_t now_tick = HAL_GetTick();
-
-    if ((now_tick - last_speed_tick) < 50U)
-        return;
-    last_speed_tick = now_tick;
-
-    uint8_t tx_buf[8];
-    int16_t speed_fl = chassis_erpm_to_speed_mmps(g_oid_drives[OID_NODE_FL].actual_speed_erpm, 1);
-    int16_t speed_fr = chassis_erpm_to_speed_mmps(g_oid_drives[OID_NODE_FR].actual_speed_erpm, -1);
-    int16_t speed_rl = chassis_erpm_to_speed_mmps(g_oid_drives[OID_NODE_RL].actual_speed_erpm, 1);
-    int16_t speed_rr = chassis_erpm_to_speed_mmps(g_oid_drives[OID_NODE_RR].actual_speed_erpm, -1);
-
-    chassis_pack_i16_be(tx_buf, 0, speed_fl);
-    chassis_pack_i16_be(tx_buf, 2, speed_fr);
-    chassis_pack_i16_be(tx_buf, 4, speed_rl);
-    chassis_pack_i16_be(tx_buf, 6, speed_rr);
-
-    odrive_can_send_message(&hcan1, CHASSIS_WHEEL_SPEED_CAN_ID, tx_buf, 8, 0);
-}
 #endif
 
 bool chassis_control_read_wheel_feedback(ChassisWheelFeedback_t wheels[4])
@@ -463,24 +371,20 @@ bool chassis_control_read_wheel_feedback(ChassisWheelFeedback_t wheels[4])
     }
 
 #if MOTOR_DRIVER_USED == DRIVER_TYPE_OID
-    wheels[0].valid = g_oid_drives[OID_NODE_FL].actual_speed_valid;
-    wheels[0].last_good_tick = g_oid_drives[OID_NODE_FL].actual_speed_update_tick;
-    wheels[0].speed_mm_per_s = chassis_erpm_to_speed_mmps(
-        g_oid_drives[OID_NODE_FL].actual_speed_erpm, 1);
-    wheels[1].valid = g_oid_drives[OID_NODE_FR].actual_speed_valid;
-    wheels[1].last_good_tick = g_oid_drives[OID_NODE_FR].actual_speed_update_tick;
-    wheels[1].speed_mm_per_s = chassis_erpm_to_speed_mmps(
-        g_oid_drives[OID_NODE_FR].actual_speed_erpm, -1);
-    wheels[2].valid = g_oid_drives[OID_NODE_RL].actual_speed_valid;
-    wheels[2].last_good_tick = g_oid_drives[OID_NODE_RL].actual_speed_update_tick;
-    wheels[2].speed_mm_per_s = chassis_erpm_to_speed_mmps(
-        g_oid_drives[OID_NODE_RL].actual_speed_erpm, 1);
-    wheels[3].valid = g_oid_drives[OID_NODE_RR].actual_speed_valid;
-    wheels[3].last_good_tick = g_oid_drives[OID_NODE_RR].actual_speed_update_tick;
-    wheels[3].speed_mm_per_s = chassis_erpm_to_speed_mmps(
-        g_oid_drives[OID_NODE_RR].actual_speed_erpm, -1);
+    int32_t erpm[4];
+    const uint8_t nodes[4] = {OID_NODE_FL, OID_NODE_FR, OID_NODE_RL, OID_NODE_RR};
+    taskENTER_CRITICAL();
+    for (unsigned i=0; i<4U; ++i) {
+        wheels[i].valid = g_oid_drives[nodes[i]].actual_speed_valid;
+        wheels[i].last_good_tick = g_oid_drives[nodes[i]].actual_speed_update_tick;
+        erpm[i] = g_oid_drives[nodes[i]].actual_speed_erpm;
+    }
+    taskEXIT_CRITICAL();
+    for (unsigned i=0; i<4U; ++i)
+        wheels[i].speed_mm_per_s = chassis_erpm_to_speed_mmps(erpm[i], (i & 1U) ? -1 : 1);
 #elif MOTOR_DRIVER_USED == DRIVER_TYPE_MSSD
     {
+        taskENTER_CRITICAL();
         const float scale = PI * WHEEL_DIAMETER * 1000.0f /
                             (GEAR_RATIO * 60.0f);
         wheels[0].valid = g_mssd_drives[MSSD_NODE_LEFT].speed_r_valid;
@@ -499,6 +403,7 @@ bool chassis_control_read_wheel_feedback(ChassisWheelFeedback_t wheels[4])
         wheels[3].last_good_tick = g_mssd_drives[MSSD_NODE_RIGHT].speed_l_update_tick;
         wheels[3].speed_mm_per_s = (int32_t)(
             (float)g_mssd_drives[MSSD_NODE_RIGHT].actual_rpm_l * scale);
+        taskEXIT_CRITICAL();
     }
 #else
     memset(wheels, 0, sizeof(ChassisWheelFeedback_t) * 4U);
@@ -526,59 +431,6 @@ void chassis_stop(void)
 #endif
 }
 
-/**
- * @brief 计算真实里程计并发送 (线速度、角速度、编码器累计位置)
- * @note 频率限制为 20ms (50Hz) 发送一次，防止挤占 CAN 总线带宽
- */
-void chassis_control_send_odom_feedback(void)
-{
-    static uint32_t last_odom_tick = 0;
-    uint32_t now_tick = HAL_GetTick();
-
-    if ((now_tick - last_odom_tick) < 50U)
-        return;
-    last_odom_tick = now_tick;
-
-    float tx_vx = 0.0f;
-    float tx_omega = 0.0f;
-
-    // ============================================================
-    // 【核心修改】：根据当前模式选择反馈的数据源
-    // ============================================================
-    if (Ctrl_Mode == 1 || Ctrl_Mode == 2)
-    {
-        // API 模式下，直接反馈上位机发来的设定值 (Echo)
-        tx_vx = host_vx;
-        tx_omega = host_omega;
-    }
-
-    // -------------------------------------------------------------
-    // 3. 打包发送 CAN 数据帧 (ID: 0x507)
-    // -------------------------------------------------------------
-    uint8_t tx_buf[8];
-
-    // Byte 0-3: tx_vx (float)
-    // Byte 4-7: tx_omega (float)
-    memcpy(&tx_buf[0], &tx_vx, 4);
-    memcpy(&tx_buf[4], &tx_omega, 4);
-
-    odrive_can_send_message(&hcan1, CHASSIS_ODOM_CAN_ID, tx_buf, 8, 0);
-    // --- 帧 0x08: 右侧编码器绝对位置 (Turns) ---
-    // float pos_fr = g_odrive_motors[1].encoder_pos;
-    // float pos_rr = g_odrive_motors[2].encoder_pos;
-    // memcpy(&tx_buf[0], &pos_fr, 4);
-    // memcpy(&tx_buf[4], &pos_rr, 4);
-    // odrive_can_send_message(&hcan1, CHASSIS_ENC_RIGHT_CAN_ID, tx_buf, 8, 0);
-
-    // // --- 帧 0x09: 左侧编码器绝对位置 (Turns) ---
-    // // 左侧取反，保证前进时所有编码器位置都是单调递增的，方便上位机做里程计
-    // float pos_fl = -g_odrive_motors[3].encoder_pos;
-    // float pos_rl = -g_odrive_motors[4].encoder_pos;
-    // memcpy(&tx_buf[0], &pos_fl, 4);
-    // memcpy(&tx_buf[4], &pos_rl, 4);
-    // odrive_can_send_message(&hcan1, CHASSIS_ENC_LEFT_CAN_ID, tx_buf, 8, 0);
-}
-
 void Send_Motor_speed(uint8_t axis_id, float speed_rpm, float torque_ff, uint8_t reset_integrator)
 {
     // 1. 单位转换: Turns/s
@@ -596,6 +448,8 @@ void set_chassis_velocity(ExecutionOwner_t owner, float vx, float vy, float omeg
         vy = 0.0f;
         omega = 0.0f;
     }
+    if (!isfinite(vx) || !isfinite(vy) || !isfinite(omega))
+        vx = vy = omega = 0.0f;
     vy = 0.0f; // 强制不支持侧向移动
 
     float R = TRACK_WIDTH / 2.0f;
@@ -692,6 +546,31 @@ void set_chassis_rc_control(uint16_t ly, uint16_t rx)
         if (turn_in > 1.0f) turn_in = 1.0f;
         if (turn_in < -1.0f) turn_in = -1.0f;
     }
+
+#if MOWER_BLADE_OK_ENABLED && REMOTE_BACKEND_FLYSKY_IBUS
+    if (g_app.cfg_ultrasonic_en) {
+        /* Use the same last accepted distances as Motion's speed ramp.
+         * A missing frame can leave the forward stop in place, so it must
+         * not trap the operator by also removing the reverse escape. */
+        const bool front_near = g_app.d2 <= MOWER_ULTRASONIC_ESCAPE_CM ||
+                                g_app.d3 <= MOWER_ULTRASONIC_ESCAPE_CM;
+        const bool side_near = g_app.d1 <= MOWER_ULTRASONIC_ESCAPE_CM ||
+                               g_app.d4 <= MOWER_ULTRASONIC_ESCAPE_CM;
+        if (front_near || side_near) {
+            // Travel straight at low speed. A front obstacle only permits reverse.
+            float vx = 0.0f;
+            if (forward_in < 0.0f || (!front_near && forward_in > 0.0f)) {
+                float speed = RemoteBackend_ApplyReverseSpeed(g_app.user_set_speed,
+                                                               forward_in < 0.0f);
+                if (speed > MOWER_ULTRASONIC_ESCAPE_MPS)
+                    speed = MOWER_ULTRASONIC_ESCAPE_MPS;
+                vx = forward_in * speed;
+            }
+            set_chassis_velocity(EXECUTION_OWNER_MANUAL_REMOTE, vx, 0.0f, 0.0f);
+            return;
+        }
+    }
+#endif
 
     // 3. 护草模式设置联动 (若遥控器设置显式开启，禁止原地自转)
     if (g_app.cfg_lawn_protect_en == 1)
@@ -802,7 +681,6 @@ void Control_Update(void)
 
 #if MOTOR_DRIVER_USED == DRIVER_TYPE_OID
     // 0x50A 已统一由 app_BMS_Sensor.c 的遥测任务发送，避免重复入队。
-    // chassis_control_send_oid_wheel_speed_feedback();
 #elif MOTOR_DRIVER_USED == DRIVER_TYPE_MSSD
     /* MSSD 实际速度反馈由轮询得到，统一由此处驱动错峰查询。 */
     chassis_control_req_motor_data();
@@ -817,16 +695,16 @@ void Control_Update(void)
         return;
     }
 
-#if MOWER_BLADE_OK_ENABLED
-    MowerModeControl_t *mode=RemoteBackend_ModeControl();
-    if (mode->selected == MOWER_SELECT_RC && mode->mode_valid && Ctrl_Mode==0U) {
+#if MOWER_CH8_CONTROL_ENABLED
+    if (Ctrl_Mode == CONTROL_MODE_REMOTE)
+    {
         get_rc_control_inputs(&mapped_throttle, &mapped_steering);
         set_chassis_rc_control(mapped_throttle, mapped_steering);
-    } else if (mode->selected == MOWER_SELECT_API && Ctrl_Mode==2U) {
-        set_chassis_velocity(EXECUTION_OWNER_API,host_vx,0.0f,-host_omega);
-    } else chassis_stop();
-    return;
-#endif
+    }
+    else if (Ctrl_Mode == CONTROL_MODE_API_RUN)
+        set_chassis_velocity(EXECUTION_OWNER_API, host_vx, host_vy, -host_omega);
+    else chassis_stop();
+#else
     // --- 状态 0：纯遥控 ---
     if (Ctrl_Mode == 0)
     {
@@ -848,11 +726,7 @@ void Control_Update(void)
             Ctrl_Mode = 0;
             api_lockout = 1;
             // 【核心新增】：退回遥控后，立刻锁死底盘，必须双摇杆解锁
-            g_app.lock = 1;
-            g_app.g_collision_latched = 1;
-            g_app.g_system_report_state = 7; // 弹窗提示：请手动解锁
-            g_app.receiver_status[STATUS_INDEX_LOCK] = 0;
-            g_app.receiver_status[STATUS_INDEX_BLADE_SPEED] = 0;
+            chassis_latch_for_manual_unlock();
         }
     }
     // --- 状态 2：API 运行 (动力开启) ---
@@ -864,7 +738,7 @@ void Control_Update(void)
             Ctrl_Mode = 0;
             g_app.lock = 1;
             g_app.g_collision_latched = 1;
-            g_app.g_system_report_state = 7; // 弹窗提示：请手动解锁
+            g_app.g_system_report_state = REPORT_INIT_SUCCESS; // 弹窗提示：请手动解锁
             chassis_stop();
             g_app.receiver_status[STATUS_INDEX_LOCK] = 0;
             g_app.receiver_status[STATUS_INDEX_BLADE_SPEED] = 0;
@@ -886,11 +760,7 @@ void Control_Update(void)
             BladeMotor_SetSpeed(BLADE_SPEED_OFF);
             Cruise_Stop();
 
-            g_app.lock = 1;                  // 顺便把割刀也锁上，保证绝对安全
-            g_app.g_collision_latched = 1;   // 锁底盘
-            g_app.g_system_report_state = 7; // 弹窗提示解锁
-            g_app.receiver_status[STATUS_INDEX_LOCK] = 0;
-            g_app.receiver_status[STATUS_INDEX_BLADE_SPEED] = 0;
+            chassis_latch_for_manual_unlock(); // 锁底盘，并顺便把割刀也锁上
             return;
         }
 
@@ -898,6 +768,7 @@ void Control_Update(void)
         set_chassis_velocity(EXECUTION_OWNER_API, host_vx, host_vy, -host_omega);
     }
 
+#endif
     // chassis_control_req_motor_data();
     osDelay(1);
     // 发送线速度、角速度与编码器数据

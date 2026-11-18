@@ -29,6 +29,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "app_context.h"
 #include "E34.h"
 #include "remote_backend.h"
 #include "remote_backend_config.h"
@@ -38,9 +39,7 @@
 
 #include "pairing_receiver.h"
 #include "BladeMotor.h"
-#include "car_Control.h"
 #include "connet_check.h"
-#include "car_Control.h"
 #include "EG2104.h"
 
 #include "read_adc.h"
@@ -222,7 +221,8 @@ int main(void)
   HAL_Init();
 
   /* USER CODE BEGIN Init */
-
+  AppContext_RecordBootReset(RCC->CSR);
+  __HAL_RCC_CLEAR_RESET_FLAGS();
   /* USER CODE END Init */
 
   /* Configure the system clock */

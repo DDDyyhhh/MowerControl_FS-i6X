@@ -26,7 +26,8 @@ bool FlashStorage_LoadSettings(AppSettings_t *settings)
     memcpy(settings, (void*)SETTINGS_FLASH_ADDRESS, sizeof(AppSettings_t));
     
     // 检查魔法数字是否匹配，以判断数据是否有效
-    if (settings->magic_number == APP_SETTINGS_MAGIC_NUMBER) {
+    if (settings->magic_number == APP_SETTINGS_MAGIC_NUMBER ||
+        settings->magic_number == APP_SETTINGS_LEGACY_MAGIC) {
         return true; // 数据有效
     }
     

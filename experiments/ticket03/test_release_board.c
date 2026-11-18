@@ -1,7 +1,7 @@
 #include "exp3_board.h"
 #include "main.h"
 #include "exp3_blade_adapter.h"
-#include "mower_mode_control.h"
+#include "remote_authorization.h"
 #include <assert.h>
 #include <stdio.h>
 
@@ -40,6 +40,8 @@ static void verified_controller_reply(void)
         .target=1U, .kind=EXP3_CONFIRM, .sender=1U};
     box.command = EXP3_SEND;
     exp3_board_channels(10000U, 1500U, 1500U, 1500U);
+    exp3_board_update_intent(MOWER_AUTH_CENTER,false,1U,10000U);
+    exp3_board_update_intent(MOWER_AUTH_CONFIRM,false,1U,10004U);
     for (now=10004U; now<12500U; now+=4U) {
         uint16_t a=1500U, b=1500U;
         fake_now=now;
@@ -82,6 +84,8 @@ static void accepted_controller_and_duplicate(void)
     input.frame_sequence=1U;
     BladeManualControl_Step(&blade, &input);
     exp3_board_channels(20000U, 1500U, 1500U, 1500U);
+    exp3_board_update_intent(MOWER_AUTH_CENTER,false,2U,20000U);
+    exp3_board_update_intent(MOWER_AUTH_CONFIRM,false,2U,20004U);
     exp3_hil_bind_session(&hmi, NULL, g_exp3_hil.controller, g_exp3_hil.hmi, 20000U);
     hmi.link.transfer=1U; /* Previous request used transfer 1 in this same session. */
     box.message=(Exp3Message){.controller=hmi.controller, .hmi=hmi.hmi,
@@ -133,13 +137,13 @@ static void accepted_controller_and_duplicate(void)
         if(now%120U==0U) exp3_hil_receive(&hmi,NULL,g_exp3_downlink_word,now);
     }
     assert(hmi.matches==1U && hmi.last_result.status==EXP3_ACCEPTED);
-    assert(confirmations==1U && BladeManualControl_GetCommand(&blade)==45.0f);
+    assert(confirmations==1U && BladeManualControl_GetCommand(&blade)==blade.config.output_min);
     input.ch7_raw=1500U; input.confirmed_gear=REMOTE_BLADE_GEAR_MEDIUM;
     ++input.frame_sequence; BladeManualControl_Step(&blade,&input);
-    assert(BladeManualControl_GetCommand(&blade)==50.0f);
+    assert(BladeManualControl_GetCommand(&blade)==blade.config.output_medium);
     input.ch7_raw=1000U; input.confirmed_gear=REMOTE_BLADE_GEAR_HIGH;
     ++input.frame_sequence; BladeManualControl_Step(&blade,&input);
-    assert(BladeManualControl_GetCommand(&blade)==55.0f);
+    assert(BladeManualControl_GetCommand(&blade)==blade.config.output_max);
     input.emergency_active=true; input.physical_latched=true;
     ++input.frame_sequence; BladeManualControl_Step(&blade,&input);
     assert(BladeManualControl_GetCommand(&blade)==0.0f);
@@ -183,58 +187,117 @@ static void accepted_controller_and_duplicate(void)
     assert(hmi.matches==3U && hmi.last_result.status==EXP3_CANCELLED);
     assert(hmi.cancel_retries==1U && cancels==1U && confirmations==1U);
 
-    puts("PASS full controller Confirm/Result, fresh-frame PWM 45/50/55, safety zero, duplicate no reauthorization");
+    printf("PASS full controller Confirm/Result, fresh-frame low/medium/high, safety zero, duplicate no reauthorization (driver=%u)\n",
+           (unsigned)BLADE_MOTOR_DRIVER_USED);
 }
 
-static void chassis_confirmation_flow(void)
+static void verified_unlock_and_duplicate(void)
 {
-    MowerModeControl_t mode;
-    MowerModeInput_t input={true,true,false,true,true,1000U,0U};
-    Exp3Hil hmi={0}; Exp3Mailbox box={0};
-    uint32_t now=60000U;
-    MowerMode_Init(&mode);
-    MowerMode_Session(&mode,g_exp3_hil.controller,g_exp3_hil.hmi);
-    for(unsigned i=0;i<30;++i) { ++input.frame_sequence; now+=10U; MowerMode_Advance(&mode,&input,now); }
-    assert(mode.ready);
-    exp3_hil_bind_session(&hmi,NULL,g_exp3_hil.controller,g_exp3_hil.hmi,now);
-    hmi.link.transfer=10U;
-    box.message=(Exp3Message){.controller=hmi.controller,.hmi=hmi.hmi,.request=3U,.action=3U,
-        .generation=mode.generation,.context=MOWER_CHASSIS_CONTEXT,.target=MOWER_CHASSIS_TARGET,
-        .kind=EXP3_CONFIRM,.sender=1U};
-    const uint16_t generation=mode.generation;
-    unsigned confirms=0U,cancels=0U;
-    for(unsigned transaction=0;transaction<4U;++transaction) {
-        if (transaction==1U) box.message.kind=EXP3_CANCEL;
-        if (transaction==2U) { box.message.kind=EXP3_CONFIRM; box.message.action=box.message.request=4U; }
-        if (transaction==3U) { box.message.action=box.message.request=5U; box.message.generation=mode.generation; }
-        box.command=EXP3_SEND;
-        uint32_t deadline=now+20000U;
-        while(now<deadline && hmi.matches<=transaction) {
-            uint16_t a,b; Exp3PwmEvent event;
-            now+=4U; fake_now=now;
-            ++input.frame_sequence; MowerMode_Advance(&mode,&input,now);
-            exp3_hil_poll(&hmi,&box,NULL,now,20U);
-            exp3_channels(hmi.published_word,&a,&b);
-            exp3_board_channels(now,1500U,a,b);
-            assert(!exp3_board_take_pwm_event(&event)); /* CHAS cannot reach blade execution. */
-            if (exp3_board_take_chassis_event(&event)) {
-                bool accepted;
-                if (event.kind==EXP3_PWM_CONFIRM) {
-                    accepted=MowerMode_Confirm(&mode,event.message.generation);
-                    if (accepted) ++confirms;
-                } else { (void)MowerMode_Cancel(&mode,event.message.generation); ++cancels; accepted=true; }
-                exp3_board_complete_pwm_event(&event,accepted);
-            }
-            exp3_board_poll(now);
-            if (now%120U==0U) exp3_hil_receive(&hmi,NULL,g_exp3_downlink_word,now);
-        }
-        assert(hmi.matches==transaction+1U);
-        if (transaction==0U || transaction==3U) assert(mode.armed && hmi.last_result.status==EXP3_ACCEPTED);
-        if (transaction==1U) assert(!mode.armed && hmi.last_result.status==EXP3_CANCELLED && mode.generation!=generation);
-        if (transaction==2U) assert(!mode.armed && hmi.last_result.status!=EXP3_ACCEPTED);
+    Exp3Hil hmi = {0};
+    Exp3Mailbox box = {0};
+    Exp3PwmEvent event;
+    RemoteAuthorization_t auth;
+    RemoteAuthorizationInput_t input = {0};
+    FlySkyIbusConfig_t config = {0};
+    unsigned confirms = 0U;
+    uint32_t now;
+    config.run_enable_semantics_configured = true;
+    config.run_enable_on_us = 2000U; config.run_enable_off_us = 1000U;
+    config.switch_position_tolerance_us = 100U; config.switch_confirm_frames = 3U;
+    config.steering.center_us = config.throttle.center_us = 1500U;
+    config.stick_center_tolerance_us = 50U; config.stick_center_hold_ms = 200U;
+    RemoteAuthorization_Init(&auth, &config);
+    input.link_fresh = input.stable_online = true;
+    input.steering_raw = input.throttle_raw = input.ch4_raw = 1500U;
+    input.run_enable_raw = 2000U;
+    for (now = 60000U; now <= 60400U; now += 10U) {
+        ++input.frame_sequence;
+        RemoteAuthorization_Advance(&auth, &input, now);
+        exp3_board_channels(now, input.ch4_raw, 1500U, 1500U);
     }
-    assert(confirms==2U && cancels==1U);
-    puts("PASS end-to-end CHAS Confirm/Cancel/Result, expired generation and independent blade dispatch");
+    exp3_hil_bind_session(&hmi, NULL, g_exp3_hil.controller, g_exp3_hil.hmi, now);
+    hmi.link.transfer = 20U;
+    now = (now + 3U) & ~3U;
+    box.message = (Exp3Message){.controller=hmi.controller,.hmi=hmi.hmi,
+        .request=3U,.action=3U,.generation=3U,.context=EXP3_UNLOCK_CONTEXT,
+        .target=EXP3_UNLOCK_TARGET,.kind=EXP3_CONFIRM,.sender=1U};
+    box.command = EXP3_SEND;
+    /* Two earlier left edges belonged to blade tests, but both generation
+     * streams still observe them. This unlock is the third physical edge. */
+    assert(exp3_board_unlock_epoch() == 2U);
+    exp3_board_update_intent(MOWER_AUTH_CENTER,true,3U,now);
+    exp3_board_update_intent(MOWER_AUTH_CONFIRM,true,3U,now);
+    uint32_t confirm_started = now;
+    for (; now < 71000U && !hmi.matches; now += 4U) {
+        uint16_t a, b;
+        fake_now = now; input.ch4_raw = 1000U; ++input.frame_sequence;
+        RemoteAuthorization_Advance(&auth, &input, now);
+        exp3_hil_poll(&hmi, &box, NULL, now, 20U);
+        exp3_channels(hmi.published_word, &a, &b);
+        exp3_board_channels(now, 1000U, a, b);
+        if (exp3_board_take_pwm_event(&event)) {
+            assert(now - confirm_started <= 500U);
+            printf("MEASURE unlock controller acceptance=%ums (120ms downlink sampling model)\n", (unsigned)(now-confirm_started));
+            assert(event.message.context == EXP3_UNLOCK_CONTEXT);
+            assert(event.message.generation == exp3_board_unlock_epoch());
+            assert(RemoteAuthorization_ConfirmOK(&auth, &input, now));
+            assert(!auth.output.run_permitted);
+            exp3_board_complete_pwm_event(&event, true); ++confirms;
+        }
+        exp3_board_poll(now);
+        if (now%120U == 0U) exp3_hil_receive(&hmi, NULL, g_exp3_downlink_word, now);
+    }
+    assert(hmi.matches == 1U && hmi.last_result.status == EXP3_ACCEPTED);
+    assert(auth.output.run_permitted && confirms == 1U);
+    RemoteAuthorization_Revoke(&auth);
+    box.command = EXP3_SEND;
+    for (; now < 81000U && hmi.matches < 2U; now += 4U) {
+        uint16_t a, b;
+        fake_now = now; ++input.frame_sequence;
+        RemoteAuthorization_Advance(&auth, &input, now);
+        exp3_hil_poll(&hmi, &box, NULL, now, 20U);
+        exp3_channels(hmi.published_word, &a, &b);
+        exp3_board_channels(now, 1000U, a, b);
+        assert(!exp3_board_take_pwm_event(&event));
+        exp3_board_poll(now);
+        if (now%120U == 0U) exp3_hil_receive(&hmi, NULL, g_exp3_downlink_word, now);
+        assert(!auth.output.run_permitted);
+    }
+    assert(hmi.matches == 2U && confirms == 1U);
+    puts("PASS unlock Confirm/real authorization/compact Result, separate blade generation, cached duplicate cannot unlock again");
+}
+
+static void token_boundaries(void)
+{
+    uint32_t controller=g_exp3_hil.controller+1U;
+    exp3_hil_bind_session(&g_exp3_hil,NULL,controller,42U,80000U);
+    assert(!g_exp3_hil.token);
+    exp3_board_update_intent(MOWER_AUTH_CENTER,true,1U,80000U);
+    exp3_board_update_intent(MOWER_AUTH_CONFIRM,true,1U,80010U);
+    Exp3Message m={.controller=controller,.hmi=42U,.generation=1U,
+      .context=EXP3_UNLOCK_CONTEXT,.target=1U};
+    assert(exp3_board_check_intent(&m,90009U)); /* 9999ms */
+    assert(!exp3_board_check_intent(&m,90009U)); /* consumed exactly once */
+    exp3_board_update_intent(MOWER_AUTH_CENTER,true,2U,100000U);
+    exp3_board_update_intent(MOWER_AUTH_CONFIRM,true,2U,100010U);
+    m.generation=2U;assert(!exp3_board_check_intent(&m,110010U)); /* exact 10000 */
+    exp3_board_update_intent(MOWER_AUTH_CONFIRM,true,2U,110020U);
+    assert(!g_exp3_hil.token_active && g_exp3_hil.token==2U); /* no held-left renewal */
+    exp3_board_update_intent(MOWER_AUTH_CENTER,false,3U,0xfffff000U);
+    exp3_board_update_intent(MOWER_AUTH_CONFIRM,false,3U,0xfffff001U);
+    m.context=EXP3_PWM_CONTEXT;m.generation=3U;
+    assert(exp3_board_check_intent(&m,(uint32_t)(0xfffff001U+9999U)));
+    g_exp3_hil.token=4094U;
+    exp3_board_update_intent(MOWER_AUTH_CENTER,true,4U,120000U);
+    exp3_board_update_intent(MOWER_AUTH_CONFIRM,true,4U,120010U);
+    assert(g_exp3_hil.bound && g_exp3_hil.token==4095U);
+    exp3_board_update_intent(MOWER_AUTH_CENTER,true,5U,120020U);
+    exp3_board_update_intent(MOWER_AUTH_CONFIRM,true,5U,120030U);
+    assert(!g_exp3_hil.bound && g_exp3_hil.restart_requested);
+    exp3_board_poll(120030U);
+    Exp3PwmEvent event;assert(exp3_board_take_pwm_event(&event));
+    assert(event.kind==EXP3_PWM_CANCEL && !event.message.kind);
+    puts("PASS actual token authority: 9999/10000ms, single consumption, held-left expiry, clock wrap, 4095 exhaustion revokes and queues fresh session");
 }
 
 int main(void)
@@ -248,13 +311,7 @@ int main(void)
     exp3_board_complete_pwm_event(&event, false);
     verified_controller_reply();
     accepted_controller_and_duplicate();
-    chassis_confirmation_flow();
-    uint32_t old_controller=g_exp3_hil.controller;
-    exp3_board_request_rebind();
-    run_pair(&hmi,200000U,210000U);
-    assert(g_exp3_hil.bound && g_exp3_hil.controller!=old_controller);
-    assert(g_mower_unlock_generation==0U && g_mower_control_word==0U);
-    assert(!exp3_board_take_chassis_event(&event));
-    puts("PASS controller request rotates session and clears pending chassis authorization");
+    verified_unlock_and_duplicate();
+    token_boundaries();
     return 0;
 }

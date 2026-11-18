@@ -114,6 +114,8 @@
 #include "lifter.h"
 #include "odrive_can.h" // 必须包含此头文件以使用 CAN_Enqueue_Message
 #include "chassis_control.h"
+#include "telemetry_snapshot.h"
+#include "byte_order.h"
 #include <string.h>
 #include <math.h>
 #include "mssd_can.h"
@@ -150,9 +152,6 @@ void StartTask_BMS_Sensor(void *argument)
     UartRxMsg_t sr04_msg;
     uint32_t last_ui_tick = 0;
     uint32_t last_odom_tick = 0;
-    uint32_t last_bms_ok_tick = 0;
-    uint8_t last_bms_soc = 0xFF;
-    uint8_t last_bms_temp = 0xFF;
 
     // 初始化超声波硬件
     SR04_UART_Init();
@@ -169,34 +168,27 @@ void StartTask_BMS_Sensor(void *argument)
         AXEBMS_RS485_Process(&my_bms);
 
         // 3. 同步 BMS 数据到全局变量
-        AXEBMS_Data *bms_data = AXEBMS_RS485_GetData(&my_bms);
-        if (AXEBMS_RS485_GetState(&my_bms) != -3 &&
-            bms_data->Voltage > 0U &&
-            bms_data->RSOC <= 100U &&
-            bms_data->Tmax <= 1000U)
+        AXEBMS_Data sample;
+        uint32_t sample_tick = 0U;
+        bool sample_valid = false;
+        if (AXEBMS_RS485_ReadTelemetry(&my_bms, &sample, &sample_tick, &sample_valid) &&
+            sample_valid && (uint32_t)(HAL_GetTick() - sample_tick) < BATTERY_FRESHNESS_MS &&
+            sample.Voltage > 0U && sample.RSOC <= 100U && sample.Tmax <= 1000U &&
+            sample.Vmin > 0U && sample.Vmin <= sample.Vmax && sample.Vmax <= 5000U)
         {
-            last_bms_ok_tick = HAL_GetTick();
-            last_bms_soc = (uint8_t)bms_data->RSOC;
 
-            float temp_val = (float)bms_data->Tmax / 10.0f;
+            float temp_val = (float)sample.Tmax / 10.0f;
             if (temp_val < 0)
                 temp_val = 0;
             if (temp_val > 100)
                 temp_val = 100;
-            last_bms_temp = (uint8_t)temp_val;
-
-            g_app.voltage_int = last_bms_soc;
-            g_app.bms_temp = last_bms_temp;
+            g_app.voltage_int = (uint8_t)sample.RSOC;
+            g_app.bms_temp = (uint8_t)temp_val;
         }
         else
         {
-            g_app.voltage_int = 0x01; // BMS 通信故障标志
+            g_app.voltage_int = 0xFF; /* Unknown is distinct from a real 1%. */
             g_app.bms_temp = 0xFF;
-            if (last_bms_ok_tick != 0U && (HAL_GetTick() - last_bms_ok_tick) < 3000U)
-            {
-                g_app.voltage_int = last_bms_soc;
-                g_app.bms_temp = last_bms_temp;
-            }
         }
 
         // 4. 处理推杆高度逻辑状态机 (50ms 级别逻辑)
@@ -263,10 +255,8 @@ static void Send_Telemetry_Core_Frame(void)
     int16_t scaled_w = (int16_t)(cur_w * 1000.0f);
 
     // 字节填充 (大端序，方便上位机查看原始报文)
-    tx_buf[0] = (uint8_t)(scaled_vx >> 8);
-    tx_buf[1] = (uint8_t)(scaled_vx & 0xFF);
-    tx_buf[2] = (uint8_t)(scaled_w >> 8);
-    tx_buf[3] = (uint8_t)(scaled_w & 0xFF);
+    ByteOrder_PutU16BE(&tx_buf[0], (uint16_t)scaled_vx);
+    ByteOrder_PutU16BE(&tx_buf[2], (uint16_t)scaled_w);
 
     tx_buf[4] = Ctrl_Mode;
     tx_buf[5] = g_app.voltage_int;
@@ -288,7 +278,7 @@ static void Send_Telemetry_Core_Frame(void)
     tx_buf[7] = status_flags;
 
     // 入队待发
-    CAN_Enqueue_Message(0x507, tx_buf, 8, 0);
+    CAN_Enqueue_Message(CHASSIS_ODOM_CAN_ID, tx_buf, 8, 0);
 }
 
 /**
@@ -334,12 +324,12 @@ static void Send_Telemetry_Odom_Frames(void)
     // --- 0x508: 右侧轮位置 ---
     memcpy(&tx_buf[0], &pos_fr, 4);
     memcpy(&tx_buf[4], &pos_rr, 4);
-    CAN_Enqueue_Message(0x508, tx_buf, 8, 0);
+    CAN_Enqueue_Message(CHASSIS_ENC_RIGHT_CAN_ID, tx_buf, 8, 0);
 
     // --- 0x509: 左侧轮位置 ---
     memcpy(&tx_buf[0], &pos_fl, 4);
     memcpy(&tx_buf[4], &pos_rl, 4);
-    CAN_Enqueue_Message(0x509, tx_buf, 8, 0);
+    CAN_Enqueue_Message(CHASSIS_ENC_LEFT_CAN_ID, tx_buf, 8, 0);
 }
 
 /**
@@ -357,75 +347,24 @@ static void Send_Telemetry_Wheel_Speed_Frame(void)
     last_speed_tick = now_tick;
 
     uint8_t tx_buf[8] = {0};
-    int16_t speed_fl;
-    int16_t speed_fr;
-    int16_t speed_rl;
-    int16_t speed_rr;
-    float speed_fl_f;
-    float speed_fr_f;
-    float speed_rl_f;
-    float speed_rr_f;
-    uint8_t stale_fl;
-    uint8_t stale_fr;
-    uint8_t stale_rl;
-    uint8_t stale_rr;
+    uint32_t stale_count = 0U;
+    ChassisWheelFeedback_t wheels[4] = {0};
 
-#if MOTOR_DRIVER_USED == DRIVER_TYPE_OID
-    /* OID 返回 erpm，换算为统一对外协议的 mm/s。 */
-    float speed_scale = PI * WHEEL_DIAMETER * 1000.0f /
-                        ((float)OID_POLE_PAIRS * GEAR_RATIO * 60.0f);
+    (void)chassis_control_read_wheel_feedback(wheels);
+    now_tick = HAL_GetTick(); /* after the atomic data copies */
+    /* Order FL, FR, RL, RR; a stale wheel is reported as 0 mm/s. */
+    for (uint8_t i = 0U; i < 4U; ++i)
+    {
+        uint8_t stale = !wheels[i].valid ||
+                        now_tick - wheels[i].last_good_tick > TELEMETRY_WHEEL_FRESHNESS_MS;
+        float speed = stale ? 0.0f : (float)wheels[i].speed_mm_per_s;
 
-    stale_fl = (now_tick - g_oid_drives[OID_NODE_FL].actual_speed_update_tick) > 150U;
-    stale_fr = (now_tick - g_oid_drives[OID_NODE_FR].actual_speed_update_tick) > 150U;
-    stale_rl = (now_tick - g_oid_drives[OID_NODE_RL].actual_speed_update_tick) > 150U;
-    stale_rr = (now_tick - g_oid_drives[OID_NODE_RR].actual_speed_update_tick) > 150U;
-
-    speed_fl_f = stale_fl ? 0.0f : (float)g_oid_drives[OID_NODE_FL].actual_speed_erpm * speed_scale;
-    speed_fr_f = stale_fr ? 0.0f : (float)g_oid_drives[OID_NODE_FR].actual_speed_erpm * -speed_scale;
-    speed_rl_f = stale_rl ? 0.0f : (float)g_oid_drives[OID_NODE_RL].actual_speed_erpm * speed_scale;
-    speed_rr_f = stale_rr ? 0.0f : (float)g_oid_drives[OID_NODE_RR].actual_speed_erpm * -speed_scale;
-
-#elif MOTOR_DRIVER_USED == DRIVER_TYPE_MSSD
-    /* MSSD 返回机械 RPM，不需要 OID 的极对数换算。 */
-    float speed_scale = PI * WHEEL_DIAMETER * 1000.0f /
-                        (GEAR_RATIO * 60.0f);
-
-    stale_fl = (now_tick - g_mssd_drives[MSSD_NODE_LEFT].speed_r_update_tick) > 150U;
-    stale_fr = (now_tick - g_mssd_drives[MSSD_NODE_RIGHT].speed_r_update_tick) > 150U;
-    stale_rl = (now_tick - g_mssd_drives[MSSD_NODE_LEFT].speed_l_update_tick) > 150U;
-    stale_rr = (now_tick - g_mssd_drives[MSSD_NODE_RIGHT].speed_l_update_tick) > 150U;
-
-    /* 左侧安装方向与车辆坐标相反，保持与 OID 对外方向约定一致。 */
-    speed_fl_f = stale_fl ? 0.0f : (float)g_mssd_drives[MSSD_NODE_LEFT].actual_rpm_r * -speed_scale;
-    speed_fr_f = stale_fr ? 0.0f : (float)g_mssd_drives[MSSD_NODE_RIGHT].actual_rpm_r * speed_scale;
-    speed_rl_f = stale_rl ? 0.0f : (float)g_mssd_drives[MSSD_NODE_LEFT].actual_rpm_l * -speed_scale;
-    speed_rr_f = stale_rr ? 0.0f : (float)g_mssd_drives[MSSD_NODE_RIGHT].actual_rpm_l * speed_scale;
-#endif
-
-    g_wheel_speed_feedback_stale_count += stale_fl + stale_fr + stale_rl + stale_rr;
-
-    if (speed_fl_f > 32767.0f) speed_fl_f = 32767.0f;
-    if (speed_fl_f < -32768.0f) speed_fl_f = -32768.0f;
-    if (speed_fr_f > 32767.0f) speed_fr_f = 32767.0f;
-    if (speed_fr_f < -32768.0f) speed_fr_f = -32768.0f;
-    if (speed_rl_f > 32767.0f) speed_rl_f = 32767.0f;
-    if (speed_rl_f < -32768.0f) speed_rl_f = -32768.0f;
-    if (speed_rr_f > 32767.0f) speed_rr_f = 32767.0f;
-    if (speed_rr_f < -32768.0f) speed_rr_f = -32768.0f;
-
-    speed_fl = (int16_t)speed_fl_f;
-    speed_fr = (int16_t)speed_fr_f;
-    speed_rl = (int16_t)speed_rl_f;
-    speed_rr = (int16_t)speed_rr_f;
-
-    tx_buf[0] = (uint8_t)((uint16_t)speed_fl >> 8);
-    tx_buf[1] = (uint8_t)((uint16_t)speed_fl & 0xFFU);
-    tx_buf[2] = (uint8_t)((uint16_t)speed_fr >> 8);
-    tx_buf[3] = (uint8_t)((uint16_t)speed_fr & 0xFFU);
-    tx_buf[4] = (uint8_t)((uint16_t)speed_rl >> 8);
-    tx_buf[5] = (uint8_t)((uint16_t)speed_rl & 0xFFU);
-    tx_buf[6] = (uint8_t)((uint16_t)speed_rr >> 8);
-    tx_buf[7] = (uint8_t)((uint16_t)speed_rr & 0xFFU);
+        stale_count += stale;
+        if (speed > 32767.0f) speed = 32767.0f;
+        if (speed < -32768.0f) speed = -32768.0f;
+        ByteOrder_PutU16BE(&tx_buf[2U * i], (uint16_t)(int16_t)speed);
+    }
+    g_wheel_speed_feedback_stale_count += stale_count;
 
     if (!CAN_Enqueue_Telemetry_Message(CHASSIS_WHEEL_SPEED_CAN_ID, tx_buf, sizeof(tx_buf), 0))
     {

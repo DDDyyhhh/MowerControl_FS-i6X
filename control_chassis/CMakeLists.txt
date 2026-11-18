@@ -2,15 +2,20 @@ cmake_minimum_required(VERSION 3.20)
 
 project(control_chassis LANGUAGES C ASM)
 
-option(MOWER_BLADE_OK "Build mower OK blade control release candidate" OFF)
-if(MOWER_BLADE_OK AND (TICKET03_EXP3_HIL OR TICKET03_EXP3_PWM_HIL))
-    message(FATAL_ERROR "MOWER_BLADE_OK is separate from bench profiles")
+set(MOWER_IBUS_TIMEOUT_MS "300" CACHE STRING "i-BUS valid-frame timeout in milliseconds (100 or 300)")
+set_property(CACHE MOWER_IBUS_TIMEOUT_MS PROPERTY STRINGS 100 300)
+if(NOT "${MOWER_IBUS_TIMEOUT_MS}" MATCHES "^(100|300)$")
+    message(FATAL_ERROR "MOWER_IBUS_TIMEOUT_MS must be 100 or 300")
 endif()
 
-option(TICKET03_EXP3_HIL "Build isolated Ticket03 Experiment3 transport" OFF)
-option(TICKET03_EXP3_PWM_HIL "Enable Ticket03 CH4/OK PWM bench adapter" OFF)
-if(TICKET03_EXP3_PWM_HIL AND NOT TICKET03_EXP3_HIL)
-    message(FATAL_ERROR "TICKET03_EXP3_PWM_HIL requires TICKET03_EXP3_HIL")
+option(MOWER_BLADE_OK "Build mower OK blade control release candidate" OFF)
+# Navigation field-test variant only: compiles out the PD1 vehicle emergency
+# button (VEHICLE_ESTOP_ENABLED=0 in app_Motion.c). Collision bar PD0, i-BUS
+# timeout, CH5 stop, CAN 0x005 timeout and the safety ownership gate stay active.
+# Never use for a delivery build.
+option(MOWER_NAV_TEST_ESTOP_BYPASS "Navigation test only: disable the PD1 vehicle emergency button" OFF)
+if(MOWER_NAV_TEST_ESTOP_BYPASS)
+    message(WARNING "MOWER_NAV_TEST_ESTOP_BYPASS=ON: the PD1 vehicle emergency button is DISABLED in this build")
 endif()
 
 if(NOT CMAKE_C_COMPILER MATCHES "arm-none-eabi-gcc")
@@ -40,12 +45,15 @@ set(USER_APP_SOURCES
     Core/UserApp/app_BMS_Sensor.c
     Core/UserApp/app_Comm.c
     Core/UserApp/app_Motion.c
+    Core/UserApp/app_imu.c
     Core/UserApp/app_Report.c
     Core/UserApp/app_SerialTX.c
     Core/UserApp/app_context.c
     Core/UserApp/blade_manual_control.c
+    Core/UserApp/control_source.c
     Core/UserApp/safety_ownership_gate.c
     Core/UserApp/telemetry_snapshot.c
+    Core/UserApp/battery_monitor.c
 )
 
 set(USER_DEVICE_SOURCES
@@ -58,7 +66,8 @@ set(USER_DEVICE_SOURCES
     Core/UserDev/blade_hil_uart_debug.c
     Core/UserDev/bsp_imu_solver.c
     Core/UserDev/buzzer.c
-    Core/UserDev/car_Control.c
+    Core/UserDev/can_tx_scheduler.c
+    Core/UserDev/can_tx_port.c
     Core/UserDev/chassis_control.c
     Core/UserDev/connet_check.c
     Core/UserDev/cruise_control.c
@@ -74,7 +83,6 @@ set(USER_DEVICE_SOURCES
     Core/UserDev/oid_can.c
     Core/UserDev/pairing_receiver.c
     Core/UserDev/read_adc.c
-    Core/UserDev/mower_mode_control.c
     Core/UserDev/remote_authorization.c
     Core/UserDev/remote_backend.c
     Core/UserDev/rs485.c
@@ -131,27 +139,25 @@ add_executable(${PROJECT_NAME}
     startup_stm32f407xx.s
 )
 
-if(TICKET03_EXP3_HIL OR MOWER_BLADE_OK)
+if(MOWER_BLADE_OK)
     set(TICKET03_SOURCES
         ../experiments/ticket03/exp3.c
         ../experiments/ticket03/exp3_link.c
         ../experiments/ticket03/exp3_hil.c
         ../experiments/ticket03/stm32_adapter.c
+        ../experiments/ticket03/exp3_probe.c
+        ../experiments/ticket03/exp3_blade_adapter.c
+        ../experiments/ticket03/exp3_auto_session.c
     )
-    if(TICKET03_EXP3_PWM_HIL OR MOWER_BLADE_OK)
-        list(APPEND TICKET03_SOURCES
-            ../experiments/ticket03/exp3_probe.c
-            ../experiments/ticket03/exp3_blade_adapter.c
-            ../experiments/ticket03/exp3_auto_session.c
-        )
-        target_compile_definitions(${PROJECT_NAME} PRIVATE
-            EXP3_PWM_PROBE_ENABLED=1 EXP3_AUTO_SESSION_ENABLED=1)
-    endif()
-    if(MOWER_BLADE_OK)
-        target_compile_definitions(${PROJECT_NAME} PRIVATE MOWER_BLADE_OK_ENABLED=1 MOWER_GRASS_BAG_CH6_ENABLED=1)
-    endif()
+    target_compile_definitions(${PROJECT_NAME} PRIVATE
+        EXP3_PWM_PROBE_ENABLED=1 EXP3_AUTO_SESSION_ENABLED=1)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE MOWER_BLADE_OK_ENABLED=1 MOWER_GRASS_BAG_CH6_ENABLED=1)
     target_sources(${PROJECT_NAME} PRIVATE ${TICKET03_SOURCES})
     target_compile_definitions(${PROJECT_NAME} PRIVATE EXP3_ENABLED=1 EXP3_LOG_COUNT=64)
+endif()
+
+if(MOWER_NAV_TEST_ESTOP_BYPASS)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE VEHICLE_ESTOP_ENABLED=0)
 endif()
 
 # The historical upper-case .C extension is C++ by convention; this source is C.
@@ -173,6 +179,7 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE
     STM32F407xx
     REMOTE_BACKEND_A28_E34=0
     REMOTE_BACKEND_FLYSKY_IBUS=1
+    REMOTE_IBUS_TIMEOUT_MS=${MOWER_IBUS_TIMEOUT_MS}U
     BLADE_HIL_UART_DEBUG_ENABLED=0
     SENS_IBUS_ELECTRICAL_OUTPUT_ENABLED=1
     SENS_IBUS_INTERNAL_PULLUP_EXPERIMENT=0
@@ -192,7 +199,7 @@ target_compile_options(${PROJECT_NAME} PRIVATE
     ${MCU_FLAGS}
     $<$<COMPILE_LANGUAGE:C>:-Wall;-ffunction-sections;-fdata-sections;-funsigned-char>
     $<$<CONFIG:Debug>:-Og;-g3>
-    $<$<CONFIG:Release>:-Os>
+    $<$<CONFIG:Release>:-Os;-g3>
 )
 
 target_link_options(${PROJECT_NAME} PRIVATE

@@ -18,6 +18,8 @@
 #include "sr04_uart.h"
 #include "usart.h"
 #include "cmsis_os.h" // 引入 FreeRTOS
+#include "FreeRTOS.h"
+#include "task.h"
 #include <string.h>
 #include <math.h>
 
@@ -37,10 +39,13 @@ uint8_t sr04_dma_buffer[SR04_RX_BUF_SIZE];
 extern osMessageQueueId_t Queue_SR04DataHandle;
 
 // 内部静态变量 (加上 static 防止外部直接访问)
-static float sr04_distances[SR04_SENSOR_COUNT] = {250.0f, 250.0f, 250.0f, 250.0f};
-static float last_distances[SR04_SENSOR_COUNT] = {250.0f, 250.0f, 250.0f, 250.0f};
+static float sr04_distances[SR04_SENSOR_COUNT] = {SR04_NO_DISTANCE_CM, SR04_NO_DISTANCE_CM, SR04_NO_DISTANCE_CM, SR04_NO_DISTANCE_CM};
+static float last_distances[SR04_SENSOR_COUNT] = {SR04_NO_DISTANCE_CM, SR04_NO_DISTANCE_CM, SR04_NO_DISTANCE_CM, SR04_NO_DISTANCE_CM};
 static uint8_t glitch_counts[SR04_SENSOR_COUNT] = {0};
 static uint8_t is_initialized[SR04_SENSOR_COUNT] = {0};
+static uint32_t sr04_sample_at;
+static bool sr04_frame_seen;
+static uint8_t sr04_measured_mask;
 
 // --- 内部函数声明 ---
 static float SR04_Filter(float current, float last);
@@ -52,10 +57,12 @@ static void SR04_Secure_Update(uint8_t idx, float raw_val);
  */
 void SR04_UART_Init(void)
 {
+    sr04_frame_seen = false;
+    sr04_measured_mask = 0U;
     // 初始化变量
     for(int i=0; i<SR04_SENSOR_COUNT; i++) {
-        sr04_distances[i] = 250.0f;
-        last_distances[i] = 250.0f;
+        sr04_distances[i] = SR04_NO_DISTANCE_CM;
+        last_distances[i] = SR04_NO_DISTANCE_CM;
         is_initialized[i] = 0;
         glitch_counts[i] = 0;
     }
@@ -101,15 +108,20 @@ void SR04_Process_Data(uint8_t *buf, uint16_t len)
     {
         if (buf[i] == 0xCB && buf[i+1] == 0x55 && buf[i+2] == 0x04)
         {
-            float raw[4];
-            raw[0] = (float)buf[i+3];
-            raw[1] = (float)buf[i+4];
-            raw[2] = (float)buf[i+5];
-            raw[3] = (float)buf[i+6];
-
-            for(int k=0; k<4; k++) {
-                SR04_Secure_Update(k, raw[k]);
+            uint8_t measured_mask = 0U;
+            taskENTER_CRITICAL();
+            for (uint8_t k = 0; k < SR04_SENSOR_COUNT; k++) {
+                const uint8_t raw = buf[i+3U+k];
+                /* A zero byte supplies no usable range. Keep the last real
+                 * reading for the walking cap, especially a known obstacle. */
+                if (raw == 0U) continue;
+                SR04_Secure_Update(k, (float)raw);
+                measured_mask |= (uint8_t)(1U << k);
             }
+            sr04_sample_at = HAL_GetTick();
+            sr04_frame_seen = true;
+            sr04_measured_mask = measured_mask;
+            taskEXIT_CRITICAL();
             
             // 跳过已处理的包
             i += 6; 
@@ -117,9 +129,36 @@ void SR04_Process_Data(uint8_t *buf, uint16_t len)
     }
 }
 
-/**
- * @brief 线程安全的获取距离函数
- */
+/* Publish the range values, channel validity and arrival time together. */
+static bool SR04_CopyFrame(float distances[SR04_SENSOR_COUNT], uint8_t *measured_mask)
+{
+    uint32_t sample_at;
+    bool seen;
+    taskENTER_CRITICAL();
+    memcpy(distances, sr04_distances, sizeof(sr04_distances));
+    sample_at = sr04_sample_at;
+    seen = sr04_frame_seen;
+    *measured_mask = sr04_measured_mask;
+    taskEXIT_CRITICAL();
+    return seen && (uint32_t)(HAL_GetTick() - sample_at) < SR04_SAMPLE_FRESH_MS;
+}
+
+bool SR04_ReadLastDistances(float distances[SR04_SENSOR_COUNT])
+{
+    uint8_t measured_mask;
+    return SR04_CopyFrame(distances, &measured_mask);
+}
+
+bool SR04_ReadDistances(float distances[SR04_SENSOR_COUNT])
+{
+    uint8_t measured_mask;
+    if (!SR04_CopyFrame(distances, &measured_mask) || measured_mask == 0U) return false;
+    for (uint8_t i = 0; i < SR04_SENSOR_COUNT; i++) {
+        if (!(measured_mask & (1U << i))) distances[i] = SR04_NO_DISTANCE_CM;
+    }
+    return true;
+}
+
 float SR04_GetDistance(uint8_t index)
 {
     if (index >= SR04_SENSOR_COUNT) return 0.0f;
@@ -148,7 +187,7 @@ static void SR04_Secure_Update(uint8_t idx, float raw_val)
     // 1. 基础物理量程限制 (过滤掉传感器本身的盲区和超量程死数据)
     // 假设超声波盲区是 30cm，最大有效距离 250cm
     if (raw_val < 30.0f) raw_val = 30.0f;
-    if (raw_val > 250.0f) raw_val = 250.0f;
+    if (raw_val > SR04_NO_DISTANCE_CM) raw_val = SR04_NO_DISTANCE_CM;
 
     // 2. 初始化第一帧数据
     if (is_initialized[idx] == 0) {

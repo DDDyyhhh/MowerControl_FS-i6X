@@ -20,6 +20,7 @@
 
 #include "AXEBMS_RS485.h"
 #include "main.h"
+#include "rs485.h"
 #include "modbus_rtu_bus.h" // <<<--- 关键：包含新的总线头文件
 #include <string.h>     // 包含 memcpy
 #define AXEBMS_RS485_TICK_MS      500
@@ -40,6 +41,7 @@ static void BMS_ModbusCallback(uint8_t* pdu, uint16_t pdu_len) {
     
     if (pdu != NULL && pdu_len == 32) {
         my_bms.sample_sequence++;
+        __DMB();
         my_bms.data.Voltage = (pdu[0] << 8) | pdu[1];
         my_bms.data.CurCadc = ((int16_t)((pdu[2] << 8) | pdu[3])) - 10000;
         my_bms.data.Temp1 = (pdu[4] << 8) | pdu[5];
@@ -59,6 +61,7 @@ static void BMS_ModbusCallback(uint8_t* pdu, uint16_t pdu_len) {
         my_bms.last_good_tick = HAL_GetTick();
         my_bms.sample_valid = true;
         my_bms.validCnt = 1;
+        __DMB();
         my_bms.sample_sequence++;
     }
 }
@@ -66,6 +69,9 @@ static void BMS_ModbusCallback(uint8_t* pdu, uint16_t pdu_len) {
 
 
 void AXEBMS_RS485_Init(AXEBMS_RS485* bms, uint8_t devAddr) {
+    bms->sample_valid = false;
+    bms->last_good_tick = 0U;
+    bms->sample_sequence = 0U;
     bms->devAddr = devAddr;
     
     bms->warmingVoltage = 0;
@@ -118,121 +124,9 @@ void AXEBMS_RS485_ConfigProtectVoltage(AXEBMS_RS485* bms, uint32_t vol, uint16_t
 }
 
 
-// ===================================================================
-// ==                   Modbus CRC16 计算函数                        ==
-// ===================================================================
-// 你需要将这个函数添加到你的文件中，它是Modbus通信的核心
-static uint16_t Modbus_CRC16(const uint8_t *data, uint16_t length) {
-    uint16_t crc = 0xFFFF;
-    for (uint16_t i = 0; i < length; i++) {
-        crc ^= data[i];
-        for (uint8_t j = 0; j < 8; j++) {
-            if (crc & 0x0001) {
-                crc = (crc >> 1) ^ 0xA001;
-            } else {
-                crc = crc >> 1;
-            }
-        }
-    }
-    return crc;
-}
-
-static void sendRequestFrame(AXEBMS_RS485* bms) {
-    // 构建 Modbus 读取保持寄存器请求帧
-    bms->txBuffer[0] = bms->devAddr;                    // 设备地址
-    bms->txBuffer[1] = MODBUS_READ_HOLDING_REGISTERS;   // 功能码 0x03
-    bms->txBuffer[2] = 0x10;                           // 起始地址高字节 0x1003
-    bms->txBuffer[3] = 0x03;                           // 起始地址低字节
-    bms->txBuffer[4] = 0x00;                           // 寄存器数量高字节 16
-    bms->txBuffer[5] = 0x10;                           // 寄存器数量低字节
-
-
-    // // 计算CRC
-    uint16_t crc = Modbus_CRC16(bms->txBuffer, 6);
-    bms->txBuffer[6] = crc & 0xFF;       // CRC低位
-    bms->txBuffer[7] = (crc >> 8) & 0xFF;// CRC高位
-
-    // 发送完整的8字节请求帧
-    RS485_SendData(bms->txBuffer, 8);
-    
-    // 发送请求帧
-    // RS485_SendData(bms->txBuffer, 6);
-}
-
-// static bool receiveResponseFrame(AXEBMS_RS485* bms) {
-//     // 接收响应数据
-//     bms->rxDataLength = RS485_ReceiveData(bms->rxBuffer, sizeof(bms->rxBuffer));
-    
-//     if (bms->rxDataLength >= 5) {  // 最小响应长度
-//         // 检查设备地址和功能码
-//         if (bms->rxBuffer[0] == bms->devAddr && bms->rxBuffer[1] == MODBUS_READ_HOLDING_REGISTERS) {
-//             uint8_t dataLength = bms->rxBuffer[2];  // 数据字节数
-            
-//             if (dataLength == 32) {  // 16个寄存器 × 2字节 = 32字节
-//                 return true;
-//             }
-//         }
-//     }
-    
-//     return false;
-// }
-
-static bool receiveResponseFrame(AXEBMS_RS485* bms) {
-    // 接收响应数据 (你已经调通的函数)
-    bms->rxDataLength = RS485_ReceiveData(bms->rxBuffer, sizeof(bms->rxBuffer));
-    
-    // 1. 检查响应长度是否正确 (地址1 + 功能码1 + 字节数1 + 数据32 + CRC2 = 37)
-    if (bms->rxDataLength != 37) {
-        return false;
-    }
-    
-    // 2. 检查设备地址和功能码
-    if (bms->rxBuffer[0] != bms->devAddr || bms->rxBuffer[1] != MODBUS_READ_HOLDING_REGISTERS) {
-        return false;
-    }
-    
-    // 3. 校验CRC (最重要的一步)
-    uint16_t received_crc = (bms->rxBuffer[36] << 8) | bms->rxBuffer[35]; // CRC高位在前
-    uint16_t calculated_crc = Modbus_CRC16(bms->rxBuffer, 35); // 对前35个字节计算CRC
-    
-    if (received_crc != calculated_crc) {
-        return false; // CRC校验失败
-    }
-    
-    // 所有检查通过，返回成功
-    return true;
-}
-
-static void parseResponseData(AXEBMS_RS485* bms) {
-    if (bms->rxDataLength >= 35) {  // 完整响应帧长度
-        uint8_t* pData = &bms->rxBuffer[3];  // 跳过地址、功能码、字节数
-        
-        // 解析16个寄存器数据
-        bms->data.Voltage = (pData[0] << 8) | pData[1];
-        bms->data.CurCadc = ((pData[2] << 8) | pData[3]) - 10000;
-        bms->data.Temp1 = (pData[4] << 8) | pData[5];
-        bms->data.Temp2 = (pData[6] << 8) | pData[7];
-        bms->data.Temp3 = (pData[8] << 8) | pData[9];
-        bms->data.Temp4 = (pData[10] << 8) | pData[11];
-        bms->data.Temp5 = (pData[12] << 8) | pData[13];
-        bms->data.Temp6 = (pData[14] << 8) | pData[15];
-        bms->data.Tmax = (pData[16] << 8) | pData[17];
-        bms->data.Tmin = (pData[18] << 8) | pData[19];
-        bms->data.Vmax = (pData[20] << 8) | pData[21];
-        bms->data.Vmin = (pData[22] << 8) | pData[23];
-        bms->data.VmaxminNo = (pData[24] << 8) | pData[25];
-        bms->data.RSOC = (pData[26] << 8) | pData[27];
-        bms->data.FCC = (pData[28] << 8) | pData[29];
-        bms->data.RC = (pData[30] << 8) | pData[31];
-        
-        bms->validCnt = 1;
-    }
-}
-
 void AXEBMS_RS485_Process(AXEBMS_RS485* bms) {
     uint32_t currentTime = HAL_GetTick();
     
-    static uint32_t lastRequestTime = 0;
     
     // **重要**：总线的Process函数需要一直被调用，以处理接收和超时
     ModbusRtuBus_Process();
@@ -319,21 +213,23 @@ bool AXEBMS_RS485_ReadTelemetry(const AXEBMS_RS485* bms,
         return false;
     }
 
-    do
+    /* Motion can preempt the lower-priority BMS writer: never spin on odd. */
+    for (unsigned retry=0U; retry<3U; ++retry)
     {
         sequence_before = bms->sample_sequence;
         if ((sequence_before & 1U) != 0U)
         {
-            continue;
+            return false;
         }
+        __DMB();
         *data = bms->data;
         *last_good_tick = bms->last_good_tick;
         *sample_valid = bms->sample_valid;
+        __DMB();
         sequence_after = bms->sample_sequence;
-    } while ((sequence_before != sequence_after) ||
-             ((sequence_after & 1U) != 0U));
-
-    return true;
+        if (sequence_before == sequence_after) return true;
+    }
+    return false;
 }
 int8_t AXEBMS_RS485_GetState(AXEBMS_RS485* bms) {
     return bms->state;

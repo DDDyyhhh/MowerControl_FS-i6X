@@ -7,6 +7,7 @@
  */
 
 #include "oid_can.h"
+#include "byte_order.h"
 #include <string.h>
 #include "odrive_can.h"
 
@@ -47,11 +48,7 @@ static void oid_send_cmd_int32(uint8_t node_id, uint8_t cmd, int32_t value)
 {
     uint8_t tx_data[8] = {0};
     tx_data[0] = cmd;
-    // 大端序: 高字节在前
-    tx_data[1] = (uint8_t)((uint32_t)value >> 24);
-    tx_data[2] = (uint8_t)((uint32_t)value >> 16);
-    tx_data[3] = (uint8_t)((uint32_t)value >> 8);
-    tx_data[4] = (uint8_t)((uint32_t)value >> 0);
+    ByteOrder_PutU32BE(&tx_data[1], (uint32_t)value); /* 大端序: 高字节在前 */
 
     if (cmd == OID_CMD_SPEED)
     {
@@ -61,20 +58,6 @@ static void oid_send_cmd_int32(uint8_t node_id, uint8_t cmd, int32_t value)
     {
         CAN_Enqueue_Message(node_id, tx_data, 5, 0);
     }
-}
-
-/**
- * @brief 发送 3 字节 CAN 帧 (DATA[0]=cmd, DATA[1~2]=int16 大端)
- *        用于电流/占空比等控制指令
- */
-static void oid_send_cmd_int16(uint8_t node_id, uint8_t cmd, int16_t value)
-{
-    uint8_t tx_data[8] = {0};
-    tx_data[0] = cmd;
-    tx_data[1] = (uint8_t)((uint16_t)value >> 8);
-    tx_data[2] = (uint8_t)((uint16_t)value >> 0);
-
-    CAN_Enqueue_Message(node_id, tx_data, 3, 0);
 }
 
 /* ==================================================================== */
@@ -127,7 +110,13 @@ uint8_t OID_Req_Parameter(uint8_t node_id, uint8_t sub_index)
         g_oid_drives[node_id].pending_subidx = sub_index;
     }
 
-    uint8_t result = CAN_Enqueue_Message(node_id, tx_data, 2, 0);
+    uint8_t speed = sub_index == OID_PARAM_ACTUAL_SPEED;
+    uint8_t result = speed ? CAN_Enqueue_SpeedQuery(node_id) :
+                            CAN_Enqueue_Message(node_id, tx_data, 2, 0);
+    if (speed && node_id > 0U && node_id < OID_MAX_NODES) {
+        ++g_oid_drives[node_id].speed_query_attempts;
+        if (result) ++g_oid_drives[node_id].speed_query_queued;
+    }
     #if SENS_IBUS_HIL_DIAG_USART1_TX_ENABLED && MOTOR_DRIVER_USED == DRIVER_TYPE_OID
     if ((node_id > 0U) && (node_id < OID_MAX_NODES) &&
         (sub_index == OID_PARAM_ACTUAL_SPEED))
@@ -156,15 +145,15 @@ uint8_t OID_Req_Actual_Speed(uint8_t node_id)
 /*              CAN 接收解析                                              */
 /* ==================================================================== */
 
-void OID_Parse_Rx_Message(uint32_t can_id, uint8_t *data, uint8_t dlc)
+void OID_Parse_Rx_MessageAt(uint32_t can_id, uint8_t *data, uint8_t dlc, uint32_t rx_tick)
 {
     // CAN ID 范围检查
-    if (can_id == 0 || can_id >= OID_MAX_NODES || data == NULL)
+    if (can_id == 0 || can_id >= OID_MAX_NODES || data == NULL || dlc == 0U)
         return;
 
     volatile OID_Data_t *drive = &g_oid_drives[can_id];
     drive->is_online = 1;
-    drive->last_update_tick = HAL_GetTick();
+    drive->last_update_tick = rx_tick;
     #if SENS_IBUS_HIL_DIAG_USART1_TX_ENABLED && MOTOR_DRIVER_USED == DRIVER_TYPE_OID
     OID_HilRecordResponse(&g_oid_hil_diag[can_id].any_response,
                           can_id, data, dlc, drive->last_update_tick);
@@ -189,6 +178,11 @@ void OID_Parse_Rx_Message(uint32_t can_id, uint8_t *data, uint8_t dlc)
         case OID_PARAM_ACTUAL_SPEED: // 实时电转速 (DLC=6, int32 erpm)
             if (dlc >= 6)
             {
+                if (drive->actual_speed_valid) {
+                    uint32_t gap = rx_tick - drive->actual_speed_update_tick;
+                    if (gap > drive->speed_max_gap_ms) drive->speed_max_gap_ms = gap;
+                }
+                ++drive->speed_responses;
                 drive->actual_speed_erpm = (int32_t)((uint32_t)data[2] << 24) |
                                             ((uint32_t)data[3] << 16) |
                                             ((uint32_t)data[4] << 8)  |

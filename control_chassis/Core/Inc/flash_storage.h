@@ -16,7 +16,8 @@ typedef struct
 } AppSettings_t;
 
 // 定义魔法数字，用于检查Flash中是否有有效数据
-#define APP_SETTINGS_MAGIC_NUMBER 0xDEADBEEF
+#define APP_SETTINGS_LEGACY_MAGIC 0xDEADBEEFU
+#define APP_SETTINGS_MAGIC_NUMBER 0x48475432U  // Ground-clearance calibration
 
 // 初始化Flash存储（实际上不需要做什么）
 void FlashStorage_Init(void);

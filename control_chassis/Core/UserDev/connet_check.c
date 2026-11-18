@@ -14,11 +14,6 @@
 
 static uint8_t g_suspend_heartbeat_check = 0;
 
-uint32_t GetLastReceiveTimeAgo(void)
-{
-    return RemoteBackend_LastReceiveAgeMs();
-}
-
 void Suspend_Heartbeat_Check(uint8_t suspend)
 {
     g_suspend_heartbeat_check = suspend;

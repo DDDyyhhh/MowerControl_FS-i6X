@@ -17,6 +17,9 @@
   */
 
 #include "app_context.h"
+#include "remote_backend_config.h"
+#include "../../../experiments/ticket03/ultrasonic_control.h"
+#include <string.h>
 // #include "mower_config.h" // 引入宏定义
 
 
@@ -28,6 +31,8 @@ AppContext_t g_app = {
     .Unlock_tips = 0,
     .g_collision_latched = 1,
     .physical_safety_latched = 0,
+    .collision_reason_latched = 0,
+    .emergency_reason_latched = 0,
     .unlock_stage1_complete = false,
     .g_system_report_state = REPORT_INIT_SUCCESS, // 初始化成功，等待解锁
     
@@ -41,7 +46,6 @@ AppContext_t g_app = {
     .speed = 0.0f,
     .turn_speed = CRUISE_GEAR_1_SPEED,
     .is_on_slope = 1,
-    .ultrasonic_enabled = true, 
     
     .d1 = 250.0f, .d2 = 250.0f, .d3 = 250.0f, .d4 = 250.0f,
     .voltage_int = 0xFF,
@@ -51,7 +55,6 @@ AppContext_t g_app = {
     .receiver_status = { [1] = 1, [2] = 1 }, // 默认速度档位1，割刀关闭
     
     .last_imu_tick = 0,
-    .g_lifter_enable_key_was_pressed = 0,
 
     .odrive_temps = {25, 25, 25, 25}, // 默认室温 25度
 
@@ -59,7 +62,11 @@ AppContext_t g_app = {
     // 单位：摄氏度 (整数)
     .bms_temp = 0, // 初始化为 0 度
 
-    .cfg_ultrasonic_en = 1,    // 1:开, 0:关
+#if REMOTE_BACKEND_FLYSKY_IBUS
+    .cfg_ultrasonic_en = MOWER_ULTRASONIC_AVOIDANCE_ENABLED,
+#else
+    .cfg_ultrasonic_en = 1,
+#endif
     .cfg_collision_en = 1,     // 1:开, 0:关
     .cfg_reverse_limit_en = 1, // 1:开, 0:关
     .cfg_tilt_sensor_en = 1,   // 1:开, 0:关
@@ -69,3 +76,13 @@ AppContext_t g_app = {
     .trigger_cruise_req = 0
 
 };
+
+void AppContext_RecordBootReset(uint32_t reset_flags)
+{
+    RemoteStopDiagnostics_t *diag = &g_app.remote_stop_diag;
+    memset(diag, 0, sizeof(*diag));
+    diag->magic = REMOTE_STOP_DIAG_MAGIC;
+    diag->version = REMOTE_STOP_DIAG_VERSION;
+    diag->record_size = sizeof(*diag);
+    diag->boot_reset_flags = reset_flags;
+}

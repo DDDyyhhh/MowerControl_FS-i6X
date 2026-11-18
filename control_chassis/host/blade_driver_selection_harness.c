@@ -2,8 +2,13 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <math.h>
 
 #include "BladeMotor.h"
+
+#if defined(EXPECTED_BLADE_DRIVER) && BLADE_MOTOR_DRIVER_USED != EXPECTED_BLADE_DRIVER
+#error "Unexpected blade driver selection"
+#endif
 
 TIM_HandleTypeDef htim2 = {{8399U}};
 
@@ -13,6 +18,9 @@ static uint32_t g_pwm_start_count;
 static uint32_t g_ftesc_init_count;
 static uint32_t g_ftesc_send_count;
 static float g_ftesc_last_erpm;
+static bool g_ftesc_reject;
+static uint32_t g_ftesc_release_count;
+static bool g_ftesc_last_release;
 
 void BladeMotor_HostSetCompare(TIM_HandleTypeDef *timer,
                                uint32_t channel,
@@ -47,7 +55,26 @@ uint8_t Flipsky_CAN_SetSpeedErpm(float erpm)
 {
     g_ftesc_send_count++;
     g_ftesc_last_erpm = erpm;
-    return 1U;
+    g_ftesc_last_release = false;
+    return g_ftesc_reject ? 0U : 1U;
+}
+
+uint8_t Flipsky_CAN_Release(void)
+{
+    g_ftesc_send_count++;
+    g_ftesc_release_count++;
+    g_ftesc_last_erpm = 0.0f;
+    g_ftesc_last_release = true;
+    return g_ftesc_reject ? 0U : 1U;
+}
+
+uint8_t Flipsky_CAN_ReleaseMotor(void)
+{
+    g_ftesc_send_count++;
+    g_ftesc_release_count++;
+    g_ftesc_last_erpm = 0.0f;
+    g_ftesc_last_release = true;
+    return g_ftesc_reject ? 0U : 1U;
 }
 
 static SafetyOwnershipGateInput_t AllowedInput(uint32_t sequence)
@@ -64,6 +91,97 @@ static SafetyOwnershipGateInput_t AllowedInput(uint32_t sequence)
     };
     return input;
 }
+
+#if BLADE_MOTOR_DRIVER_USED == BLADE_MOTOR_DRIVER_FTESC_CAN
+/* Stop = ERPM 0 brake window, then zero-current release while idle. */
+static void TestFtescBrakeThenRelease(void)
+{
+    SafetyOwnershipGateInput_t input = AllowedInput(200U);
+    const uint32_t brake = BLADE_FTESC_STOP_BRAKE_MS;
+    uint32_t t0, before;
+
+    SafetyOwnershipGate_Reset(); SafetyOwnershipGate_Update(&input);
+    g_ftesc_reject = false;
+    g_ftesc_release_count = 0U;
+
+    /* Power-up may leave the blade coasting: brake first, never release at once. */
+    g_now_ms = 100000U; t0 = g_now_ms;
+    BladeMotor_Start();
+    assert(!g_ftesc_last_release && g_ftesc_last_erpm == 0.0f);
+    g_now_ms = t0 + brake - 1U;
+    assert(BladeMotor_SetSpeed(0.0f) == HAL_OK);
+    assert(!g_ftesc_last_release && g_ftesc_release_count == 0U);
+
+    before = g_ftesc_send_count;
+    g_now_ms = t0 + brake;
+    assert(BladeMotor_SetSpeed(0.0f) == HAL_OK);
+#if BLADE_FTESC_IDLE_RELEASE_ENABLED
+    /* Frame-kind change is sent at once, not after the keepalive. */
+    assert(g_ftesc_send_count == before + 1U && g_ftesc_last_release);
+
+    /* Release keeps the 200ms keepalive. */
+    g_now_ms = t0 + brake + BLADE_FTESC_KEEPALIVE_MS - 1U;
+    assert(BladeMotor_SetSpeed(0.0f) == HAL_OK);
+    assert(g_ftesc_send_count == before + 1U);
+    g_now_ms = t0 + brake + BLADE_FTESC_KEEPALIVE_MS;
+    assert(BladeMotor_SetSpeed(0.0f) == HAL_OK);
+    assert(g_ftesc_send_count == before + 2U && g_ftesc_last_release);
+
+    /* Run after release goes out immediately. */
+    g_now_ms += 1U;
+    assert(BladeMotor_SetSpeed(14000.0f) == HAL_OK);
+    assert(g_ftesc_send_count == before + 3U && !g_ftesc_last_release &&
+           g_ftesc_last_erpm == 14000.0f);
+
+    /* Run -> zero brakes; repeated zeros do not restart the window. */
+    g_now_ms += 10U; t0 = g_now_ms;
+    assert(BladeMotor_SetSpeed(0.0f) == HAL_OK);
+    assert(!g_ftesc_last_release && g_ftesc_last_erpm == 0.0f);
+    for (uint32_t t = t0 + 50U; t < t0 + brake; t += 50U)
+    {
+        g_now_ms = t;
+        assert(BladeMotor_SetSpeed(0.0f) == HAL_OK);
+        assert(!g_ftesc_last_release);
+    }
+    /* A rejected brake->release transition is retried on the next call. */
+    g_now_ms = t0 + brake; before = g_ftesc_send_count; g_ftesc_reject = true;
+    assert(BladeMotor_SetSpeed(0.0f) == HAL_ERROR);
+    assert(g_ftesc_send_count == before + 1U);
+    g_ftesc_reject = false; g_now_ms += 1U;
+    assert(BladeMotor_SetSpeed(0.0f) == HAL_OK);
+    assert(g_ftesc_send_count == before + 2U && g_ftesc_last_release);
+
+    /* Gate denial while running is a zero intent: brake, then release. */
+    g_now_ms += 1U;
+    assert(BladeMotor_SetSpeed(15000.0f) == HAL_OK && g_ftesc_last_erpm == 15000.0f);
+    g_now_ms += 1U; t0 = g_now_ms;
+    input.software_locked = true; SafetyOwnershipGate_Update(&input);
+    assert(BladeMotor_SetSpeed(15000.0f) == HAL_OK);
+    assert(!g_ftesc_last_release && g_ftesc_last_erpm == 0.0f);
+    /* Stop() is unconditional: ERPM 0 inside the window, release after it. */
+    g_now_ms = t0 + 1U; before = g_ftesc_send_count;
+    BladeMotor_Stop();
+    assert(g_ftesc_send_count == before + 1U && !g_ftesc_last_release);
+    g_now_ms = t0 + brake; BladeMotor_Stop();
+    assert(g_ftesc_send_count == before + 2U && g_ftesc_last_release);
+
+    /* Invalid input during idle release stays released. */
+    g_now_ms += 1U;
+    assert(BladeMotor_SetSpeed(NAN) == HAL_ERROR);
+    assert(g_ftesc_last_release);
+#else
+    /* Legacy hold: same ERPM 0 frame, keepalive suppression, never a release. */
+    assert(g_ftesc_send_count == before);
+    for (uint32_t t = t0 + brake; t < t0 + 4U * brake; t += 50U)
+    {
+        g_now_ms = t;
+        assert(BladeMotor_SetSpeed(0.0f) == HAL_OK);
+    }
+    BladeMotor_Stop();
+    assert(g_ftesc_release_count == 0U && !g_ftesc_last_release);
+#endif
+}
+#endif
 
 int main(void)
 {
@@ -108,20 +226,94 @@ int main(void)
     assert(BladeMotor_SetSpeedForOwner(EXECUTION_OWNER_MANUAL_REMOTE, 14000.0f) == HAL_OK);
     assert(g_ftesc_send_count == 2U);
 
+    g_now_ms = 209U;
+    assert(BladeMotor_SetSpeedForOwner(EXECUTION_OWNER_MANUAL_REMOTE, 14000.0f) == HAL_OK);
+    assert(g_ftesc_send_count == 2U);
+
     g_now_ms = 210U;
     assert(BladeMotor_SetSpeedForOwner(EXECUTION_OWNER_MANUAL_REMOTE, 14000.0f) == HAL_OK);
     assert(g_ftesc_send_count == 3U);
 
+    g_now_ms = 211U;
+    assert(BladeMotor_SetSpeedForOwner(EXECUTION_OWNER_MANUAL_REMOTE, 15500.0f) == HAL_OK);
+    assert(g_ftesc_send_count == 4U);
+    assert(g_ftesc_last_erpm == 15500.0f);
+
+    g_now_ms = 212U;
+    assert(BladeMotor_SetSpeedForOwner(EXECUTION_OWNER_MANUAL_REMOTE, 16000.0f) == HAL_OK);
+    assert(g_ftesc_send_count == 5U);
+    assert(g_ftesc_last_erpm == 16000.0f);
+
+    g_now_ms = 213U;
     input.software_locked = true;
     SafetyOwnershipGate_Update(&input);
     assert(BladeMotor_SetSpeedForOwner(EXECUTION_OWNER_MANUAL_REMOTE, 15500.0f) == HAL_OK);
-    assert(g_ftesc_send_count == 4U);
+    assert(g_ftesc_send_count == 6U);
+    assert(g_ftesc_last_erpm == 0.0f);
+
+    g_now_ms = 413U;
+    assert(BladeMotor_SetSpeedForOwner(EXECUTION_OWNER_MANUAL_REMOTE, 16000.0f) == HAL_OK);
+    assert(g_ftesc_send_count == 7U);
+    assert(g_ftesc_last_erpm == 0.0f);
+
+    BladeMotor_Stop();
+    assert(g_ftesc_send_count == 8U);
     assert(g_ftesc_last_erpm == 0.0f);
     assert(g_pwm_start_count == 0U);
 #else
 #error "Harness requires a legal blade driver"
 #endif
 
-    puts("blade driver selection harness passed");
+    /* Low battery must reject real PWM/CAN blade output without denying
+     * the selected owner's travel permission. */
+    input = AllowedInput(100U);
+    SafetyOwnershipGate_Reset(); SafetyOwnershipGate_Update(&input);
+    SafetyOwnershipGate_SetBatteryPolicy(false, true);
+    g_now_ms += 1000U;
+    assert(SafetyOwnershipGate_Authorize(EXECUTION_OWNER_MANUAL_REMOTE, true));
+    assert(BladeMotor_SetSpeedForOwner(EXECUTION_OWNER_MANUAL_REMOTE, 10000.0f) == HAL_OK);
+#if BLADE_MOTOR_DRIVER_USED == BLADE_MOTOR_DRIVER_PWM
+    assert(g_compare == 0U);
+#else
+    assert(g_ftesc_last_erpm == 0.0f);
+#endif
+
+#if BLADE_MOTOR_DRIVER_USED == BLADE_MOTOR_DRIVER_FTESC_CAN
+    input = AllowedInput(101U);
+    SafetyOwnershipGate_Reset(); SafetyOwnershipGate_Update(&input);
+    g_now_ms += 1000U;
+    assert(BladeMotor_SetSpeed(14000.0f) == HAL_OK);
+    uint32_t before = g_ftesc_send_count;
+    g_ftesc_reject = true; BladeMotor_Stop();
+    assert(g_ftesc_send_count == before + 1U);
+    g_ftesc_reject = false;
+    assert(BladeMotor_SetSpeed(0.0f) == HAL_OK);
+    assert(g_ftesc_send_count == before + 2U); /* failed Stop cannot suppress zero */
+
+    assert(BladeMotor_SetSpeed(14000.0f) == HAL_OK);
+    before = g_ftesc_send_count;
+    g_ftesc_reject = true;
+    assert(BladeMotor_SetSpeed(NAN) == HAL_ERROR);
+    g_ftesc_reject = false;
+    assert(BladeMotor_SetSpeed(0.0f) == HAL_OK);
+    assert(g_ftesc_send_count == before + 2U); /* invalid-input zero needs acceptance */
+
+    before = g_ftesc_send_count;
+    g_ftesc_reject = true;
+    assert(BladeMotor_SetSpeed(15000.0f) == HAL_ERROR);
+    g_ftesc_reject = false;
+    assert(BladeMotor_SetSpeed(15000.0f) == HAL_OK);
+    assert(g_ftesc_send_count == before + 2U); /* no 200ms suppression after rejection */
+    before = g_ftesc_send_count;
+    g_ftesc_reject = true;
+    assert(BladeMotor_SetSpeed(0.0f) == HAL_ERROR);
+    g_ftesc_reject = false;
+    assert(BladeMotor_SetSpeed(0.0f) == HAL_OK);
+    assert(g_ftesc_send_count == before + 2U);
+    TestFtescBrakeThenRelease();
+#endif
+
+    printf("blade driver selection harness passed (driver=%u)\n",
+           (unsigned)BLADE_MOTOR_DRIVER_USED);
     return 0;
 }

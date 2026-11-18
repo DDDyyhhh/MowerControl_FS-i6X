@@ -38,16 +38,6 @@ void BladeConfirmCh6Adapter_Init(BladeConfirmCh6Adapter_t *adapter,
     adapter->initialized = true;
 }
 
-void BladeConfirmCh6Adapter_Reset(BladeConfirmCh6Adapter_t *adapter)
-{
-    if (adapter == NULL)
-    {
-        return;
-    }
-    BladeConfirmCh6Config_t cfg = adapter->config;
-    BladeConfirmCh6Adapter_Init(adapter, &cfg);
-}
-
 BladeConfirmCh6Position_t BladeConfirmCh6Adapter_ClassifyCh6(
     const BladeConfirmCh6Config_t *config, uint16_t pulse_us)
 {

@@ -560,6 +560,15 @@ static void TestSequenceWraparound(void)
 static void TestCh7GearMapping(void)
 {
     BladeManualControlConfig_t config = BladeManualControl_DefaultConfig();
+#if BLADE_MOTOR_DRIVER_USED == BLADE_MOTOR_DRIVER_FTESC_CAN
+    assert(config.output_min == 12000.0f);
+    assert(config.output_medium == 15000.0f);
+    assert(config.output_max == 16000.0f);
+#else
+    assert(config.output_min == 45.0f);
+    assert(config.output_medium == 50.0f);
+    assert(config.output_max == 55.0f);
+#endif
     assert(BladeManualControl_MapSpeed(&config, 2000U) == config.output_min);
     assert(BladeManualControl_MapSpeed(&config, 1500U) == config.output_medium);
     assert(BladeManualControl_MapSpeed(&config, 1000U) == config.output_max);
@@ -778,7 +787,8 @@ static void TestCh4StartArmingAcrossOtherSamples(void)
 
 int main(void)
 {
-    printf("Running blade_manual_control_harness...\n");
+    printf("Running blade_manual_control_harness (driver=%u)...\n",
+           (unsigned)BLADE_MOTOR_DRIVER_USED);
 
     TestPowerUpAtStartProhibited();
     TestPendingOutputStrictlyZero();

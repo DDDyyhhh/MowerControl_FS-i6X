@@ -77,8 +77,8 @@ def main():
     sym = symbols(a.elf)
     base, size = sym["g_exp3_hil"]
     box, box_size = sym["g_exp3_mailbox"]
-    capacity = (size - 244) // 16
-    if box_size != 36 or size != 244 + capacity * 16 or capacity < 1:
+    capacity = (size - 252) // 16
+    if box_size != 36 or size != 252 + capacity * 16 or capacity < 1:
         raise RuntimeError("Incompatible Experiment3 debug ABI")
     probe = Probe(a.port)
     if a.operation == "capture":
@@ -87,12 +87,12 @@ def main():
         end = time.monotonic() + a.seconds
         with a.output.open("x") as f:
             while time.monotonic() < end:
-                write, read, overflow = probe.read(base + 228, 3)
+                write, read, overflow = probe.read(base + 236, 3)
                 count = (write - read) & 0xffffffff
                 if count > capacity:
                     raise RuntimeError("Ring reset/corruption; stop and provision a fresh paired run")
                 if count:
-                    words = probe.read(base + 240, capacity * 4)
+                    words = probe.read(base + 248, capacity * 4)
                     for seq in range(count):
                         index = ((read + seq) % capacity) * 4
                         tick, x, y, event = words[index:index+4]

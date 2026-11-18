@@ -64,19 +64,19 @@ static void accepted_result_crosses_existing_blade_state_machine_once(void)
     assert(BladeManualControl_GetCommand(&blade) == 0.0f);
     input.frame_sequence++;
     BladeManualControl_Step(&blade, &input);
-    assert(BladeManualControl_GetCommand(&blade) == 45.0f);
+    assert(BladeManualControl_GetCommand(&blade) == blade.config.output_min);
 
     input.ch7_raw = 1500U;
     input.confirmed_gear = REMOTE_BLADE_GEAR_MEDIUM;
     input.frame_sequence++;
     BladeManualControl_Step(&blade, &input);
-    assert(BladeManualControl_GetCommand(&blade) == 50.0f);
+    assert(BladeManualControl_GetCommand(&blade) == blade.config.output_medium);
 
     input.ch7_raw = 1000U;
     input.confirmed_gear = REMOTE_BLADE_GEAR_HIGH;
     input.frame_sequence++;
     BladeManualControl_Step(&blade, &input);
-    assert(BladeManualControl_GetCommand(&blade) == 55.0f);
+    assert(BladeManualControl_GetCommand(&blade) == blade.config.output_max);
 
     input.link_fresh = false;
     input.frame_sequence++;
@@ -177,7 +177,7 @@ static void old_cancel_must_not_clear_a_new_ch4_request(void)
     BladeManualControl_Step(&blade, &input);
     ++input.frame_sequence;
     BladeManualControl_Step(&blade, &input);
-    assert(BladeManualControl_GetCommand(&blade) == 45.0f);
+    assert(BladeManualControl_GetCommand(&blade) == blade.config.output_min);
 }
 
 int main(void)
@@ -185,6 +185,7 @@ int main(void)
     accepted_result_crosses_existing_blade_state_machine_once();
     denied_or_cancelled_results_fail_closed();
     old_cancel_must_not_clear_a_new_ch4_request();
-    puts("PASS Experiment3-to-blade gate and CH7 PWM low/medium/high commands");
+    printf("PASS Experiment3-to-blade gate and CH7 low/medium/high commands (driver=%u)\n",
+           (unsigned)BLADE_MOTOR_DRIVER_USED);
     return 0;
 }

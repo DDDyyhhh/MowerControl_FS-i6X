@@ -9,12 +9,13 @@ In `Core/Inc/blade_motor_config.h`:
 ```c
 #define BLADE_MOTOR_DRIVER_PWM        1U
 #define BLADE_MOTOR_DRIVER_FTESC_CAN  2U
-#define BLADE_MOTOR_DRIVER_USED BLADE_MOTOR_DRIVER_PWM
+#define BLADE_MOTOR_DRIVER_USED BLADE_MOTOR_DRIVER_FTESC_CAN
 ```
 
-`BLADE_MOTOR_DRIVER_USED` defaults to the PA1/TIM2_CH2 PWM adapter. Set it to
-`BLADE_MOTOR_DRIVER_FTESC_CAN` for FTESC. Defining legacy/alternate selector
-macros or selecting any other value is a compile-time error.
+`BLADE_MOTOR_DRIVER_USED` defaults to the FTESC CAN adapter. An explicit compiler
+definition of `BLADE_MOTOR_DRIVER_USED=BLADE_MOTOR_DRIVER_PWM` selects the
+PA1/TIM2_CH2 PWM adapter for a separate PWM build. Defining legacy/alternate
+selector macros or selecting any other value is a compile-time error.
 
 The common `BladeMotor_*` seam accepts the selected adapter's native command:
 PWM duty percent in PWM builds, or the existing ERPM setpoint in FTESC builds.
@@ -32,9 +33,86 @@ deterministic 0% duty. PE5 is not part of the PWM blade chain.
 - DLC: 5.
 - Data bytes 0..3: signed big-endian integer ERPM.
 - Data byte 4: gear limit `0x00`.
-- ERPM `0` is the normal stop request; stop is sent explicitly.
+- ERPM `0` is the brake phase of a stop; stop is sent explicitly.
+- Idle release command: command `0x15` (`CAN_SET_CURRENT_GEAR`), extended ID
+  `0x00009A15`, DLC 5, bytes 0..3 signed big-endian current x100000 (always 0),
+  byte 4 gear `0x00`, no CRC. The firmware only ever sends current 0.
+
+### Stop sequence: brake, then release
+
+The first zero intent after the blade may be turning (power-up, or any accepted
+nonzero ERPM frame) opens a brake window. For `BLADE_FTESC_STOP_BRAKE_MS`
+(default 3000 ms) the adapter sends ERPM `0`. After that it sends the `0x15`
+zero-current release while the blade stays off, so the ESC stops driving the
+motor and the blade coasts. Repeated zeros do not restart the window; only a newly
+accepted nonzero frame re-arms it. Both frames use the 200 ms keepalive. A change
+of frame kind (brake to release, release to run) is sent at once, and a rejected
+frame is retried on the next call.
+
+Reason: holding a sensorless ESC in its ERPM 0 speed loop let lifter H-bridge
+noise and deck jolts twitch an "off" blade. See `docs/adr/0005-blade-idle-release.md`.
+`BLADE_FTESC_IDLE_RELEASE_ENABLED=0` restores the legacy ERPM 0 hold. Hardware
+must confirm that the FTESC actually releases on `0x15` current 0.
 
 The existing hardware-validated ERPM levels remain 14,000, 15,500, and 16,000.
+These are electrical RPM setpoints, not measured mechanical blade RPM. CH7
+2000/1500/1000 us selects low/medium/high respectively. CH4 start plus the
+matching remote OK confirmation and `SafetyOwnershipGate` authorization remain
+required. An unchanged command is refreshed every 200 ms; a changed command,
+including zero after denied authorization, is sent immediately on the next
+adapter call. `BladeMotor_Stop()` sends an explicit zero unconditionally (ERPM 0
+inside the brake window, the `0x15` release after it).
+
+## Reliable blade transmission
+
+`can_tx_scheduler` owns accepted blade requests and all three CAN TX mailboxes.
+CANTx alone advances delivery; Motion publishes blade intent. Initialization runs
+in `User_CAN_Init` before tasks, and `Flipsky_CAN_Init` only resets feedback.
+Mailbox 2 is reserved for blade commands; wheel control, queries, telemetry and
+ordinary FIFO traffic use mailboxes 0/1 with their existing priority order.
+ERPM/current/duty commands all use the dedicated blade interface; the ordinary
+extended-frame enqueue rejects these IDs for this ESC. Wire formats are unchanged.
+
+A zero request (ERPM 0 or the `0x15` release) replaces queued nonzero intent and
+stays pending until its own TXOK. Repeated zeros, including a release arriving
+while an ERPM 0 stop is pending, keep the pending stop's identity and age; the
+release then goes out on a later keepalive (at most 200 ms later). While it is pending,
+nonzero submissions fail and are not saved for automatic replay. `BladeMotor`
+updates its suppression cache only after acceptance. The 200ms keepalive is not
+the retry mechanism: submission errors, arbitration loss and transmission errors
+retain the blade request, with retries no earlier than the following millisecond.
+Nonzero intent expires at age 250ms without refreshing its age on retry. A blade
+attempt still pending after 20ms is explicitly aborted before retry/replacement.
+
+Each CANTx step settles mailbox results before reuse and aborts only obsolete
+blade work. An already transmitting old run may finish, but zero is submitted
+after its result; old nonzero work cannot follow that stop. The STM32 port selects
+mailboxes explicitly, polls RQCP/TXOK/ALST/TERR without TX interrupts, and writes
+only the intended RQCP or ABRQ bits rather than read-modify-writing TSR. The HAL
+library and automatic retransmission/Bus-Off configuration are unchanged.
+See [STM32 RM0090](https://www.st.com/resource/en/reference_manual/rm0090-stm32f407-advanced-armbased-32bit-mcus-stmicroelectronics.pdf),
+bxCAN transmission handling and CAN_TSR, for completion and abort semantics.
+
+`CAN_TxScheduler_ReadBladeDiagnostics` is a read-only view of stop pending/age,
+mailbox activity, failures, retries, aborts, expiry and last CAN success. It does
+not grant authorization or certify ESC execution. Hardware acceptance separately
+measures request-to-CAN-success, request-to-physical-stop and Motion period under
+load; see the local `blade-stop-reliable-tx` hardware ticket.
+
+This backend switch does not validate realtime feedback:
+`FLIPSKY_REALTIME_FEEDBACK_VALIDATED` remains `0`. The remote output-enabled
+indicator describes the permitted output command, not actual motor rotation.
+The 500 ms feedback freshness setting is not an ESC command-loss watchdog;
+configure and test that watchdog on the FTESC itself. CAN interruption must not
+be treated as a confirmed software safety stop or guaranteed fresh-start latch.
+
+The current application defaults to `VEHICLE_ESTOP_ENABLED=1`: the PD1 vehicle
+emergency-stop software path is enabled and active high. PD1 is an input with
+an internal pull-up: normal operation requires a low level, and high/open input
+triggers the existing latched stop. Verify the actual button wiring and signal
+levels before enabling power. Initial commissioning still requires an independent
+power-disconnect path. Revalidate actual direction, starting, stopping,
+command-loss behavior and recovery on the newly configured hardware.
 
 The feedback commands are enabled in FTESC configuration as required:
 

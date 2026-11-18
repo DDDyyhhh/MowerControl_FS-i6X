@@ -21,12 +21,14 @@ fixture = r'''
 #include <stdint.h>
 #include <stdio.h>
 #include "telemetry_snapshot.h"
-typedef struct {
-    bool connected, link_fresh, stable_online, timeout_latched, remote_recoverable_latched;
-    unsigned recoverable_latch_reason;
-} RemoteCommand_t;
-typedef struct { bool emergency_active, collision_active, tilt_active; } RemoteSafetyInput_t;
-typedef struct { uint32_t Voltage; int32_t CurCadc; uint16_t RSOC; } AXEBMS_Data;
+#include "battery_monitor.h"
+#ifndef REMOTE_BACKEND_A28_E34
+#define REMOTE_BACKEND_A28_E34 0
+#define REMOTE_BACKEND_FLYSKY_IBUS 1
+#endif
+#include "remote_backend.h"
+#include "../../../experiments/ticket03/battery_status.h"
+typedef struct { uint32_t Voltage; int32_t CurCadc; uint16_t RSOC, Vmin; } AXEBMS_Data;
 typedef struct { bool valid; uint32_t last_good_tick; int32_t speed_mm_per_s; } ChassisWheelFeedback_t;
 typedef struct {
     bool erpm_valid, crc_error_active;
@@ -34,13 +36,21 @@ typedef struct {
     int32_t erpm;
 } FlipskyCanFeedback_t;
 enum { REPORT_FAULT_COLLISION=2, REPORT_FAULT_TILT=3,
-       REMOTE_LATCH_REASON_REMOTE_STOP=4, REMOTE_LATCH_REASON_OWNERSHIP_TRANSITION=5,
        EXECUTION_OWNER_MANUAL_REMOTE=0, GPIO_PIN_RESET=0, GPIO_PIN_10=10 };
 #define GPIOD ((void *)0)
 #define FLIPSKY_REALTIME_FEEDBACK_VALIDATED 0
 #define FLIPSKY_CAN_RX_TIMEOUT_MS 100
-static struct { unsigned g_system_report_state; } g_app;
+static struct { unsigned g_system_report_state, lock, collision_reason_latched, emergency_reason_latched;
+    unsigned is_bag_full, is_bag_full_valid, is_bag_connected; BatteryMonitor_t battery; } g_app;
 static unsigned api_lockout, my_bms, pd10=1, reads;
+static uint32_t telemetry_now;
+#define HAL_GetTick() telemetry_now
+#define MOTOR_DRIVER_USED 2
+#define DRIVER_TYPE_OID 2
+static uint32_t g_oid_speed_query_failures, g_can_speed_query_expired;
+static uint32_t g_can_tx_mailbox_failures, g_can_rx_queue_full, g_can_error_code;
+static uint16_t height_feedback=0x0ac6U;
+static uint16_t Lifter_GetHeightFeedback(void) { return height_feedback; }
 static int HAL_GPIO_ReadPin(void *port, unsigned pin) {
     assert(port==GPIOD && pin==GPIO_PIN_10); ++reads; return pd10;
 }
@@ -63,16 +73,49 @@ int main(void) {
         for (unsigned sample=0; sample<6; ++sample) {
             pd10=sample%2;
             uint32_t now=1000U+sample*100U;
-            RefreshTelemetrySnapshot(&command,&safety,false,now);
+            telemetry_now=now; RefreshTelemetrySnapshot(&command,&safety,false,now);
             assert(TelemetrySnapshot_Read(&snapshot));
             uint16_t word=snapshot.values[TELEMETRY_VALUE_BAG_CONNECTION];
             assert((word&2U) && !!(word&1U)==!pd10);
             assert((word>>2)==now/100U);
             assert(snapshot.values[TELEMETRY_VALUE_RUN_PERMISSION]==0U);
             assert(snapshot.values[TELEMETRY_VALUE_WORK_MODE]==0U);
+            assert(snapshot.values[TELEMETRY_VALUE_HEIGHT_FEEDBACK]==height_feedback);
         }
     }
-    assert(reads==12U);
+    g_app.lock=1U; g_app.collision_reason_latched=1U;
+    safety=(RemoteSafetyInput_t){0};
+    telemetry_now=2000U; RefreshTelemetrySnapshot(&command,&safety,false,2000U);
+    assert(TelemetrySnapshot_Read(&snapshot));
+    assert((snapshot.values[TELEMETRY_VALUE_DETAILED_FAULT]&0x402U)==0x402U);
+    g_app.collision_reason_latched=0U;
+    telemetry_now=2010U; RefreshTelemetrySnapshot(&command,&safety,false,2010U);
+    assert(TelemetrySnapshot_Read(&snapshot));
+    assert((snapshot.values[TELEMETRY_VALUE_DETAILED_FAULT]&0x402U)==0x400U);
+    g_app.emergency_reason_latched=1U;
+    telemetry_now=2020U; RefreshTelemetrySnapshot(&command,&safety,false,2020U);
+    assert(TelemetrySnapshot_Read(&snapshot));
+    assert((snapshot.values[TELEMETRY_VALUE_DETAILED_FAULT]&0x403U)==0x401U);
+    g_app.emergency_reason_latched=0U;
+    telemetry_now=2030U; RefreshTelemetrySnapshot(&command,&safety,false,2030U);
+    assert(TelemetrySnapshot_Read(&snapshot));
+    assert((snapshot.values[TELEMETRY_VALUE_DETAILED_FAULT]&0x403U)==0x400U);
+    assert(reads==16U);
+    for (unsigned valid=0; valid<2; ++valid) for (unsigned full=0; full<2; ++full) {
+        g_app.is_bag_full_valid=valid; g_app.is_bag_full=full; g_app.is_bag_connected=1U;
+        pd10=0U;
+        telemetry_now+=100U; RefreshTelemetrySnapshot(&command,&safety,false,telemetry_now);
+        assert(TelemetrySnapshot_Read(&snapshot));
+        assert(snapshot.values[TELEMETRY_VALUE_BAG_FULL]==(valid ? 2U|full : 0U));
+        pd10=1U; /* Fresh physical disconnect wins over cached full detection. */
+        telemetry_now+=100U; RefreshTelemetrySnapshot(&command,&safety,false,telemetry_now);
+        assert(TelemetrySnapshot_Read(&snapshot));
+        assert(snapshot.values[TELEMETRY_VALUE_BAG_FULL]==0U);
+    }
+    pd10=0U; g_app.is_bag_connected=0U;
+    telemetry_now+=100U; RefreshTelemetrySnapshot(&command,&safety,false,telemetry_now);
+    assert(TelemetrySnapshot_Read(&snapshot));
+    assert(snapshot.values[TELEMETRY_VALUE_BAG_FULL]==0U); /* reconnect awaits detector */
     puts("PASS production PD10 source: low=connected, always sampled while locked/offline/in safety fault");
 }
 '''

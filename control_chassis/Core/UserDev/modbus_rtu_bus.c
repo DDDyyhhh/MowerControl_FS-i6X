@@ -14,6 +14,7 @@
   ******************************************************************************
   */
 #include "modbus_rtu_bus.h"
+#include "crc16_modbus.h"
 #include "rs485.h"        // 依赖底层的RS485驱动
 #include "main.h"         // 依赖HAL_GetTick
 #include <string.h>
@@ -27,22 +28,6 @@ static ModbusRxCallback g_rx_callback = NULL;
 // 当前正在通信的设备信息 (用于校验响应)
 static uint8_t g_current_dev_addr = 0;
 static uint8_t g_current_func_code = 0;
-
-// CRC16计算函数
-static uint16_t Modbus_CRC16(const uint8_t *data, uint16_t length) {
-    uint16_t crc = 0xFFFF;
-    for (uint16_t i = 0; i < length; i++) {
-        crc ^= data[i];
-        for (uint8_t j = 0; j < 8; j++) {
-            if (crc & 0x0001) {
-                crc = (crc >> 1) ^ 0xA001;
-            } else {
-                crc = crc >> 1;
-            }
-        }
-    }
-    return crc;
-}
 
 void ModbusRtuBus_Init(ModbusRxCallback callback) {
     g_state = MODBUS_STATE_IDLE;
@@ -63,7 +48,7 @@ bool ModbusRtuBus_ReadHoldingRegisters(uint8_t devAddr, uint16_t startAddr, uint
     tx_frame[4] = (numRegs >> 8) & 0xFF;   // 数量高位
     tx_frame[5] = numRegs & 0xFF;        // 数量低位
 
-    uint16_t crc = Modbus_CRC16(tx_frame, 6);
+    uint16_t crc = Crc16_Modbus(tx_frame, 6U);
     tx_frame[6] = crc & 0xFF;
     tx_frame[7] = (crc >> 8) & 0xFF;
 
@@ -93,7 +78,7 @@ void ModbusRtuBus_Process(void) {
 
         // 校验CRC
         uint16_t received_crc = (rx_buffer[rx_len - 1] << 8) | rx_buffer[rx_len - 2];
-        uint16_t calculated_crc = Modbus_CRC16(rx_buffer, rx_len - 2);
+        uint16_t calculated_crc = Crc16_Modbus(rx_buffer, (uint32_t)(rx_len - 2U));
 
         // 校验地址和功能码
 				

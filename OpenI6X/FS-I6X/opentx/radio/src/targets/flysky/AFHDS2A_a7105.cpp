@@ -192,6 +192,17 @@ void AFHDS2A_build_packet(uint8_t * packet, const uint8_t type)
         setChannelValue(packet, ch, channelOutputs[ch]);
       }
 #if EXP3_ENABLED
+#if MOWER_BLADE_OK_ENABLED
+      {
+#if MOWER_ULTRASONIC_AVOIDANCE_ENABLED
+        const uint16_t setting = g_mower_ultrasonic_request;
+#else
+        const uint16_t setting = MOWER_ULTRASONIC_OFF_US;
+#endif
+        packet[33] = setting & 255U;
+        packet[34] = setting >> 8;
+      }
+#endif
       { uint32_t exp3Channels = g_exp3_uplink_channels;
       if (exp3Channels) {
         uint16_t a = (uint16_t)exp3Channels, b = (uint16_t)(exp3Channels >> 16);

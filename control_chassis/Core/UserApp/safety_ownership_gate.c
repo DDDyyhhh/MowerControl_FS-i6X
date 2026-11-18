@@ -12,18 +12,26 @@ typedef struct
     bool input_allowed;
     bool fresh_command_required;
     bool stop_requested;
+    bool battery_stop, battery_blade_inhibit;
 } SafetyOwnershipGateState_t;
 
 static SafetyOwnershipGateState_t g_gate;
 
 static bool SafetyOwnershipGate_InputAllowsNonzero(void)
 {
-    return !g_gate.input.physical_latched &&
+    return !g_gate.battery_stop && !g_gate.input.physical_latched &&
            !g_gate.input.software_locked &&
            !g_gate.input.recoverable_remote_latched &&
            g_gate.input.link_stable &&
            g_gate.input.run_permitted &&
            (g_gate.input.selected_owner != EXECUTION_OWNER_NONE);
+}
+
+/* True while the gate still waits for a command newer than the invalidated one. */
+static bool SafetyOwnershipGate_CommandIsStale(void)
+{
+    return g_gate.fresh_command_required &&
+           (g_gate.input.command_sequence == g_gate.invalidated_sequence);
 }
 
 static void SafetyOwnershipGate_InvalidateCurrentCommand(void)
@@ -37,6 +45,20 @@ void SafetyOwnershipGate_Reset(void)
 {
     memset(&g_gate, 0, sizeof(g_gate));
     g_gate.last_owner = EXECUTION_OWNER_NONE;
+}
+
+void SafetyOwnershipGate_SetBatteryPolicy(bool stop, bool blade_inhibit)
+{
+    if (stop && !g_gate.battery_stop && g_gate.initialized)
+        SafetyOwnershipGate_InvalidateCurrentCommand();
+    g_gate.battery_stop = stop;
+    g_gate.battery_blade_inhibit = blade_inhibit;
+}
+
+bool SafetyOwnershipGate_AuthorizeBlade(ExecutionOwner_t owner, bool nonzero_intent)
+{
+    if (nonzero_intent && g_gate.battery_blade_inhibit) return false;
+    return SafetyOwnershipGate_Authorize(owner, nonzero_intent);
 }
 
 void SafetyOwnershipGate_Update(const SafetyOwnershipGateInput_t *input)
@@ -82,8 +104,7 @@ bool SafetyOwnershipGate_Authorize(ExecutionOwner_t intent_owner,
 
     if (!SafetyOwnershipGate_InputAllowsNonzero() ||
         (intent_owner != g_gate.input.selected_owner) ||
-        (g_gate.fresh_command_required &&
-         (g_gate.input.command_sequence == g_gate.invalidated_sequence)))
+        SafetyOwnershipGate_CommandIsStale())
     {
         g_gate.stop_requested = true;
         return false;
@@ -99,8 +120,7 @@ bool SafetyOwnershipGate_IsOwnerPermitted(ExecutionOwner_t owner)
     return g_gate.initialized &&
            SafetyOwnershipGate_InputAllowsNonzero() &&
            (owner == g_gate.input.selected_owner) &&
-           !(g_gate.fresh_command_required &&
-             (g_gate.input.command_sequence == g_gate.invalidated_sequence));
+           !SafetyOwnershipGate_CommandIsStale();
 }
 
 SafetyOwnershipGateReason_t SafetyOwnershipGate_GetReason(ExecutionOwner_t owner)
@@ -121,6 +141,10 @@ SafetyOwnershipGateReason_t SafetyOwnershipGate_GetReason(ExecutionOwner_t owner
     {
         return SAFETY_GATE_REJECT_REMOTE_LATCH;
     }
+    if (g_gate.battery_stop)
+    {
+        return SAFETY_GATE_REJECT_BATTERY;
+    }
     if (!g_gate.input.link_stable)
     {
         return SAFETY_GATE_REJECT_LINK;
@@ -134,8 +158,7 @@ SafetyOwnershipGateReason_t SafetyOwnershipGate_GetReason(ExecutionOwner_t owner
     {
         return SAFETY_GATE_REJECT_OWNER;
     }
-    if (g_gate.fresh_command_required &&
-        (g_gate.input.command_sequence == g_gate.invalidated_sequence))
+    if (SafetyOwnershipGate_CommandIsStale())
     {
         return SAFETY_GATE_REJECT_STALE_COMMAND;
     }

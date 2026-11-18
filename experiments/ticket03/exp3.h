@@ -9,9 +9,15 @@
 #ifndef MOWER_BLADE_OK_ENABLED
 #define MOWER_BLADE_OK_ENABLED 0
 #endif
-#define EXP3_WIRE_VERSION (MOWER_BLADE_OK_ENABLED ? 0x33U : 0x31U)
+#define EXP3_WIRE_VERSION 0x39U
+/* SENS private sensor carrying the downlink word (receipts, auto-session bootstrap). */
+#define EXP3_DOWNLINK_SENS_ADDRESS 9U
+#define EXP3_DOWNLINK_SENS_TYPE 0xE1U
 #if EXP3_ENABLED != 0 && EXP3_ENABLED != 1
 #error "EXP3_ENABLED must be 0 or 1"
+#endif
+#if EXP3_ENABLED && !MOWER_BLADE_OK_ENABLED
+#error "EXP3_ENABLED requires MOWER_BLADE_OK_ENABLED: the 0x31 bench profile was removed"
 #endif
 #if EXP3_ENABLED
 #ifdef __cplusplus
@@ -38,6 +44,23 @@ typedef struct {
     uint16_t target;
     uint8_t kind, sender, status, command;
 } Exp3Message;
+/* Little-endian wire fields, independent of host byte order. */
+static inline void exp3_put32_le(uint8_t *p, uint32_t v) {
+    p[0] = (uint8_t)v;
+    p[1] = (uint8_t)(v >> 8);
+    p[2] = (uint8_t)(v >> 16);
+    p[3] = (uint8_t)(v >> 24);
+}
+static inline uint32_t exp3_get32_le(const uint8_t *p) {
+    return (uint32_t)p[0] | ((uint32_t)p[1] << 8) | ((uint32_t)p[2] << 16) | ((uint32_t)p[3] << 24);
+}
+/* Same transaction: session (controller/hmi), request/action, context, generation, target.
+ * kind, sender, status and command are deliberately not compared; callers add them. */
+static inline bool exp3_same_identity(const Exp3Message *a, const Exp3Message *b) {
+    return a->controller == b->controller && a->hmi == b->hmi && a->request == b->request &&
+           a->action == b->action && a->context == b->context &&
+           a->generation == b->generation && a->target == b->target;
+}
 typedef struct {
     Exp3Message records[EXP3_CACHE_SIZE];
     uint32_t controller, hmi, high_action, created;
