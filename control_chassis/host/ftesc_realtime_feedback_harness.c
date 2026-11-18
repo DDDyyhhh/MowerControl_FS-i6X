@@ -35,13 +35,15 @@ uint8_t CAN_Enqueue_BladeControl_Message(uint32_t id, const uint8_t *data, uint8
 
 static void TestErpmTxCommands(void)
 {
-    static const float speeds[] = {0.0f, 14000.0f, 15500.0f, 16000.0f};
+    static const float speeds[] = {
+        0.0f, BLADE_FTESC_ERPM_LEVEL_1, BLADE_FTESC_ERPM_LEVEL_2, BLADE_FTESC_ERPM_LEVEL_3
+    };
+    /* Default release orientation: 0, +12000, +15000 and +16000 eRPM. */
     static const uint8_t expected[][5] = {
         {0x00U, 0x00U, 0x00U, 0x00U, 0x00U},
-        /* Blade direction is reversed on the wire: -14000, -15500, -16000 ERPM. */
-        {0xFFU, 0xFFU, 0xC9U, 0x50U, 0x00U},
-        {0xFFU, 0xFFU, 0xC3U, 0x74U, 0x00U},
-        {0xFFU, 0xFFU, 0xC1U, 0x80U, 0x00U}
+        {0x00U, 0x00U, 0x2EU, 0xE0U, 0x00U},
+        {0x00U, 0x00U, 0x3AU, 0x98U, 0x00U},
+        {0x00U, 0x00U, 0x3EU, 0x80U, 0x00U}
     };
 
     for (size_t i = 0U; i < sizeof(speeds) / sizeof(speeds[0]); ++i)
@@ -54,10 +56,30 @@ static void TestErpmTxCommands(void)
         assert(memcmp(g_tx_data, expected[i], 5U) == 0);
     }
 
+    /* Idle release: 0x15 current 0, gear 0x00, DLC 5, no CRC. */
+    assert(Flipsky_CAN_Release() == 1U);
+    assert(g_tx_count == 5U);
+    assert(g_tx_id == 0x00009A15U);
+    assert(g_tx_len == 5U);
+    assert(g_tx_remote == 0U);
+    assert(memcmp(g_tx_data, expected[0], 5U) == 0);
+    g_tx_count = 4U;
+
     assert(Flipsky_CAN_SetSpeedErpm(-1.0f) == 0U);
     assert(Flipsky_CAN_SetSpeedErpm(NAN) == 0U);
     assert(Flipsky_CAN_SetSpeedErpm(INFINITY) == 0U);
     assert(g_tx_count == 4U);
+
+    /* Zero-duty release: 0x02 duty 0, gear 0x00, DLC 7, CRC16. */
+    assert(Flipsky_CAN_ReleaseMotor() == 1U);
+    assert(g_tx_count == 5U);
+    assert(g_tx_id == 0x00009A02U);
+    assert(g_tx_len == 7U);
+    assert(g_tx_remote == 0U);
+    assert(g_tx_data[0] == 0U && g_tx_data[1] == 0U &&
+           g_tx_data[2] == 0U && g_tx_data[3] == 0U &&
+           g_tx_data[4] == 0U);
+    g_tx_count = 4U;
 }
 
 static uint16_t Crc16Modbus(const uint8_t *data, uint32_t length)

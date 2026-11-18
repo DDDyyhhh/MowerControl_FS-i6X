@@ -75,7 +75,7 @@ static void SensIbusResponder_Send(SensIbusResponder_t *responder,
 #endif
     SensIbusResponder_Finalize(response, length);
 #if EXP3_ENABLED
-    if ((responder->request[1] & 0x0FU) == 9U)
+    if ((responder->request[1] & 0x0FU) == EXP3_DOWNLINK_SENS_ADDRESS)
         exp3_board_sens(responder->request, response, length);
 #endif
     if (responder->send_response != NULL)
@@ -108,7 +108,7 @@ static bool SensIbusResponder_HandleRequest(SensIbusResponder_t *responder)
     command = responder->request[1] & 0xF0U;
     address = responder->request[1] & 0x0FU;
 #if SENS_IBUS_HIL_ADDR9_PROBE_ENABLED || EXP3_ENABLED
-    if (address == 9U)
+    if (address == EXP3_DOWNLINK_SENS_ADDRESS)
     {
 #if SENS_IBUS_HIL_DIAG_USART1_TX_ENABLED
         if (responder->observe != NULL)
@@ -140,7 +140,7 @@ static bool SensIbusResponder_HandleRequest(SensIbusResponder_t *responder)
         {
             response[0] = SENS_IBUS_STANDARD_RESPONSE_SIZE;
             response[1] = responder->request[1];
-            response[2] = 0xE1U; /* Unknown/raw sensor; not a blade message. */
+            response[2] = EXP3_DOWNLINK_SENS_TYPE; /* Unknown/raw sensor; not a blade message. */
             response[3] = 2U;
             SensIbusResponder_Send(responder, response,
                                    SENS_IBUS_STANDARD_RESPONSE_SIZE);
@@ -192,7 +192,7 @@ static bool SensIbusResponder_HandleRequest(SensIbusResponder_t *responder)
         return true;
     }
     /* Dedicated read-only runtime sensor. Existing addresses 1..8 are unchanged. */
-    if (address == 10U) {
+    if (address == MOWER_FAST_STATUS_ADDRESS) {
         if (command == SENS_IBUS_COMMAND_DISCOVERY) {
             memcpy(response, responder->request, SENS_IBUS_REQUEST_SIZE);
             SensIbusResponder_Send(responder, response, SENS_IBUS_REQUEST_SIZE);

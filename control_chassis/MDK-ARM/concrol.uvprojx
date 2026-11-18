@@ -592,11 +592,6 @@
               <FilePath>..\Core\UserDev\AXEBMS_RS485.c</FilePath>
             </File>
             <File>
-              <FileName>car_Control.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\Core\UserDev\car_Control.c</FilePath>
-            </File>
-            <File>
               <FileName>icm42688.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Core\UserDev\icm42688.c</FilePath>
@@ -750,6 +745,11 @@
               <FileName>app_context.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Core\UserApp\app_context.c</FilePath>
+            </File>
+            <File>
+              <FileName>control_source.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Core\UserApp\control_source.c</FilePath>
             </File>
             <File>
               <FileName>safety_ownership_gate.c</FileName>

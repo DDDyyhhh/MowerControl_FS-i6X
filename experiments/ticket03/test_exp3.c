@@ -2,7 +2,10 @@
 #include "exp3_hil.h"
 #include <assert.h>
 #include <stdio.h>
+#include <stddef.h>
 #include <string.h>
+#include "exp3_board.h"
+bool exp3_board_defer_result(const Exp3Message *m) { (void)m; return false; }
 static Exp3Message message(void) {
     Exp3Message m = {0};
     m.kind = EXP3_CONFIRM;
@@ -51,9 +54,7 @@ static void faults(void) {
     Exp3Message m = message(), out;
     uint8_t b[36], other[36], f[18];
     unsigned i;
-    const uint8_t golden[36] = {0xe3, 0x31, 1, 1, 0x44, 0x33, 0x22, 0x11, 0x88, 0x77, 0x66, 0x55,
-                                1,    0,    0, 0, 1,    0,    0,    0,    9,    0,    0,    0,
-                                3,    0,    0, 0, 2,    0,    0,    0,    0x1a, 0x8e, 0xaf, 0x0f};
+    const uint8_t golden[36] = {0xe3, 0x39, 0x1, 0x1, 0x44, 0x33, 0x22, 0x11, 0x88, 0x77, 0x66, 0x55, 0x1, 0x0, 0x0, 0x0, 0x1, 0x0, 0x0, 0x0, 0x9, 0x0, 0x0, 0x0, 0x3, 0x0, 0x0, 0x0, 0x2, 0x0, 0x0, 0x0, 0x92, 0xc8, 0x90, 0x78};
     exp3_encode(&m, b);
     assert(memcmp(b, golden, 36) == 0);
     assert(!exp3_decode(b, 35, &out));
@@ -174,12 +175,13 @@ static void hil(void) {
             exp3_hil_receive(&h, NULL, c.published_word, t);
     }
     assert(h.matches == 1 && h.last_result.status == EXP3_ACCEPTED);
-    assert(h.rtt_ms > 20000 && h.rtt_ms < 30000 && h.log_overflow > 0);
+    /* The release build keeps the trace ring as a no-op, so nothing overflows. */
+    assert(h.rtt_ms > 20000 && h.rtt_ms < 30000 && h.log_overflow == 0);
     hb.command = EXP3_ARM;
     hb.message.hmi++;
     exp3_hil_poll(&h, &hb, NULL, 30001, 20);
     assert(h.hmi == message().hmi);
-    puts("PASS HIL same-clock RTT, bounded overflow, one-time session binding");
+    puts("PASS HIL same-clock RTT, no-op trace, one-time session binding");
 }
 static void pair_run(Exp3Hil *h, Exp3Hil *c, Exp3Mailbox *hb, Exp3Mailbox *cb, Exp3Endpoint *ep,
                      unsigned start, unsigned end, int uplink, int downlink) {
@@ -250,7 +252,7 @@ static void link_faults(void) {
 int main(void) {
     assert(sizeof(Exp3Mailbox) == 36 && offsetof(Exp3Mailbox, command) == 32);
     assert(offsetof(Exp3Hil, log_write) == 236 && offsetof(Exp3Hil, events) == 248);
-    assert(sizeof(Exp3Hil) == 252 + 16 * EXP3_LOG_COUNT);
+    assert(sizeof(Exp3Hil) == 276 + 16 * EXP3_LOG_COUNT);
     link_faults();
     hil();
     transport();
@@ -261,7 +263,7 @@ int main(void) {
     Exp3Message m = message(), decoded;
     uint8_t bytes[EXP3_MESSAGE_BYTES];
     assert(exp3_encode(&m, bytes));
-    assert(bytes[0] == 0xE3 && bytes[1] == 0x31 && bytes[2] == EXP3_CONFIRM);
+    assert(bytes[0] == 0xE3 && bytes[1] == EXP3_WIRE_VERSION && bytes[2] == EXP3_CONFIRM);
     assert(bytes[4] == 0x44 && bytes[7] == 0x11);
     assert(exp3_decode(bytes, sizeof bytes, &decoded));
     assert(decoded.controller == m.controller && decoded.action == 1);

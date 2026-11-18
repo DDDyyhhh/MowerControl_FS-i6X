@@ -23,7 +23,6 @@
 #include <string.h>
 #include <pairing_common.h>
 #include <math.h>
-#include "car_Control.h" // <<<--- 需要包含这个头文件来使用 g_current_target_speed_rpm
 #include "lifter.h"      // <<<--- 1. 包含 lifter.h 头文件
 #include "serial_port.h"
 #include "app_context.h"
@@ -45,6 +44,8 @@ extern volatile uint8_t TESTok;
 extern uint16_t RPM;
 static uint8_t buf[32];
 extern AppContext_t g_app;
+/* 目标速度回传值：原由已移除的 car_Control.c 写入，当前无写者，恒为 0。 */
+static const float g_current_target_speed_rpm = 0.0f;
 
 // 适配函数：动态调用对应模块的地址设置指令
 static void RF_Module_Set_Address(uint16_t addr)

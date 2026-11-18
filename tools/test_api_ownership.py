@@ -4,6 +4,9 @@ from pathlib import Path
 import re
 import subprocess
 import tempfile
+import sys
+sys.dont_write_bytecode = True  # keep tools/ free of __pycache__
+from _harness_util import c_function
 
 ROOT = Path(__file__).resolve().parents[1]
 source = (ROOT/'control_chassis/Core/UserApp/app_Motion.c').read_text()
@@ -16,11 +19,7 @@ while depth:
     depth += (source[end] == '{') - (source[end] == '}')
     end += 1
 body = source[begin:end]
-def function(text, signature):
-    a=text.index(signature); b=text.index('{',a); e=b+1; depth=1
-    while depth:
-        depth+=(text[e]=='{')-(text[e]=='}'); e+=1
-    return text[a:e]
+function = c_function
 record = function(source,'static void RecordRemoteStop(')
 boot = function((ROOT/'control_chassis/Core/UserApp/app_context.c').read_text(),
                 'void AppContext_RecordBootReset(')

@@ -29,32 +29,12 @@
       }
     },
     {
-      "name": "exp3-hil",
-      "inherits": "release",
-      "displayName": "Ticket03 Experiment3 transport HIL",
-      "binaryDir": "${sourceDir}/build/gcc15/exp3-hil",
-      "cacheVariables": {
-        "TICKET03_EXP3_HIL": "ON"
-      }
-    },
-    {
-      "name": "exp3-pwm-hil",
-      "inherits": "exp3-hil",
-      "displayName": "Ticket03 CH4/OK PWM bench HIL",
-      "binaryDir": "${sourceDir}/build/gcc15/exp3-pwm-hil",
-      "cacheVariables": {
-        "TICKET03_EXP3_PWM_HIL": "ON"
-      }
-    },
-    {
       "name": "mower-ok-release",
       "inherits": "release",
       "displayName": "Mower CH4/OK/CH7 accepted release",
       "binaryDir": "${sourceDir}/build/gcc15/mower-ok-release",
       "cacheVariables": {
         "MOWER_BLADE_OK": "ON",
-        "TICKET03_EXP3_HIL": "OFF",
-        "TICKET03_EXP3_PWM_HIL": "OFF",
         "MOWER_IBUS_TIMEOUT_MS": "300"
       }
     },
@@ -75,6 +55,15 @@
       "cacheVariables": {
         "MOWER_IBUS_TIMEOUT_MS": "100"
       }
+    },
+    {
+      "name": "mower-ok-nav-estop-off",
+      "inherits": "mower-ok-release",
+      "displayName": "NAV TEST ONLY: mower-ok-release with PD1 emergency button disabled",
+      "binaryDir": "${sourceDir}/build/gcc15/mower-ok-nav-estop-off",
+      "cacheVariables": {
+        "MOWER_NAV_TEST_ESTOP_BYPASS": "ON"
+      }
     }
   ],
   "buildPresets": [
@@ -85,14 +74,6 @@
     {
       "name": "release",
       "configurePreset": "release"
-    },
-    {
-      "name": "exp3-hil",
-      "configurePreset": "exp3-hil"
-    },
-    {
-      "name": "exp3-pwm-hil",
-      "configurePreset": "exp3-pwm-hil"
     },
     {
       "name": "flash-debug",
@@ -109,20 +90,6 @@
       ]
     },
     {
-      "name": "flash-exp3-hil",
-      "configurePreset": "exp3-hil",
-      "targets": [
-        "flash"
-      ]
-    },
-    {
-      "name": "flash-exp3-pwm-hil",
-      "configurePreset": "exp3-pwm-hil",
-      "targets": [
-        "flash"
-      ]
-    },
-    {
       "name": "mower-ok-release",
       "configurePreset": "mower-ok-release"
     },
@@ -133,6 +100,17 @@
     {
       "name": "mower-ok-ibus-100ms",
       "configurePreset": "mower-ok-ibus-100ms"
+    },
+    {
+      "name": "mower-ok-nav-estop-off",
+      "configurePreset": "mower-ok-nav-estop-off"
+    },
+    {
+      "name": "flash-mower-ok-nav-estop-off",
+      "configurePreset": "mower-ok-nav-estop-off",
+      "targets": [
+        "flash"
+      ]
     }
   ]
 }

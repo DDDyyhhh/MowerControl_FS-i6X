@@ -2,6 +2,7 @@
 #define EXP3_BOARD_H
 #include "exp3_hil.h"
 #include "mower_fast_status.h"
+#include "ultrasonic_control.h"
 #include "exp3_completion.h"
 #ifndef EXP3_PWM_PROBE_ENABLED
 #define EXP3_PWM_PROBE_ENABLED 0
@@ -30,6 +31,10 @@ extern Exp3Hil g_exp3_hil;
 extern volatile Exp3Mailbox g_exp3_mailbox;
 extern volatile uint16_t g_exp3_downlink_word;
 extern volatile uint32_t g_exp3_uplink_channels;
+#if MOWER_ULTRASONIC_AVOIDANCE_ENABLED
+/* Menu task writes; RF ISR reads one aligned setting in STICKS packets only. */
+extern volatile uint16_t g_mower_ultrasonic_request;
+#endif
 extern volatile uint32_t g_exp3_capture_overflow;
 typedef struct {
     Exp3Message last_result;
@@ -69,7 +74,6 @@ void exp3_board_status(Exp3BoardStatus *status);
 bool exp3_board_submit(const Exp3Message *message);
 #if EXP3_PWM_PROBE_ENABLED
 bool exp3_board_take_pwm_event(Exp3PwmEvent *event);
-#if MOWER_BLADE_OK_ENABLED
 extern volatile uint16_t g_blade_ok_runtime_word;
 void exp3_board_complete_pwm_event(const Exp3PwmEvent *event, bool accepted);
 bool exp3_board_defer_result(const Exp3Message *result);
@@ -89,7 +93,6 @@ bool exp3_board_bag_full(uint32_t now, bool *full);
 bool exp3_board_height(uint32_t now, uint16_t *mm);
 /* Idle E1 diagnostics; false when unbound, incomplete or no heartbeat. */
 bool exp3_board_battery(uint32_t now, uint16_t *minimum_mv, uint16_t *reasons);
-#endif
 uint32_t exp3_board_ch4_epoch(void);
 uint32_t exp3_board_unlock_epoch(void);
 void exp3_board_publish_pwm_diag(const Exp3PwmDiag *diag);

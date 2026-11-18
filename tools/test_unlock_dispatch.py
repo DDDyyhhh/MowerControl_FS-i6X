@@ -15,6 +15,8 @@ while depth:
     end += 1
 fixture = r'''
 #include "remote_backend.h"
+#include "control_source.h"
+static ControlSource_t g_control_source = {.requested=CONTROL_SOURCE_REMOTE,.valid=true};
 #include "exp3_probe.h"
 #include "battery_monitor.h"
 static struct { BatteryMonitor_t battery; } g_app;
@@ -193,5 +195,6 @@ with tempfile.TemporaryDirectory(prefix='mower-unlock-dispatch-') as directory:
                         '-I'+str(core/'Inc'), '-I'+str(root/'experiments/ticket03'), str(source),
                         *[str(core/'UserDev'/name) for name in ['remote_backend.c', 'remote_authorization.c',
                             'flysky_ibus_servo.c', 'blade_confirm_ch6_adapter.c']],
+                        str(core/'UserApp/control_source.c'),
                         '-lm', '-o', str(executable)], check=True)
         subprocess.run([str(executable)], check=True)

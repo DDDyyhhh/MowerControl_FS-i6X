@@ -2,13 +2,12 @@
 """Compile the production CAN scheduler, OID parser and wheel snapshots with fake HAL time."""
 from pathlib import Path
 import subprocess, tempfile
+import sys
+sys.dont_write_bytecode = True  # keep tools/ free of __pycache__
+from _harness_util import c_function
 root=Path(__file__).resolve().parents[1]
 core=root/'control_chassis/Core'
-def function(s,signature):
- a=s.index(signature); b=s.index('{',a); end=b+1; depth=1
- while depth:
-  depth+=(s[end]=='{')-(s[end]=='}');end+=1
- return s[a:end]
+function = c_function
 chassis=(core/'UserDev/chassis_control.c').read_text()
 wheel=function(chassis,'bool chassis_control_read_wheel_feedback(')
 convert=function(chassis,'static int16_t chassis_erpm_to_speed_mmps(')

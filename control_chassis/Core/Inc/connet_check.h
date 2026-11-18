@@ -4,16 +4,10 @@
 
 #include "stm32f4xx_hal.h"
 
-// 通信状态检测
-extern volatile uint32_t last_receive_timestamp;
-extern volatile uint8_t communication_connected;
-
 #define COMMUNICATION_TIMEOUT_MS 300
 
 // 函数声明
 uint8_t CheckCommunicationStatus(void);
-uint32_t GetLastReceiveTimeAgo(void);
-
 void Suspend_Heartbeat_Check(uint8_t suspend);
 #endif
 

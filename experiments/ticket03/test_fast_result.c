@@ -3,9 +3,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
-#if MOWER_BLADE_OK_ENABLED
 bool exp3_board_defer_result(const Exp3Message *m) { (void)m; return false; }
-#endif
 
 static Exp3Message result(void)
 {
@@ -52,19 +50,11 @@ static void lossless_results_and_corrupt_frames(void)
     uint16_t w[90], other[90], damaged[90];
     uint8_t expected[36], actual[36];
     /* Independently generated with Python struct.pack and zlib.crc32. */
-    #if MOWER_BLADE_OK_ENABLED
-    const uint16_t golden[18] = {0xe044U,0xe133U,0xe222U,0xe311U,0xe488U,0xe577U,0xe666U,0xe755U,0xe841U,0xe901U,0xea8eU,0xeb02U,0xec11U,0xed00U,0xeeb0U,0xef8eU,0xf08cU,0xf1d4U};
-#else
-    const uint16_t golden[17] = {
-        0xe044U, 0xe133U, 0xe222U, 0xe311U, 0xe488U, 0xe577U,
-        0xe666U, 0xe755U, 0xe841U, 0xe901U, 0xea8eU, 0xeb02U,
-        0xec11U, 0xed87U, 0xee14U, 0xef3bU, 0xf0fcU
-    };
-    #endif
+    const uint16_t golden[18] = {0xe044U,0xe133U,0xe222U,0xe311U,0xe488U,0xe577U,0xe666U,0xe755U,0xe841U,0xe901U,0xea8eU,0xeb02U,0xec11U,0xed00U,0xee0fU,0xef52U,0xf004U,0xf18bU};
     unsigned n, i;
     Exp3Link rx = {0};
     n = words(&m, w);
-    assert(n == (MOWER_BLADE_OK_ENABLED ? 18U : 17U));
+    assert(n == 18U);
     assert(!memcmp(w, golden, sizeof(golden)));
     assert(receive(w, n, &decoded) == EXP3_COMPLETE);
     assert(exp3_encode(&m, expected) && exp3_encode(&decoded, actual));
@@ -94,13 +84,11 @@ static void lossless_results_and_corrupt_frames(void)
     m.status = EXP3_CANCELLED;
     assert(words(&m, w) == n && receive(w, n, &decoded) == EXP3_COMPLETE);
     assert(decoded.command == EXP3_CANCEL && decoded.status == EXP3_CANCELLED);
-#if MOWER_BLADE_OK_ENABLED
     m.context = EXP3_UNLOCK_CONTEXT;
     assert(words(&m, w) == n && receive(w, n, &decoded) == EXP3_COMPLETE);
     assert(decoded.context == EXP3_UNLOCK_CONTEXT);
     memcpy(damaged, w, sizeof(w)); damaged[13] ^= 1U;
     assert(receive(damaged, n, &decoded) != EXP3_COMPLETE);
-#endif
     m.action = m.request = 65536U; /* Full-width identity never gets truncated. */
     n = words(&m, w);
     assert(n == 90U && receive(w, n, &decoded) == EXP3_COMPLETE);

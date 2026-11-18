@@ -1,20 +1,21 @@
 #!/usr/bin/env python3
 """Execute the actual 128x64 home and overlay renderers against display fakes."""
 from pathlib import Path
+import os
 import subprocess
 import tempfile
 root = Path(__file__).resolve().parents[1]
 source = root / 'OpenI6X/FS-I6X/opentx/radio/src/gui/128x64/view_main.cpp'
 text = source.read_text()
-def function(signature):
-    start = text.index(signature)
-    opened = text.index('{', start)
+def function(signature, source_text=text):
+    start = source_text.index(signature)
+    opened = source_text.index('{', start)
     depth = 1
     end = opened + 1
     while depth:
-        depth += (text[end] == '{') - (text[end] == '}')
+        depth += (source_text[end] == '{') - (source_text[end] == '}')
         end += 1
-    return text[start:end]
+    return source_text[start:end]
 header = root / 'OpenI6X/FS-I6X/opentx/radio/src/gui/128x64/mower_ui.h'
 probe = root / 'experiments/ticket03/exp3_probe.h'
 prefix = r'''
@@ -30,7 +31,10 @@ prefix = r'''
 #include "BOARD_HEADER"
 using coord_t=int;
 using event_t=int;
-enum { SMLSIZE=1, RIGHT=2, INVERS=4, ERASE=8, BLINK=16, PREC2=32, FORCE=64 };
+using LcdFlags=uint32_t;
+enum { INVERS=0x02, FORCE=0x02, ERASE=0x04, SMLSIZE=0x0200, MIDSIZE=0x0300,
+       LEADING0=0x10, PREC1=0x20, PREC2=0x30 };
+#define MODE(flags) ((((int8_t)(flags) & 0x30) - 0x10) >> 4)
 enum { VIEW_MOWER=0, KEY_ENTER=0, KEY_MENU=0, KEY_EXIT=1, KEY_RIGHT=4, KEY_LEFT=5, KEY_UP=3, KEY_DOWN=2 };
 #define EVT_KEY_BREAK(x) (0x20|(x))
 #define EVT_KEY_LONG(x) (0x80|(x))
@@ -53,7 +57,28 @@ static void lcdDrawRect(int x,int y,int w,int h) {
 }
 static coord_t mowerZhText(coord_t,coord_t,const char*,bool inverse=false);
 static coord_t mowerZhDraw(coord_t,coord_t,const char*,bool);
-static void mowerZhCenteredText(coord_t,const char*);
+static coord_t lcdNextPos;
+static void lcdDrawChar(coord_t x,coord_t y,unsigned char c,LcdFlags flags) {
+    assert(c>=32 && c<128);
+    if(c!=' ') lcdDrawPoint(x,y+2,(flags & INVERS) ? ERASE : FORCE);
+}
+static void lcdDrawText(coord_t x,coord_t y,const char *value,LcdFlags flags) {
+    labels.emplace_back(value);
+    textPositions.push_back({x,y,value});
+    lcdNextPos=x;
+    // Model glyph advances for the numeric and unit strings used here.
+    const bool large=flags==MIDSIZE;
+    assert(y>=0 && y+(large ? 12 : 6)<=64);
+    for(const char *c=value;*c;++c) {
+      lcdNextPos += large ? (*c=='.' ? 3 : *c=='-' ? 6 : 7) : (*c=='m' ? 6 : 5);
+      lcdDrawPoint(lcdNextPos-2,y+3,FORCE);
+    }
+    assert(lcdNextPos<=128);
+}
+void lcdDrawNumber(coord_t x,coord_t y,int val,LcdFlags flags,uint8_t len=0);
+#if MOWER_ULTRASONIC_AVOIDANCE_ENABLED
+volatile uint16_t g_mower_ultrasonic_request=MOWER_ULTRASONIC_ON_US;
+#endif
 static unsigned ticks=100;
 static unsigned get_tmr10ms() { return ticks; }
 static int channelOutputs[14];
@@ -123,8 +148,8 @@ static bool hasAt(const char *value,int x,int y) {
     return false;
 }
 static void assertModalBodyClean() {
-    for(int y=12;y<64;++y) for(int x=0;x<128;++x)
-        if(x<5 || x>122 || y<18 || y>48) assert(!pixels[y][x]);
+    for(int y=14;y<51;++y) for(int x=0;x<128;++x)
+        if(x<15 || x>114 || y<16 || y>49) assert(!pixels[y][x]);
 }
 static void saveScreen(const char *name) {
     const char *dir=std::getenv("MOWER_UI_PREVIEW_DIR");
@@ -187,55 +212,70 @@ int main() {
     fixture.soc_percent=82; fixture.radio_battery_100mv=78;
     fixture.radio_quality=100; fixture.height_deci_cm=70; fixture.bag_command=2;
     labels.clear(); mowerUserRender();
-    assert(has("已连接") && hasAt("高",42,36) && has("1.10m/s"));
-    assert(hasAt("车速度",0,24) && hasAt("刀速度",0,36));
+    assert(has("已连接") && hasAt("高",114,14) && hasAt("1.10",3,26) && has("m/s"));
+    assert(hasAt("4000",68,26) && has("rpm"));
+    assert(hasAt("设定",14,14) && hasAt("刀设定",78,14));
     assert(!has("行走设") && !has("割刀") && !has("输出") && !has("开"));
-    assert(mowerZhTextWidth("车速度")==33 && mowerZhTextWidth("1.80m/s")==42);
+    assert(mowerZhTextWidth("刀设定")==33 && mowerZhTextWidth("1.80m/s")==42);
     assert(mowerZhTextWidth("按OK确认")==45);
     const uint16_t gradeWords[]={0,3,5,7};
     const char *gradeLabels[]={"关","低","中","高"};
     const char *gradeScreens[]={"blade-off","blade-low","blade-middle","blade-high"};
+    const char *gradeRpm[]={"0","3000","3750","4000"};
     for(unsigned i=0;i<4;++i) {
       runtime=gradeWords[i];
       resetDraw(); mowerUserRender();
-      assert(hasAt(gradeLabels[i],42,36)); saveScreen(gradeScreens[i]);
+      assert(hasAt(gradeLabels[i],114,14));
+      assert(hasAt(gradeRpm[i],68,26) && has("rpm")); saveScreen(gradeScreens[i]);
     }
+    fixture.valid |= MOWER_UI_BLADE_RPM;
+    fixture.blade_actual_rpm=2555;
+    resetDraw(); mowerUserHome(fixture,true,5U);
+    assert(hasAt("3750",68,26) && !has("2555"));
+    resetDraw(); mowerUserDebugRow(5,12,fixture,true,5U);
+    assert(has("2555")); // Diagnostics keep the raw feedback contract.
+    resetDraw(); mowerUserHome(fixture,true,1U); // Enable flag without a legal gear.
+    assert(hasAt("--",114,14) && hasAt("--",68,26));
     known=false; resetDraw(); mowerUserRender();
-    assert(hasAt("--",42,36) && !has("高") && !has("开")); saveScreen("blade-unknown");
+    assert(hasAt("--",114,14) && hasAt("--",68,26)); saveScreen("blade-unknown");
+    fixture.valid &= ~MOWER_UI_BLADE_RPM;
     known=true; runtime=15; resetDraw(); mowerUserRender();
-    assert(has("高度") && has("7.0cm") && !has("高度设") && !has("3/5"));
+    assert(hasAt("高",14,40) && has("7.0cm") && !has("高度设") && !has("3/5"));
     fixture.valid |= MOWER_UI_BAG_CONNECTION;
     for(unsigned command=0; command<=2; ++command) {
       fixture.bag_command=command; fixture.bag_connected=false;
-      resetDraw(); mowerUserRender(); assert(has("草袋未连接"));
-      assert(!has("袋指令") && !has("草袋开") && !has("草袋关"));
+      resetDraw(); mowerUserRender(); assert(hasAt("未连接",78,40));
+      assert(!hasAt("开",78,40) && !hasAt("关",78,40));
     }
     fixture.bag_connected=true;
-    const char *bagLabels[]={"草袋--","草袋开","草袋关"};
+    const char *bagLabels[]={"--","开","关"};
     for(unsigned command=0; command<=2; ++command) {
       fixture.bag_command=command;
-      resetDraw(); mowerUserRender(); assert(has(bagLabels[command]));
+      resetDraw(); mowerUserRender(); assert(hasAt(bagLabels[command],78,40));
     }
     fixture.valid &= ~MOWER_UI_BAG_CONNECTION;
-    resetDraw(); mowerUserRender(); assert(has("草袋未知"));
+    resetDraw(); mowerUserRender(); assert(hasAt("未知",78,40));
     fixture.telemetry_online=false; fixture.valid |= MOWER_UI_BAG_CONNECTION;
-    resetDraw(); mowerUserRender(); assert(has("草袋未知"));
+    resetDraw(); mowerUserRender(); assert(hasAt("未知",78,40));
     fixture.telemetry_online=true; fixture.valid &= ~MOWER_UI_BAG_CONNECTION;
     fixture.bag_command=2;
     fixture.valid |= MOWER_UI_BAG_CONNECTION | MOWER_UI_BAG_FULL;
     fixture.bag_connected=true; fixture.bag_full=false;
     resetDraw(); mowerUserHome(fixture,true,15U);
-    assert(hasAt("草袋未满",66,36) && hasAt("草袋关",66,48));
+    assert(hasAt("未满",104,40) && hasAt("关",78,40));
     saveScreen("bag-not-full");
     uint8_t notFullPixels[64][128]; memcpy(notFullPixels,pixels,sizeof(pixels));
     fixture.bag_full=true;
     resetDraw(); mowerUserHome(fixture,true,15U);
-    assert(hasAt("草袋已满",66,36) && hasAt("草袋关",66,48));
-    for(int x=66;x<110;++x) assert(pixels[47][x]); // Entire 44px cell inverted.
+    assert(hasAt("已满",104,40) && hasAt("关",78,40));
     for(int y=0;y<64;++y) for(int x=0;x<128;++x)
-      if(x<66 || x>=110 || y<36 || y>=48) assert(pixels[y][x]==notFullPixels[y][x]);
+      if(x<104 || x>=126 || y<40 || y>=52) assert(pixels[y][x]==notFullPixels[y][x]);
     saveScreen("bag-full");
-    resetDraw(); mowerUserDebugRow(27,12,fixture,true,15U);
+    uint8_t fullPixels[64][128]; memcpy(fullPixels,pixels,sizeof(pixels));
+    resetDraw(); mowerZhText(104,40,"已满");
+    for(int y=40;y<51;++y) for(int x=104;x<126;++x)
+      assert(fullPixels[y][x] == !pixels[y][x]);
+    resetDraw(); mowerUserDebugRow(28,12,fixture,true,15U);
     assert(has("草袋满载") && has("已满"));
     for(int condition=0;condition<4;++condition) {
       MowerUiSnapshot unknown=fixture;
@@ -244,22 +284,23 @@ int main() {
       if(condition==2) unknown.valid &= ~MOWER_UI_BAG_CONNECTION;
       if(condition==3) unknown.bag_connected=false;
       resetDraw(); mowerUserHome(unknown,true,15U);
-      assert(hasAt("满载未知",66,36) && !has("草袋未满") && !has("草袋已满"));
-      for(int x=66;x<110;++x) assert(!pixels[47][x]);
+      assert(!hasAt("未满",104,40) && !hasAt("已满",104,40));
+      if(condition==1) assert(hasAt("--",104,40));
+      else assert(!hasAt("--",104,40));
       saveScreen(condition==3 ? "bag-full-disconnected" : "bag-full-unknown");
-      resetDraw(); mowerUserDebugRow(27,12,unknown,true,15U); assert(has("未知"));
+      resetDraw(); mowerUserDebugRow(28,12,unknown,true,15U); assert(has("未知"));
     }
     fixture.valid &= ~(MOWER_UI_BAG_FULL | MOWER_UI_BAG_CONNECTION);
     fixture.bag_full=false;
-    channelOutputs[9]=-1000; mowerUserRender(); assert(has("0.40m/s"));
-    channelOutputs[9]=1000; mowerUserRender(); assert(has("1.80m/s"));
-    channelOutputs[9]=-500; mowerUserRender(); assert(has("0.75m/s"));
-    channelOutputs[9]=500; mowerUserRender(); assert(has("1.45m/s"));
+    channelOutputs[9]=-1000; mowerUserRender(); assert(hasAt("0.40",3,26));
+    channelOutputs[9]=1000; mowerUserRender(); assert(hasAt("1.80",3,26));
+    channelOutputs[9]=-500; mowerUserRender(); assert(hasAt("0.75",3,26));
+    channelOutputs[9]=500; mowerUserRender(); assert(hasAt("1.45",3,26));
     channelOutputs[9]=0;
     labels.clear(); runtime=8; mowerUserRender();
     assert(has("关") && !has("开"));
     labels.clear(); known=false; mowerUserRender();
-    assert(has("--") && !has("开") && !has("高"));
+    assert(hasAt("--",114,14));
     labels.clear(); mowerExp3Overlay(EXP3_UI_PROMPT);
     assert(has("确认启动割刀") && has("按OK确认"));
     labels.clear(); mowerExp3Overlay(EXP3_UI_REJECTED);
@@ -284,6 +325,27 @@ int main() {
       g_model.telemetrySensors[i].id=sensorIds[i];
       telemetryItems[i].available=true; telemetryItems[i].value=sensorValues[i];
     }
+    const char *modeLabels[]={"--","遥控","API待机","API运行","接管"};
+    for(unsigned mode=0; mode<5; ++mode) {
+      telemetryItems[4].value=mode;
+      MowerUiSnapshot modeData; mowerUiReadLive(modeData);
+      assert((modeData.valid & MOWER_UI_WORK_MODE) && modeData.work_mode==mode);
+      modeData.valid |= MOWER_UI_BAG_CONNECTION;modeData.bag_connected=true;
+      resetDraw();mowerUserHome(modeData,true,8);
+      assert(hasAt(modeLabels[mode],56-mowerZhTextWidth(modeLabels[mode])/2,0));
+      if(mode==2 || mode==3) {
+        assert(has("实速") && hasAt("0.75",3,26) && hasAt("API",78,40));
+        resetDraw(); mowerUserHome(modeData,true,MOWER_FAST_VALID|7U);
+        assert(hasAt("4000",68,26) && hasAt("高",114,14));
+        assert(!has("设定") && !hasAt("开",78,40) && !hasAt("关",78,40));
+      }
+      saveScreen(mode==2?"mode-api-standby":mode==3?"mode-api-running":mode==4?"mode-takeover":"mode-remote");
+      modeData.valid &= ~MOWER_UI_WORK_MODE;resetDraw();mowerUserHome(modeData,true,8);
+      assert(hasAt("--",50,0));
+    }
+    telemetryItems[4].value=5;MowerUiSnapshot invalidMode;mowerUiReadLive(invalidMode);
+    assert(!(invalidMode.valid & MOWER_UI_WORK_MODE));
+    telemetryItems[4].value=1;
     MowerUiSnapshot live;
     channelOutputs[8]=-1000; channelOutputs[5]=1000;
     mowerUiReadLive(live);
@@ -296,17 +358,17 @@ int main() {
       mowerUiReadLive(live);
       assert((live.valid & MOWER_UI_BAG_CONNECTION) && !live.bag_connected);
       renderFixture=true; fixture=live;
-      resetDraw(); mowerUserRender(); assert(has("草袋未连接"));
+      resetDraw(); mowerUserRender(); assert(hasAt("未连接",78,40));
     }
     bagConnected=true;
     for(auto output:bagOutputs) {
       channelOutputs[5]=output; mowerUiReadLive(live); fixture=live;
       assert((live.valid & MOWER_UI_BAG_CONNECTION) && live.bag_connected);
       resetDraw(); mowerUserRender();
-      assert(has(output < 0 ? "草袋开" : output > 0 ? "草袋关" : "草袋--"));
+      assert(hasAt(output < 0 ? "开" : output > 0 ? "关" : "--",78,40));
     }
     bagKnown=false; mowerUiReadLive(live); fixture=live;
-    resetDraw(); mowerUserRender(); assert(has("草袋未知"));
+    resetDraw(); mowerUserRender(); assert(hasAt("未知",78,40));
     bagKnown=true; bagConnected=true; bagFullKnown=true; bagFull=true;
     mowerUiReadLive(live);
     assert((live.valid & MOWER_UI_BAG_FULL) && live.bag_full);
@@ -338,9 +400,15 @@ int main() {
       renderFixture=true; fixture=live; resetDraw(); mowerUserRender();
       assert(has("7.0cm") && !has("高度设") && !has("3/5"));
     }
+    const unsigned calibratedMm[] = {20,40,60,70,80};
+    const char *expectedHeight[] = {"2.0cm","4.0cm","6.0cm","7.0cm","8.0cm"};
+    for (unsigned i=0; i<5; ++i) {
+      heightMm=calibratedMm[i]; mowerUiReadLive(live); fixture=live;
+      resetDraw(); mowerUserRender(); assert(has(expectedHeight[i]));
+    }
     heightMm=110; mowerUiReadLive(live); fixture=live;
     fixture.valid |= MOWER_UI_BAG_CONNECTION; fixture.bag_connected=false;
-    resetDraw(); mowerUserRender(); assert(has("11.0cm") && has("草袋未连接"));
+    resetDraw(); mowerUserRender(); assert(has("11.0cm") && hasAt("未连接",78,40));
     saveScreen("height-11cm-bag-disconnected");
     heightKnown=false; mowerUiReadLive(live); fixture=live;
     resetDraw(); mowerUserRender(); assert(!has("11.0cm") && !has("7.0cm") && has("--cm"));
@@ -352,7 +420,7 @@ int main() {
     mowerUiReadLive(live); assert(!live.telemetry_online);
     telemetryItems[4].old=false;
     mowerUiReadLive(live); assert(live.telemetry_online && !(live.valid & MOWER_UI_FAULT));
-    assert(std::string(mowerConnection(live))=="状态未知");
+    assert(std::string(mowerConnection(live))=="未知");
     assert(!(live.valid & (MOWER_UI_SOC|MOWER_UI_VOLTAGE|MOWER_UI_WALK_ACTUAL|MOWER_UI_BLADE_RPM)));
     telemetryItems[6].old=false; telemetryItems[6].value=0x1C0;
     mowerUiReadLive(live);
@@ -426,18 +494,18 @@ int main() {
     fixture.valid |= MOWER_UI_HEIGHT_FEEDBACK;
     resetDraw(); mowerUserRender(); saveScreen("home-online");
     fixture.valid |= MOWER_UI_BAG_CONNECTION; fixture.bag_connected=false;
-    resetDraw(); mowerUserRender(); saveScreen("bag-disconnected"); assert(has("草袋未连接"));
+    resetDraw(); mowerUserRender(); saveScreen("bag-disconnected"); assert(hasAt("未连接",78,40));
     fixture.bag_connected=true; fixture.bag_command=1;
-    resetDraw(); mowerUserRender(); saveScreen("bag-open"); assert(has("草袋开"));
+    resetDraw(); mowerUserRender(); saveScreen("bag-open"); assert(hasAt("开",78,40));
     fixture.bag_command=2;
-    resetDraw(); mowerUserRender(); saveScreen("bag-closed"); assert(has("草袋关"));
+    resetDraw(); mowerUserRender(); saveScreen("bag-closed"); assert(hasAt("关",78,40));
     fixture.bag_command=0;
-    resetDraw(); mowerUserRender(); saveScreen("bag-command-unknown"); assert(has("草袋--"));
+    resetDraw(); mowerUserRender(); saveScreen("bag-command-unknown"); assert(hasAt("--",78,40));
     fixture.bag_command=2; fixture.valid &= ~MOWER_UI_BAG_CONNECTION;
-    resetDraw(); mowerUserRender(); saveScreen("bag-unknown"); assert(has("草袋未知"));
+    resetDraw(); mowerUserRender(); saveScreen("bag-unknown"); assert(hasAt("未知",78,40));
     fixture.telemetry_online=false; fixture.valid=0;
     resetDraw(); mowerUserRender(); saveScreen("home-offline");
-    assert(has("未连接") && has("--") && !has("100") && !has("高") && !has("开"));
+    assert(has("未连接") && has("--") && !has("100") && !hasAt("高",114,14) && !has("开"));
     fixture.telemetry_online=true; fixture.fast_status_known=false; fixture.valid=MOWER_UI_FAULT|MOWER_UI_SOC; fixture.fault_bits=0x30F;
     resetDraw(); mowerUserRender(); saveScreen("home-fault"); assert(has("碰撞"));
     mowerUserPage=MOWER_USER_MAINTENANCE;
@@ -471,7 +539,7 @@ int main() {
     fixture={}; fixture.telemetry_online=false;
     assert(std::string(mowerConnection(fixture))=="未连接");
     fixture.telemetry_online=true;
-    assert(std::string(mowerConnection(fixture))=="状态未知");
+    assert(std::string(mowerConnection(fixture))=="未知");
     fixture.valid=MOWER_UI_FAULT; fixture.fault_bits=0x440U;
     fixture.fast_status_known=true;
     fixture.fast_status=MOWER_FAST_VALID|MOWER_FAST_LOCKED|MOWER_FAST_FAULT;
@@ -527,26 +595,26 @@ int main() {
     fixture.battery_min_mv=2930; fixture.battery_reasons=4;
     fixture.radio_battery_100mv=78;
     resetDraw(); mowerUserHome(fixture,false,0);
-    assert(hasAt("车",0,12) && hasAt("100%",12,12) && hasAt("遥",48,12) && hasAt("7.8V",60,12));
+    assert(hasAt("100%",35,52) && hasAt("7.8V",98,52) && pixels[58][28]);
     assert(!has("BMS估算") && !has("保护已标定") && !has("保护待标定") && !has("保护未知") && !has("52.00V"));
     saveScreen("battery-home-restored");
-    resetDraw(); mowerUserDebugRow(1,12,fixture,false,0); assert(has("52.00V"));
+    resetDraw(); mowerUserDebugRow(2,12,fixture,false,0); assert(has("52.00V"));
     fixture.soc_percent=29; fixture.voltage_centivolts=4700;
     fixture.fault_bits=MOWER_BATTERY_WARNING|MOWER_BATTERY_BLADE_INHIBIT;
     resetDraw(); mowerUserHome(fixture,false,0);
     assert(has("请充电") && has("29%") && !has("47.00V")); saveScreen("battery-low");
-    resetDraw(); mowerUserDebugRow(25,12,fixture,false,0);
-    mowerUserDebugRow(26,24,fixture,false,0);
+    resetDraw(); mowerUserDebugRow(26,12,fixture,false,0);
+    mowerUserDebugRow(27,24,fixture,false,0);
     assert(has("2.930V") && has("电压过低"));
     fixture.battery_reasons=0x20;
-    resetDraw(); mowerUserDebugRow(26,24,fixture,false,0); assert(has("电量过低"));
+    resetDraw(); mowerUserDebugRow(27,24,fixture,false,0); assert(has("电量过低"));
     fixture.valid &= ~(MOWER_UI_SOC|MOWER_UI_VOLTAGE|MOWER_UI_BATTERY_MIN);
     fixture.fault_bits=0x40U;
     resetDraw(); mowerUserHome(fixture,false,0);
     assert(has("已连接") && has("--%") && !has("电池异常") && !has("请充电") && !has("29%")); saveScreen("battery-invalid");
     fixture.battery_reasons=1;
-    resetDraw(); mowerUserDebugRow(21,12,fixture,false,0);
-    mowerUserDebugRow(26,24,fixture,false,0);
+    resetDraw(); mowerUserDebugRow(22,12,fixture,false,0);
+    mowerUserDebugRow(27,24,fixture,false,0);
     assert(has("电池反馈异常") && has("!") && has("数据失效"));
     saveScreen("battery-invalid-debug");
     fixture.fault_bits=MOWER_BATTERY_WARNING|MOWER_BATTERY_BLADE_INHIBIT|0x40U;
@@ -574,10 +642,10 @@ int main() {
         assert(!memcmp(headerPixels,pixels,sizeof(headerPixels)));
         if(state==EXP3_UI_PROMPT) assertModalBodyClean();
         if(state==EXP3_UI_PROMPT) {
-          assert(hasAt(unlock ? "是否解锁" : "确认启动割刀",unlock ? 42 : 31,20));
-          assert(hasAt("按OK确认",41,34));
+          assert(hasAt(unlock ? "是否解锁" : "确认启动割刀",unlock ? 42 : 31,18));
+          assert(hasAt("按OK确认",42,34));
         }
-        if(state==EXP3_UI_TIMEOUT) assert(hasAt("无回执",47,52));
+        if(state==EXP3_UI_TIMEOUT) assert(hasAt("无回执",48,52));
         if(state==EXP3_UI_UNBOUND) assert(!has("链路未就绪"));
       }
     }
@@ -623,6 +691,162 @@ int main() {
     mowerUserPage=MOWER_USER_MAINTENANCE;
     menuMainView(0);
     assert(mowerUserPage==MOWER_USER_MAINTENANCE);
+    // Shared fixed-point conversion must preserve zero padding and full unsigned range.
+    resetDraw(); mowerUserValue(0,12,0,true,"V",3); assert(has("0.000V"));
+    resetDraw(); mowerUserValue(0,12,12,true,"V",3); assert(has("0.012V"));
+    resetDraw(); mowerUserValue(0,12,65535,true,"V",3); assert(has("65.535V"));
+    resetDraw(); mowerUserValue(0,12,0xffffffffU,true); assert(has("4294967295"));
+    resetDraw(); mowerUserValue(0,12,0,false,"m/s",2); assert(has("--m/s"));
+    // Work mode, speed and blade setpoint on the production home page.
+    board={}; board.bound=true; board.controller=31U; board.hmi=32U;
+    mowerExp3Initialized=false; known=true; runtime=MOWER_FAST_VALID;
+    authority=mower_auth_pack(MOWER_AUTH_CH4,false,3U); channelOutputs[3]=0;
+    fixture={}; fixture.telemetry_online=true; fixture.fast_status_known=true;
+    fixture.valid=MOWER_UI_FAULT|MOWER_UI_SOC|MOWER_UI_HEIGHT_FEEDBACK|
+        MOWER_UI_BAG_CONNECTION|MOWER_UI_BAG_FULL|MOWER_UI_WORK_MODE;
+    fixture.fault_bits=MOWER_ULTRASONIC_ENABLED; fixture.soc_percent=82;
+    fixture.height_deci_cm=70; fixture.bag_connected=true; fixture.bag_command=2; fixture.work_mode=1;
+    fixture.radio_quality=100; fixture.radio_battery_100mv=78;
+    renderFixture=true; mowerUserPage=MOWER_USER_DEBUG; mowerDebugFirstRow=0;
+    const unsigned settingsSubmissions=submissions;
+    menuMainView(0);
+#if MOWER_ULTRASONIC_AVOIDANCE_ENABLED
+    assert(g_mower_ultrasonic_request==MOWER_ULTRASONIC_ON_US && !mowerUltrasonicPending);
+#endif
+    resetDraw(); mowerUserHome(fixture,true,15U);
+    assert(hasAt("4000",68,26) && has("rpm"));
+    resetDraw(); mowerUserHome(fixture,true,5U);
+    assert(hasAt("3750",68,26) && hasAt("中",114,14)); saveScreen("dashboard-a-work");
+    fixture.valid |= MOWER_UI_WALK_ACTUAL;
+    fixture.walk_actual_cms=65535; fixture.work_mode=3;
+    fixture.height_deci_cm=110; fixture.soc_percent=100; fixture.radio_battery_100mv=255;
+    resetDraw(); mowerUserHome(fixture,true,15U);
+    assert(hasAt("655.35",3,26) && hasAt("4000",68,26));
+    assert(hasAt("11.0cm",26,40) && hasAt("100%",35,52) && hasAt("25.5V",98,52));
+    fixture.height_deci_cm=70; fixture.soc_percent=82; fixture.radio_battery_100mv=78;
+    fixture.walk_actual_cms=0;
+    resetDraw(); mowerUserHome(fixture,true,15U);
+    assert(hasAt("0.00",3,26));
+    fixture.valid &= ~MOWER_UI_WALK_ACTUAL;
+    resetDraw(); mowerUserHome(fixture,true,15U);
+    assert(hasAt("--",3,26));
+    fixture.work_mode=1;
+    resetDraw(); mowerUserHome(fixture,true,15U);
+#if MOWER_ULTRASONIC_AVOIDANCE_ENABLED
+    assert(hasAt("避障",78,0) && hasAt("开",100,0) && hasAt("高",114,14));
+    assert(!has("信") && !hasAt("100",78,0) && hasAt("刀设定",78,14)); saveScreen("ultrasonic-on");
+    assert(std::string(mowerConnection(fixture))=="已连接");
+    menuMainView(EVT_KEY_BREAK(KEY_ENTER));
+    assert(g_mower_ultrasonic_request==MOWER_ULTRASONIC_OFF_US && mowerUltrasonicPending);
+    assert(submissions==settingsSubmissions && has("待生效"));
+    resetDraw(); mowerUserRender(); saveScreen("ultrasonic-pending");
+    menuMainView(EVT_KEY_BREAK(KEY_ENTER));
+    assert(g_mower_ultrasonic_request==MOWER_ULTRASONIC_OFF_US);
+    resetDraw(); mowerUserHome(fixture,true,15U); assert(hasAt("开",100,0));
+    ticks+=300U; resetDraw(); mowerUserRender(); assert(has("未确认"));
+    saveScreen("ultrasonic-unconfirmed");
+    fixture.fault_bits=0U; resetDraw(); mowerUserRender();
+    assert(!mowerUltrasonicPending && hasAt("关",54,12)); saveScreen("ultrasonic-debug-off");
+    resetDraw(); mowerUserHome(fixture,true,15U);
+    assert(hasAt("关",100,0)); saveScreen("ultrasonic-off");
+    menuMainView(EVT_KEY_BREAK(KEY_ENTER));
+    assert(g_mower_ultrasonic_request==MOWER_ULTRASONIC_ON_US && mowerUltrasonicPending);
+    fixture.fault_bits=MOWER_ULTRASONIC_ENABLED; resetDraw(); mowerUserRender();
+    assert(!mowerUltrasonicPending && hasAt("开",54,12)); saveScreen("ultrasonic-debug-on");
+    // A passive warning never hides or supplies an authorization prompt.
+    mowerUserPage=MOWER_USER_HOME; mowerExp3DisplayState=EXP3_UI_IDLE;
+    fixture.fault_bits=MOWER_ULTRASONIC_ENABLED|MOWER_ULTRASONIC_NEAR;
+    fixture.fast_status=MOWER_FAST_VALID|MOWER_FAST_RUN;
+    resetDraw(); mowerUserHome(fixture,true,runtime);
+    uint8_t powerRow[12][128]; memcpy(powerRow,pixels[52],sizeof(powerRow));
+    resetDraw(); mowerUserRender();
+    assert(!memcmp(powerRow,pixels[52],sizeof(powerRow)));
+    assert(hasAt("前方障碍",47,18) && hasAt("请倒车",53,34));
+    assert(!has("按OK确认") && std::string(mowerConnection(fixture))=="已连接");
+    assertModalBodyClean();saveScreen("obstacle-warning");
+    mowerExp3DisplayState=EXP3_UI_PROMPT;mowerUnlockDisplay=true;
+    resetDraw();mowerUserRender();
+    assert(has("是否解锁") && has("按OK确认") && !has("前方障碍"));
+    saveScreen("obstacle-unlock-priority");
+    mowerUnlockDisplay=false;resetDraw();mowerUserRender();
+    assert(has("确认启动割刀") && !has("前方障碍"));saveScreen("obstacle-blade-priority");
+    mowerExp3DisplayState=EXP3_UI_TIMEOUT;resetDraw();mowerUserRender();
+    assert(has("前方障碍") && hasAt("无回执",48,52));
+    mowerExp3DisplayState=EXP3_UI_IDLE;
+    for(unsigned absent=0;absent<5;++absent) {
+      MowerUiSnapshot saved=fixture;
+      if(absent==0) fixture.fault_bits &= ~MOWER_ULTRASONIC_NEAR;
+      if(absent==1) fixture.fault_bits &= ~MOWER_ULTRASONIC_ENABLED;
+      if(absent==2) fixture.telemetry_online=false;
+      if(absent==3) fixture.fast_status_known=false;
+      if(absent==4) fixture.valid &= ~MOWER_UI_FAULT;
+      resetDraw();mowerUserRender();assert(!has("前方障碍") && !has("请倒车"));
+      fixture=saved;
+    }
+    for(auto page:{MOWER_USER_DEBUG,MOWER_USER_MAINTENANCE}) {
+      mowerUserPage=page;resetDraw();mowerUserRender();assert(!has("前方障碍"));
+    }
+    mowerUserPage=MOWER_USER_DEBUG;mowerDebugFirstRow=0;
+    menuMainView(EVT_KEY_BREAK(KEY_ENTER));
+    assert(g_mower_ultrasonic_request==MOWER_ULTRASONIC_OFF_US && submissions==settingsSubmissions);
+    fixture.fault_bits=0;resetDraw();mowerUserRender();assert(!mowerUltrasonicPending);
+    fixture.fault_bits=MOWER_ULTRASONIC_ENABLED;g_mower_ultrasonic_request=MOWER_ULTRASONIC_ON_US;
+    puts("PASS front-obstacle popup, automatic clear/off/stale, auth priority, editable debug and restored blade/signal layout");
+    // Faults and missing feedback must not be mistaken for a disabled setting.
+    fixture.fast_status_known=false; resetDraw(); mowerUserHome(fixture,true,15U);
+    assert(hasAt("--",100,0)); saveScreen("ultrasonic-unknown");
+    menuMainView(EVT_KEY_BREAK(KEY_ENTER));
+    assert(g_mower_ultrasonic_request==MOWER_ULTRASONIC_ON_US && !mowerUltrasonicPending);
+    fixture.fast_status_known=true; fixture.valid=0;
+    menuMainView(EVT_KEY_BREAK(KEY_ENTER)); assert(!mowerUltrasonicPending);
+    fixture.valid=MOWER_UI_FAULT; fixture.telemetry_online=false;
+    menuMainView(EVT_KEY_BREAK(KEY_ENTER)); assert(!mowerUltrasonicPending);
+    fixture.telemetry_online=true; mowerDebugFirstRow=1;
+    menuMainView(EVT_KEY_BREAK(KEY_ENTER)); assert(!mowerUltrasonicPending);
+    mowerDebugFirstRow=0;
+    g_mower_ultrasonic_request=MOWER_ULTRASONIC_OFF_US;
+    mowerUltrasonicPending=true; ++board.controller;
+    menuMainView(0);
+    assert(g_mower_ultrasonic_request==MOWER_ULTRASONIC_ON_US && !mowerUltrasonicPending);
+    // A new authorization prompt consumes the view change, never the debug OK.
+    channelOutputs[3]=0; authority=mower_auth_pack(MOWER_AUTH_CENTER,false,4U); menuMainView(0);
+    channelOutputs[3]=-1000; authority=mower_auth_pack(MOWER_AUTH_CONFIRM,false,5U);
+    menuMainView(EVT_KEY_BREAK(KEY_ENTER));
+    assert(mowerUserPage==MOWER_USER_HOME && submissions==settingsSubmissions);
+    assert(g_mower_ultrasonic_request==MOWER_ULTRASONIC_ON_US);
+    puts("PASS ultrasonic home actual/unknown, debug-only toggle, pending/timeout/late feedback, session reset, OK isolation");
+#else
+    resetDraw();
+    menuMainView(EVT_KEY_BREAK(KEY_ENTER));
+    assert(mowerUserPage==MOWER_USER_DEBUG && submissions==settingsSubmissions);
+    assert(has("超声波") && hasAt("停用",54,12) && !has("待生效"));
+    saveScreen("ultrasonic-disabled-debug");
+
+    mowerUserPage=MOWER_USER_HOME;
+    mowerExp3DisplayState=EXP3_UI_IDLE;
+    fixture.fault_bits=0;
+    resetDraw(); mowerUserRender();
+    assert(!has("避障") && !has("前方障碍") && !has("请倒车"));
+    assert(has("已连接") && has("遥控") && has("刀设定") && has("82%"));
+    assert(pixels[9][115] && pixels[9][124]); // Signal bars retained.
+    uint8_t offScreen[64][128]; memcpy(offScreen,pixels,sizeof(offScreen));
+    fixture.fault_bits=MOWER_ULTRASONIC_ENABLED|MOWER_ULTRASONIC_NEAR;
+    resetDraw(); mowerUserRender();
+    assert(!has("避障") && !has("前方障碍") && !has("请倒车"));
+    assert(memcmp(offScreen,pixels,sizeof(offScreen))==0);
+    saveScreen("ultrasonic-disabled-home");
+
+    fixture.fast_status=MOWER_FAST_VALID|MOWER_FAST_LOCKED|MOWER_FAST_EMERGENCY;
+    resetDraw(); mowerUserRender();
+    assert(has("急停") && !has("前方障碍"));
+    mowerExp3DisplayState=EXP3_UI_PROMPT; mowerUnlockDisplay=true;
+    resetDraw(); mowerUserRender();
+    assert(has("是否解锁") && has("按OK确认") && !has("前方障碍"));
+    mowerUnlockDisplay=false;
+    resetDraw(); mowerUserRender();
+    assert(has("确认启动割刀") && has("按OK确认") && !has("前方障碍"));
+    puts("PASS disabled UI: no sonar badge or popup even with both old E0 bits, debug read-only, emergency and CH4/OK prompts retained");
+#endif
     puts("PASS profile-3 actual GUI: arbitrary controller token, early OK, explicit rejection, ACK+runtime success, independent blade, no 2s hide; home/debug/router/glyph/pixel checks");
 }
 '''
@@ -630,12 +854,22 @@ with tempfile.TemporaryDirectory(prefix='blade-ok-ui-') as work:
     work = Path(work)
     cpp = work/'ui.cpp'
     declarations = text[text.index('static Exp3UiProbe mowerExp3Probe;'):text.index('static Exp3UiState mowerExp3Step(')]
+    native_lcd = (source.parent/'lcd.cpp').read_text()
     user = (source.parent/'mower_user_ui.h').read_text()
     user = user.replace('#pragma once', '').replace('#include "mower_zh_font.h"', '#include "'+str(source.parent/'mower_zh_font.h')+'"')
+    user = user.replace('#include "../../../../../../../experiments/ticket03/blade_gear_presets.h"',
+                        '#include "'+str(root/'experiments/ticket03/blade_gear_presets.h')+'"')
     user = user.replace('#include "../../thirdparty/mini_print/mini_vsnprintf.h"', '#include "'+str(root/'OpenI6X/FS-I6X/opentx/radio/src/thirdparty/mini_print/mini_vsnprintf.h')+'"')
     user = user.replace('static coord_t mowerZhText(', 'static coord_t mowerZhDraw(')
     wrapper = r'''
 static coord_t mowerZhText(coord_t x,coord_t y,const char *value,bool inverse) {
+    const char *cursor=value;
+    while (*cursor) {
+      const uint16_t code=mowerZhNext(cursor);
+      bool found=false;
+      for (auto glyph:mowerZhGlyphs) if (glyph.code==code) found=true;
+      assert(code<128 ? code>=32 : found);
+    }
     labels.emplace_back(value);
     textPositions.push_back({x,y,value});
     unsigned width=0;
@@ -665,15 +899,21 @@ static void deliverKey(event_t event) {
     menuMainView(event);
 }
 '''
-    cpp.write_text(prefix+'\n'+function('static int32_t mowerSensor(')+'\n'+function('void mowerUiReadLive(')+'\n'+function('static uint16_t mowerTravelSpeedCms(')+'\n'+declarations+'\n'+function('static Exp3UiState mowerExp3Step(')+'\n'+function('static void mowerExp3Overlay(')+'\n'+user+'\n'+wrapper+'\n'+route+'\n'+delivery+'\n'+decoder+'\n'+tests)
+    cpp.write_text(prefix+'\n'+function('static int32_t mowerSensor(')+'\n'+function('void mowerUiReadLive(')+'\n'+function('static uint16_t mowerTravelSpeedCms(')+'\n'+declarations+'\n'+function('static Exp3UiState mowerExp3Step(')+'\n'+function('void lcdDrawNumber(coord_t x, coord_t y, int val, LcdFlags flags, uint8_t len)', native_lcd)+'\n'+user+'\n'+wrapper+'\n'+route+'\n'+delivery+'\n'+decoder+'\n'+tests)
     # Compile C separately, matching the firmware language boundary.
     objects=[]
     for src in [root/'experiments/ticket03/exp3_probe.c', root/'OpenI6X/FS-I6X/opentx/radio/src/thirdparty/mini_print/mini_vsnprintf.c']:
         obj=work/(src.stem+'.o')
         subprocess.run(['cc','-std=c99','-fsanitize=address,undefined','-DEXP3_ENABLED=1','-DMOWER_BLADE_OK_ENABLED=1','-c',str(src),'-o',str(obj)],check=True)
         objects.append(str(obj))
-    subprocess.run(['c++','-std=c++11','-fsanitize=address,undefined','-Wall','-Wextra','-Werror','-Wno-unused-parameter',
-        '-DPCBI6X=1','-DPCBI6X_MOWER_UI_SHELL=1','-DPCBI6X_MOWER_BLADE_OK=1',
-        '-DEXP3_ENABLED=1','-DMOWER_BLADE_OK_ENABLED=1',str(cpp),*objects,'-o',str(work/'ui')],check=True)
-    subprocess.run([str(work/'ui')],check=True)
+    for avoidance in (1, 0):
+        subprocess.run(['c++','-std=c++11','-fsanitize=address,undefined','-Wall','-Wextra','-Werror','-Wno-unused-parameter',
+            '-DPCBI6X=1','-DPCBI6X_MOWER_UI_SHELL=1','-DPCBI6X_MOWER_BLADE_OK=1',
+            '-DEXP3_ENABLED=1','-DMOWER_BLADE_OK_ENABLED=1',f'-DMOWER_ULTRASONIC_AVOIDANCE_ENABLED={avoidance}',
+            str(cpp),*objects,'-o',str(work/'ui')],check=True)
+        env=os.environ.copy()
+        if avoidance:
+            env.pop('MOWER_UI_PREVIEW_DIR',None)
+        subprocess.run([str(work/'ui')],check=True,env=env)
+
 print('PASS Chinese production UI, live provider, actual main-view route, CH9/CH6 boundaries, scrolling and pixel bounds: UNKNOWN inhibits OK; explicit completion, context/token isolation, late matching receipt, runtime home')

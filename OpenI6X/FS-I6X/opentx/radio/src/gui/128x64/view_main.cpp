@@ -25,7 +25,7 @@
 #endif
 #if defined(PCBI6X) && defined(PCBI6X_MOWER_UI_SHELL)
 #include "mower_ui.h"
-#if defined(PCBI6X_EXP3_PWM_HIL) || defined(PCBI6X_MOWER_BLADE_OK)
+#if defined(PCBI6X_MOWER_BLADE_OK)
 #include "../../../../../../../experiments/ticket03/exp3_board.h"
 #include "../../../../../../../experiments/ticket03/exp3_ui_event.h"
 #endif
@@ -285,13 +285,6 @@ void drawReceiverVoltage()
 }
 #endif
 #if defined(PCBI6X) && defined(PCBI6X_MOWER_UI_SHELL)
-static MowerUiProvider mowerProvider = nullptr;
-
-void mowerUiSetProvider(MowerUiProvider provider)
-{
-  mowerProvider = provider;
-}
-
 // The eight existing SENS measurements are addressed by their published
 // FlySky sensor type, not their user-editable display label or discovery order.
 // GCC15 Thumb/LTO may reuse a call-clobbered output pointer across this call.
@@ -348,7 +341,7 @@ void mowerUiReadLive(MowerUiSnapshot &snapshot)
     snapshot.blade_actual_rpm = value;
     snapshot.valid |= MOWER_UI_BLADE_RPM;
   }
-  if ((value = mowerSensor(0x16)) >= 0 && value <= 1) {
+  if ((value = mowerSensor(0x16)) >= 0 && value <= 4) {
     snapshot.work_mode = value;
     snapshot.valid |= MOWER_UI_WORK_MODE;
   }
@@ -434,17 +427,10 @@ static void mowerUiReadMock(MowerUiSnapshot &snapshot)
 
 static void mowerUiRead(MowerUiSnapshot &snapshot)
 {
-  if (mowerProvider) {
-    mowerProvider(snapshot);
-  }
 #if defined(PCBI6X_MOWER_UI_MOCK)
-  else {
-    mowerUiReadMock(snapshot);
-  }
+  mowerUiReadMock(snapshot);
 #else
-  else {
-    mowerUiReadLive(snapshot);
-  }
+  mowerUiReadLive(snapshot);
 #endif
 }
 
@@ -487,24 +473,25 @@ static void mowerIcon()
   lcdDrawRect(67, 52, 3, 3);
 }
 
-#if defined(PCBI6X_EXP3_PWM_HIL) || defined(PCBI6X_MOWER_BLADE_OK)
+#if defined(PCBI6X_MOWER_BLADE_OK)
 static Exp3UiProbe mowerExp3Probe;
 static uint32_t mowerExp3Controller;
 static uint32_t mowerExp3Hmi;
 static bool mowerExp3Initialized;
 static Exp3UiState mowerExp3DisplayState;
 static bool mowerExp3Bound;
-#if defined(PCBI6X_MOWER_BLADE_OK)
 static bool mowerExp3CancelFailed;
 static Exp3UiProbe mowerUnlockProbe;
 static uint32_t mowerActionSequence;
+#if MOWER_ULTRASONIC_AVOIDANCE_ENABLED
+static bool mowerUltrasonicPending;
+static uint32_t mowerUltrasonicSentAt;
+#endif
 static bool mowerUnlockDisplay;
 
-#endif
 
 static Exp3UiState mowerExp3Step(event_t event)
 {
-#if defined(PCBI6X_MOWER_BLADE_OK)
   Exp3BoardStatus status;
   exp3_board_status(&status);
   mowerExp3Bound = status.bound;
@@ -516,6 +503,10 @@ static Exp3UiState mowerExp3Step(event_t event)
     exp3_ui_probe_bind(&mowerUnlockProbe,status.controller,status.hmi,EXP3_UNLOCK_CONTEXT,1U,0U);
     mowerExp3Controller=status.controller; mowerExp3Hmi=status.hmi;
     mowerExp3Initialized=true; mowerActionSequence=0U;
+#if MOWER_ULTRASONIC_AVOIDANCE_ENABLED
+    g_mower_ultrasonic_request=MOWER_ULTRASONIC_ON_US;
+    mowerUltrasonicPending=false;
+#endif
   }
   uint16_t runtime=0U, authority=0U;
   const bool known=exp3_board_runtime(now,&runtime) && exp3_board_authority(now,&authority);
@@ -585,294 +576,17 @@ static Exp3UiState mowerExp3Step(event_t event)
   if (completed) return EXP3_UI_IDLE;
   mowerUnlockDisplay=unlock;
   return displays[unlock?0U:1U];
-#else
-
-  Exp3BoardStatus status;
-  Exp3UiInput input = {};
-  Exp3UiOutput output;
-  int32_t ch4 = channelOutputs[3] / 2 + PPM_CH_CENTER(3);
-  exp3_board_status(&status);
-  mowerExp3Bound = status.bound;
-  if (!mowerExp3Initialized || status.controller != mowerExp3Controller ||
-      status.hmi != mowerExp3Hmi) {
-    exp3_ui_probe_init(&mowerExp3Probe);
-    exp3_ui_probe_bind(&mowerExp3Probe, status.controller, status.hmi,
-                       EXP3_PWM_CONTEXT, EXP3_PWM_TARGET, 1U);
-    mowerExp3Controller = status.controller;
-    mowerExp3Hmi = status.hmi;
-    mowerExp3Initialized = true;
-#if defined(PCBI6X_MOWER_BLADE_OK)
-    mowerExp3WaitState = EXP3_UI_IDLE;
-    exp3_ui_probe_init(&mowerUnlockProbe);
-    exp3_ui_probe_bind(&mowerUnlockProbe, status.controller, status.hmi,
-                       EXP3_UNLOCK_CONTEXT, EXP3_UNLOCK_TARGET, 1U);
-    mowerActionSequence = 0U;
-    mowerUnlockWaitState = EXP3_UI_IDLE;
-    mowerUnlockNeedsCenter = true;
-    mowerUnlockWasLocked = false;
-    mowerUnlockCompleted = false;
-    mowerBatteryNotice = mowerBatteryWasLow = false;
-    mowerBladeDisplayCompleted = false;
-    mowerBladePreviousRuntimeKnown = false;
-#endif
-  }
-  if (ch4 < 0)
-    ch4 = 0;
-  else if (ch4 > 65535)
-    ch4 = 65535;
-  input.ch4_us = static_cast<uint16_t>(ch4);
-  input.ok_pressed = (event == EVT_KEY_BREAK(KEY_ENTER));
-  input.bound = status.bound;
-  input.transport_waiting = status.waiting;
-  input.cancel_ready = status.cancel_ready;
-#if defined(PCBI6X_MOWER_BLADE_OK)
-  mowerExp3CancelFailed = status.cancel_failed;
-#endif
-  input.now_ms = static_cast<uint32_t>(get_tmr10ms()) * 10U;
-#if defined(PCBI6X_MOWER_BLADE_OK)
-  uint16_t runtime = 0U;
-  const bool runtimeKnown = exp3_board_runtime(input.now_ms, &runtime);
-  input.ok_pressed = input.ok_pressed && runtimeKnown;
-  const bool lockKnown = runtimeKnown;
-  const bool locked = lockKnown && (runtime & MOWER_FAST_LOCKED);
-  MowerUiSnapshot batteryData;
-  mowerUiRead(batteryData);
-  const bool lowBattery = batteryData.telemetry_online &&
-      (batteryData.valid & MOWER_UI_FAULT) &&
-      (batteryData.fault_bits & MOWER_BATTERY_BLADE_INHIBIT);
-  const bool startPosition = ch4 >= 900 && ch4 <= 1100;
-  const bool newStart = startPosition && !mowerExp3Probe.ch4_start && mowerExp3Probe.center_seen;
-  const bool lowAttempt = newStart || (startPosition && event == EVT_KEY_BREAK(KEY_ENTER)) ||
-      (!mowerBatteryWasLow && (mowerExp3Probe.state == EXP3_UI_PROMPT || mowerExp3Probe.state == EXP3_UI_WAIT));
-  if (runtimeKnown && !locked && lowBattery && lowAttempt) {
-    mowerBatteryNotice = true;
-    mowerBatteryNoticeStarted = input.now_ms;
-  }
-  if (!runtimeKnown || locked || !lowBattery) mowerBatteryNotice = false;
-  mowerBatteryWasLow = lowBattery;
-  if (lowBattery) {
-    // Discard the intent; only drain a Cancel for an already submitted action.
-    if ((mowerExp3Probe.state == EXP3_UI_WAIT || mowerExp3Probe.state == EXP3_UI_ACCEPTED ||
-         mowerExp3Probe.state == EXP3_UI_TIMEOUT) && mowerExp3Probe.pending.action != 0U)
-      mowerExp3Probe.cancel_pending = 1U;
-    mowerExp3Probe.start_armed = 0U;
-  }
-  if (!lockKnown || !locked || !mowerUnlockWasLocked)
-    mowerUnlockNeedsCenter = true;
-  if (locked && ch4 >= 1400 && ch4 <= 1600)
-    mowerUnlockNeedsCenter = false;
-  mowerUnlockWasLocked = locked;
-  input.ok_pressed = input.ok_pressed && !locked;
-  input.start_inhibited = !runtimeKnown || locked || lowBattery;
-  mowerExp3Probe.next_action = mowerActionSequence;
-  if (mowerExp3Probe.ch4_start && !(ch4 >= 900 && ch4 <= 1100) &&
-      (mowerExp3Probe.state == EXP3_UI_WAIT || mowerExp3Probe.state == EXP3_UI_ACCEPTED ||
-       mowerExp3Probe.state == EXP3_UI_TIMEOUT)) {
-    mowerBladeDisplayCompleted = false;
-    mowerBladeRuntimeBaseline = mowerBladePreviousRuntimeKnown ? mowerBladePreviousRuntime : runtime;
-  }
-  mowerBladePreviousRuntimeKnown = runtimeKnown;
-  if (runtimeKnown) mowerBladePreviousRuntime = runtime;
-#endif
-  input.matches = status.matches;
-  input.last_result = status.last_result;
-  output = exp3_ui_probe_step(&mowerExp3Probe, &input);
-#if defined(PCBI6X_MOWER_BLADE_OK)
-  if (output.submit_kind == EXP3_UI_SUBMIT_CONFIRM) {
-    mowerActionSequence = output.message.action;
-    mowerBladeDisplayCompleted = false;
-    mowerBladeRuntimeBaseline = runtime;
-  }
-#endif
-  if (output.submit_kind != EXP3_UI_SUBMIT_NONE &&
-      !exp3_board_submit(&output.message)) {
-    if (output.submit_kind == EXP3_UI_SUBMIT_CANCEL) {
-      mowerExp3Probe.cancel_pending = 1U;
-      mowerExp3Probe.state = EXP3_UI_CANCEL_WAIT;
-    }
-    else {
-      mowerExp3Probe.state = EXP3_UI_PROMPT;
-    }
-  }
-#if defined(PCBI6X_MOWER_BLADE_OK)
-  // Count every physical CH4 edge, but discard its prompt when feedback is stale.
-  // Recovery while CH4 is held left must not resurrect that start intent.
-  if (!runtimeKnown || locked || lowBattery) {
-    if (mowerExp3Probe.state != EXP3_UI_WAIT &&
-        mowerExp3Probe.state != EXP3_UI_ACCEPTED &&
-        mowerExp3Probe.state != EXP3_UI_TIMEOUT)
-      mowerExp3Probe.start_armed = 0U;
-    if (mowerExp3Probe.state == EXP3_UI_PROMPT ||
-        mowerExp3Probe.state == EXP3_UI_UNBOUND)
-      mowerExp3Probe.state = EXP3_UI_IDLE;
-  }
-  /* The two intents have separate physical generations and share one wire action
-   * sequence/mailbox. Keep tracking both even when one is not permitted. */
-  exp3_board_status(&status);
-  Exp3UiInput unlockInput = input;
-  unlockInput.bound = status.bound;
-  unlockInput.transport_waiting = status.waiting ||
-      output.submit_kind != EXP3_UI_SUBMIT_NONE;
-  unlockInput.cancel_ready = status.cancel_ready &&
-      output.submit_kind == EXP3_UI_SUBMIT_NONE;
-  unlockInput.start_inhibited = !locked || mowerUnlockNeedsCenter;
-  unlockInput.ok_pressed = event == EVT_KEY_BREAK(KEY_ENTER) &&
-      !unlockInput.start_inhibited;
-  mowerUnlockProbe.next_action = mowerActionSequence;
-  const bool unlockInFlight = mowerUnlockProbe.state == EXP3_UI_WAIT ||
-      mowerUnlockProbe.state == EXP3_UI_ACCEPTED || mowerUnlockProbe.state == EXP3_UI_TIMEOUT;
-  if (lockKnown && !locked && (unlockInFlight ||
-      mowerUnlockProbe.state == EXP3_UI_CANCEL_WAIT)) mowerUnlockCompleted = true;
-  if ((!locked || mowerUnlockNeedsCenter) && !unlockInFlight)
-    mowerUnlockProbe.start_armed = 0U;
-  Exp3UiOutput unlockOutput = exp3_ui_probe_step(&mowerUnlockProbe, &unlockInput);
-  if (!locked || mowerUnlockNeedsCenter) {
-    if (!unlockInFlight) mowerUnlockProbe.start_armed = 0U;
-    if (mowerUnlockProbe.state == EXP3_UI_PROMPT ||
-        mowerUnlockProbe.state == EXP3_UI_UNBOUND)
-      mowerUnlockProbe.state = EXP3_UI_IDLE;
-  }
-  if (unlockOutput.submit_kind == EXP3_UI_SUBMIT_CONFIRM) {
-    mowerActionSequence = unlockOutput.message.action;
-    mowerUnlockCompleted = false;
-  }
-  if (mowerUnlockProbe.state == EXP3_UI_ACCEPTED) mowerUnlockCompleted = true;
-  if (unlockOutput.submit_kind != EXP3_UI_SUBMIT_NONE &&
-      !exp3_board_submit(&unlockOutput.message)) {
-    if (unlockOutput.submit_kind == EXP3_UI_SUBMIT_CANCEL) {
-      mowerUnlockProbe.cancel_pending = 1U;
-      mowerUnlockProbe.state = EXP3_UI_CANCEL_WAIT;
-    }
-    else mowerUnlockProbe.state = EXP3_UI_REJECTED;
-  }
-  if (mowerUnlockProbe.state == EXP3_UI_REJECTED) {
-    mowerUnlockNeedsCenter = true;
-    mowerUnlockProbe.start_armed = 0U;
-  }
-  const Exp3UiState unlockState = mowerUnlockProbe.state;
-  if (unlockState != mowerUnlockWaitState) {
-    mowerUnlockWaitState = unlockState;
-    mowerUnlockWaitStarted = input.now_ms;
-  }
-  mowerUnlockDisplay = unlockState != EXP3_UI_IDLE && unlockState != EXP3_UI_ACCEPTED;
-  // Once unlock is observed, keep receipt/cancel drainage silent even on CH4
-  // release. The transaction stays busy and cannot authorize a new OK.
-  if (mowerUnlockCompleted && (unlockState == EXP3_UI_WAIT ||
-      unlockState == EXP3_UI_CANCEL_WAIT)) mowerUnlockDisplay = false;
-  if (mowerUnlockDisplay) {
-    if ((unlockState == EXP3_UI_WAIT || unlockState == EXP3_UI_CANCEL_WAIT) &&
-        static_cast<uint32_t>(input.now_ms - mowerUnlockWaitStarted) >= 2000U)
-      return EXP3_UI_IDLE;
-    return unlockState;
-  }
-  if (mowerBatteryNotice) {
-    if (static_cast<uint32_t>(input.now_ms - mowerBatteryNoticeStarted) < 2000U)
-      return EXP3_UI_BATTERY_LOW;
-    mowerBatteryNotice = false;
-  }
-  const Exp3UiState state = mowerExp3Probe.state;
-  if (runtimeKnown) {
-    const uint16_t delta = ((runtime >> MOWER_FAST_HEARTBEAT_SHIFT) -
-        (mowerBladeRuntimeBaseline >> MOWER_FAST_HEARTBEAT_SHIFT)) & MOWER_FAST_HEARTBEAT_MASK;
-    if (delta && delta < MOWER_FAST_HEARTBEAT_FORWARD_LIMIT &&
-        ((state == EXP3_UI_CANCEL_WAIT && !(runtime & 1U)) ||
-         (mowerExp3Probe.pending.action && (runtime & 1U) &&
-          (state == EXP3_UI_WAIT || state == EXP3_UI_ACCEPTED || state == EXP3_UI_TIMEOUT))))
-      mowerBladeDisplayCompleted = true;
-  }
-  if (state != mowerExp3WaitState) {
-    mowerExp3WaitState = state;
-    mowerExp3WaitStarted = input.now_ms;
-  }
-  // A fresh center-to-start edge can show the next prompt immediately while
-  // the old Cancel completes. Keep the probe in CANCEL_WAIT: OK is ignored
-  // until that transaction drains, and is never queued for later execution.
-  if (runtimeKnown && mowerExp3Probe.start_armed &&
-      state == EXP3_UI_CANCEL_WAIT)
-    return EXP3_UI_PROMPT;
-  // Runtime changes close only the display. Matching receipts still own busy
-  // state, and a new physical edge plus a new OK are required for every start.
-  if (mowerBladeDisplayCompleted &&
-      (state == EXP3_UI_CANCEL_WAIT || state == EXP3_UI_WAIT || state == EXP3_UI_TIMEOUT))
-    return EXP3_UI_IDLE;
-  // Bound only the modal display. Never clear/reissue the pending transaction.
-  if ((state == EXP3_UI_WAIT || state == EXP3_UI_CANCEL_WAIT) &&
-      static_cast<uint32_t>(input.now_ms - mowerExp3WaitStarted) >= 2000U)
-    return EXP3_UI_IDLE;
-#endif
-  return mowerExp3Probe.state;
-#endif
 }
 
-#if defined(PCBI6X_MOWER_BLADE_OK)
 void mowerUiBladePoll()
 {
   // The GUI task tracks CH4 even while a radio/model menu is open.
   // Confirm still requires an explicit OK on a mower page.
   mowerExp3DisplayState = mowerExp3Step(0);
 }
-#endif
 
-#if defined(PCBI6X_MOWER_BLADE_OK)
-static coord_t mowerZhText(coord_t x, coord_t y, const char *text, bool inverse=false);
-static void mowerZhCenteredText(coord_t y, const char *text);
-#endif
+static void mowerExp3Overlay(Exp3UiState state);
 
-static void mowerExp3Overlay(Exp3UiState state)
-{
-#if defined(PCBI6X_MOWER_BLADE_OK)
-  if (state == EXP3_UI_IDLE || state == EXP3_UI_ACCEPTED) return;
-  if (state != EXP3_UI_PROMPT) {
-    const char *notice = state == EXP3_UI_BATTERY_LOW ? "电量过低" :
-        state == EXP3_UI_SAFETY ? "安全输入未释放" :
-        state == EXP3_UI_OWNER ? "控制权未就绪" :
-        state == EXP3_UI_TIMEOUT ? "无回执" :
-        state == EXP3_UI_REJECTED ? (mowerUnlockDisplay ? "解锁被拒绝" : "启动被拒绝") : 0;
-    if (notice) mowerZhCenteredText(52, notice);
-    return;
-  }
-  // Keep the whole status row; clear whole body rows instead of half glyphs.
-  lcdDrawSolidFilledRect(0, 12, 128, 52, ERASE);
-  lcdDrawRect(5, 18, 118, 31);
-  mowerZhCenteredText(20, mowerUnlockDisplay ? "是否解锁" : "确认启动割刀");
-  mowerZhCenteredText(34, "按OK确认");
-
-#else
-
-#if defined(PCBI6X_MOWER_BLADE_OK)
-  if (state == EXP3_UI_ACCEPTED) return; // The home snapshot supplies current runtime state.
-#endif
-  if (state == EXP3_UI_IDLE)
-    return;
-  lcdDrawSolidFilledRect(5, 18, 118, 31, ERASE);
-  lcdDrawRect(5, 18, 118, 31);
-  if (state == EXP3_UI_PROMPT) {
-    lcdDrawText(14, 23, "START BLADE?", INVERS);
-#if defined(PCBI6X_MOWER_BLADE_OK)
-    if (mowerExp3Probe.cancel_pending || mowerExp3Probe.state == EXP3_UI_CANCEL_WAIT)
-      lcdDrawText(15, 37, mowerExp3CancelFailed ||
-          static_cast<uint32_t>(get_tmr10ms()*10U - mowerExp3Probe.sent_at) >= 10000U ?
-          "STOP NO REPLY" : "STOPPING...", SMLSIZE);
-    else
-#endif
-      lcdDrawText(75, 37, "> OK", BLINK);
-  }
-  else if (state == EXP3_UI_WAIT)
-    lcdDrawText(27, 29, "WAIT RESULT", INVERS);
-  else if (state == EXP3_UI_CANCEL_WAIT)
-    lcdDrawText(27, 29, "WAIT CANCEL", INVERS);
-  else if (state == EXP3_UI_ACCEPTED) {
-    lcdDrawText(22, 23, "TEST ACCEPTED", INVERS);
-    lcdDrawText(22, 37, "PWM VIA CH7", SMLSIZE);
-  }
-  else if (state == EXP3_UI_UNBOUND)
-    lcdDrawText(21, 29, MOWER_BLADE_OK_ENABLED ? "LINK NOT READY" : "EXP3 UNBOUND", INVERS);
-  else if (state == EXP3_UI_TIMEOUT)
-    lcdDrawText(28, 29, MOWER_BLADE_OK_ENABLED ? "NO REPLY" : "EXP3 TIMEOUT", INVERS);
-  else
-    lcdDrawText(24, 29, MOWER_BLADE_OK_ENABLED ? "START DENIED" : "EXP3 REJECT", INVERS);
-#endif
-}
 #endif
 
 static void mowerPage(uint8_t page, event_t event)
@@ -880,7 +594,7 @@ static void mowerPage(uint8_t page, event_t event)
   MowerUiSnapshot data;
   mowerUiRead(data);
   lcdDrawText(0, 0, data.mock ? "MOWER DEMO" : "MOWER", INVERS);
-#if defined(PCBI6X_EXP3_PWM_HIL) || defined(PCBI6X_MOWER_BLADE_OK)
+#if defined(PCBI6X_MOWER_BLADE_OK)
   lcdDrawText(34, 0, mowerExp3Bound ? (MOWER_BLADE_OK_ENABLED ? "READY" : "E3 READY") : (MOWER_BLADE_OK_ENABLED ? "SYNC" : "E3 SYNC"), SMLSIZE);
 #endif
   lcdDrawText(76, 0, "TX", SMLSIZE);
@@ -952,7 +666,8 @@ static void mowerPage(uint8_t page, event_t event)
     mowerValue(67, 40, "MOVE", data.height_action, data.valid & MOWER_UI_HEIGHT_ACTION);
     lcdDrawText(0, 48, "MODE", SMLSIZE);
     lcdDrawText(35, 48, !(data.valid & MOWER_UI_WORK_MODE) ? "--" :
-                data.work_mode ? "REMOTE" : "OFF", SMLSIZE);
+                data.work_mode == 1 ? "REMOTE" : data.work_mode == 2 ? "API WAIT" :
+                data.work_mode == 3 ? "API RUN" : data.work_mode == 4 ? "TAKEOVER" : "--", SMLSIZE);
     lcdDrawText(0, 56, "BAG", SMLSIZE);
     lcdDrawText(35, 56, "UNKNOWN", SMLSIZE);
   }
@@ -976,7 +691,7 @@ static void mowerPage(uint8_t page, event_t event)
       lcdDrawText(0, 24, "FAULT UNKNOWN", SMLSIZE);
     lcdDrawText(0, 56, "LEFT/RIGHT  PAGE", SMLSIZE);
   }
-#if defined(PCBI6X_EXP3_PWM_HIL) || defined(PCBI6X_MOWER_BLADE_OK)
+#if defined(PCBI6X_MOWER_BLADE_OK)
   mowerExp3Overlay(mowerExp3DisplayState);
 #else
   (void)event;
@@ -1092,7 +807,7 @@ void menuMainView(event_t event)
   #define CHANNELS_PAGES ((MAX_OUTPUT_CHANNELS + 8 - 1) / 8)
   #define CHANNELS_SEGMENT_WIDTH (54 / CHANNELS_PAGES)
 
-#if defined(PCBI6X_EXP3_PWM_HIL) || defined(PCBI6X_MOWER_BLADE_OK)
+#if defined(PCBI6X_MOWER_BLADE_OK)
   {
     bool mowerPageVisible = view_base <= VIEW_MOWER_FAULT;
     // Keep CH4 edge/cancel state current on every main-view page. Only the

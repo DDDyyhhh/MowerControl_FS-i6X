@@ -78,15 +78,18 @@ void EG2104_HBridge_Stop(EG2104_HBridge_t *bridge)
     if (bridge->left_timer == &htim3) lift_speed = 0.0f;
     else { assert(bridge->left_timer == &htim2); bag_speed = 0.0f; }
 }
+static uint32_t saved_magic = APP_SETTINGS_MAGIC_NUMBER;
 bool FlashStorage_LoadSettings(AppSettings_t *settings)
 {
     assert(!critical_depth);
+    settings->magic_number = saved_magic;
     settings->lifter_current_height_cm = saved_height;
     return load_ok;
 }
 bool FlashStorage_SaveSettings(const AppSettings_t *settings)
 {
     assert(!critical_depth && lift_speed == 0.0f);
+    assert(settings->magic_number == APP_SETTINGS_MAGIC_NUMBER);
     ++flash_saves;
     flash_height = settings->lifter_current_height_cm;
     return true;
@@ -100,6 +103,7 @@ static void Reset(float height, bool valid, uint32_t tick)
     memset(&g_app, 0, sizeof(g_app));
     saved_height = height; load_ok = valid; now_ms = tick;
     Lifter_Init();
+    Lifter_SetHeightPermission(true);
     assert(Lifter_GetHeightFeedback() == 0U);
     lift_starts = flash_saves = 0;
     assert(lift_speed == 0.0f && bag_speed == 0.0f);
@@ -118,7 +122,7 @@ static void Tick(uint32_t tick)
 
 static void TestImmediateHomingInterrupt(void)
 {
-    Reset(7.0f, true, 0);
+    Reset(6.0f, true, 0);
     Lifter_SetTargetLevel(5); Tick(0);
     assert(lift_speed == -50.0f);
     Lifter_SetTargetLevel(3); Tick(1000);
@@ -126,13 +130,13 @@ static void TestImmediateHomingInterrupt(void)
     assert(Lifter_GetState() == LIFTER_STATE_AUTO_ADJUST);
     assert(lift_speed == 50.0f);
     assert(g_app.g_system_report_state == REPORT_NONE);
-    assert(Lifter_GetCurrentHeight_cm() > 7.0f && Lifter_GetCurrentHeight_cm() < 11.0f);
+    assert(Lifter_GetCurrentHeight_cm() > 6.0f && Lifter_GetCurrentHeight_cm() < 8.0f);
     puts("[PASS] New height target interrupts homing on the next lifter update");
 }
 
 static void TestFullHomingFromSavedHeights(void)
 {
-    const float heights[] = {11.0f, 7.0f, 2.0f};
+    const float heights[] = {8.0f, 6.0f, 2.0f};
     for (unsigned i = 0; i < sizeof(heights)/sizeof(heights[0]); ++i) {
         Reset(heights[i], true, 100U);
         Lifter_SetTargetLevel(5);
@@ -150,13 +154,13 @@ static void TestFullHomingFromSavedHeights(void)
         assert(lift_speed == -50.0f);
         Tick(11200U);
         assert(lift_speed == 0.0f && Lifter_GetState() == LIFTER_STATE_HOMING_DONE);
-        assert(Lifter_GetCurrentHeight_cm() == 11.0f);
+        assert(Lifter_GetCurrentHeight_cm() == 8.0f);
         assert(g_app.g_system_report_state == REPORT_NONE);
         Lifter_SetTargetLevel(5);
         Tick(11220U);
         assert(lift_starts == 1 && !flash_saves);
         Tick(21199U); assert(!flash_saves);
-        Tick(21200U); assert(flash_saves == 1 && flash_height == 11.0f);
+        Tick(21200U); assert(flash_saves == 1 && flash_height == 8.0f);
         Tick(22000U); assert(flash_saves == 1 && lift_starts == 1);
     }
     puts("[PASS] First/repeated level 5, saved-height drift, exact 10s and lazy save");
@@ -164,30 +168,30 @@ static void TestFullHomingFromSavedHeights(void)
 
 static void TestLatestTargetWinsDuringHoming(void)
 {
-    Reset(7.0f, true, 0);
+    Reset(6.0f, true, 0);
     Lifter_SetTargetLevel(5);
     Lifter_SetTargetLevel(1);
     Lifter_SetTargetLevel(2); /* Latest target cancels the unconsumed home edge. */
     Tick(0);
     assert(lift_speed == 50.0f && Lifter_GetState() == LIFTER_STATE_AUTO_ADJUST);
     assert(lift_starts == 1);
-    Tick(2000); assert(lift_speed == 0.0f && Lifter_GetCurrentHeight_cm() == 5.0f);
-    Lifter_SetTargetLevel(5); Tick(2020);
+    Tick(1400); assert(lift_speed == 0.0f && Lifter_GetCurrentHeight_cm() == 4.0f);
+    Lifter_SetTargetLevel(5); Tick(1420);
     assert(lift_speed == -50.0f);
     Lifter_SetTargetLevel(4); Lifter_SetTargetLevel(3); Lifter_SetTargetLevel(1);
-    Tick(3020); /* pos 6500 - 1000*0.8 = 5700: descend to level 1 now. */
+    Tick(2420); /* pos 2800 - 1000*0.8 = 2000: descend to level 1 now. */
     assert(lift_speed == 50.0f && Lifter_GetState() == LIFTER_STATE_AUTO_ADJUST);
-    Tick(6820); assert(lift_speed == 0.0f && Lifter_GetCurrentHeight_cm() == 2.0f);
-    Tick(12020); /* Original homing deadline must not force a false top reset. */
+    Tick(4620); assert(lift_speed == 0.0f && Lifter_GetCurrentHeight_cm() == 2.0f);
+    Tick(11420); /* Original homing deadline must not force a false top reset. */
     assert(lift_speed == 0.0f && Lifter_GetCurrentHeight_cm() == 2.0f && !flash_saves);
-    Tick(16819); assert(!flash_saves);
-    Tick(16820); assert(flash_saves == 1 && flash_height == 2.0f);
+    Tick(14619); assert(!flash_saves);
+    Tick(14620); assert(flash_saves == 1 && flash_height == 2.0f);
     puts("[PASS] Latest target wins before/during homing; no delayed reset; lazy save");
 }
 
 static void TestReentryAndActiveHomingDedup(void)
 {
-    Reset(7.0f, true, 0);
+    Reset(6.0f, true, 0);
     Lifter_SetTargetLevel(5); Tick(0);
     Lifter_SetTargetLevel(3); Tick(1000);
     assert(lift_speed == 50.0f);
@@ -207,28 +211,28 @@ static void TestReentryAndActiveHomingDedup(void)
 
 static void TestOrdinaryLevelDirections(void)
 {
-    Reset(11.0f, true, 0);
+    Reset(8.0f, true, 0);
     Lifter_SetTargetLevel(1); Tick(0);
     assert(lift_speed == 50.0f);
-    Tick(9500); assert(lift_speed == 0.0f && Lifter_GetCurrentHeight_cm() == 2.0f);
-    Lifter_SetTargetLevel(2); Tick(9500);
+    Tick(4200); assert(lift_speed == 0.0f && Lifter_GetCurrentHeight_cm() == 2.0f);
+    Lifter_SetTargetLevel(2); Tick(4200);
     assert(lift_speed == -50.0f);
-    Tick(13250); assert(lift_speed == 0.0f && Lifter_GetCurrentHeight_cm() == 5.0f);
-    Lifter_SetTargetLevel(3); Tick(13250);
-    Tick(15750); assert(lift_speed == 0.0f && Lifter_GetCurrentHeight_cm() == 7.0f);
-    Lifter_SetTargetLevel(4); Tick(15750);
-    Tick(17875); assert(lift_speed == 0.0f && Lifter_GetCurrentHeight_cm() == 9.0f);
+    Tick(5950); assert(lift_speed == 0.0f && Lifter_GetCurrentHeight_cm() == 4.0f);
+    Lifter_SetTargetLevel(3); Tick(5950);
+    Tick(7700); assert(lift_speed == 0.0f && Lifter_GetCurrentHeight_cm() == 6.0f);
+    Lifter_SetTargetLevel(4); Tick(7700);
+    Tick(8575); assert(lift_speed == 0.0f && Lifter_GetCurrentHeight_cm() == 7.0f);
     /* Reverse while still moving: mock requires an intervening bridge stop. */
-    Lifter_SetTargetLevel(1); Tick(17875); Tick(18075);
-    Lifter_SetTargetLevel(4); Tick(18175);
+    Lifter_SetTargetLevel(1); Tick(8575); Tick(8775);
+    Lifter_SetTargetLevel(4); Tick(8875);
     assert(lift_speed == -50.0f);
-    puts("[PASS] Levels 1-4 unchanged, reversed +/-60% PWM and stop before reversal");
+    puts("[PASS] Calibrated levels 1-4, reversed +/-50% PWM and stop before reversal");
 }
 
 static void TestWrapAndBootHoming(void)
 {
     uint32_t start = UINT32_MAX - 4000U;
-    Reset(7.0f, true, start);
+    Reset(6.0f, true, start);
     Lifter_SetTargetLevel(5); Tick(start);
     Tick(start + 9999U); assert(lift_speed == -50.0f);
     Tick(start + 10000U); assert(lift_speed == 0.0f);
@@ -236,26 +240,26 @@ static void TestWrapAndBootHoming(void)
     Tick(300); assert(lift_speed == -50.0f);
     Lifter_SetTargetLevel(3); Tick(1300);
     assert(lift_speed == 50.0f && Lifter_GetState() == LIFTER_STATE_AUTO_ADJUST);
-    Tick(5800); assert(lift_speed == 0.0f && Lifter_GetCurrentHeight_cm() == 7.0f);
-    Tick(10300); assert(lift_speed == 0.0f && Lifter_GetCurrentHeight_cm() == 7.0f);
+    Tick(2700); assert(lift_speed == 0.0f && Lifter_GetCurrentHeight_cm() == 6.0f);
+    Tick(10300); assert(lift_speed == 0.0f && Lifter_GetCurrentHeight_cm() == 6.0f);
     puts("[PASS] Tick rollover and interruptible invalid-Flash boot homing");
 }
 
 static void TestManualInitAndTaskHandoff(void)
 {
-    Reset(7.0f, true, 0);
+    Reset(6.0f, true, 0);
     Lifter_User_Init();
     assert(lift_speed == 0.0f && g_app.g_system_report_state == REPORT_NONE);
     Tick(0); assert(lift_speed == -50.0f);
     /* Arrival just after the consumer snapshot must survive for the next update. */
     inject_level_on_exit = 4;
     g_app.g_system_report_state = REPORT_DUMPING_START;
-    Tick(1000); assert(lift_speed == -50.0f);
-    Tick(1020); /* Late request is consumed on the following update. */
+    Tick(500); assert(lift_speed == -50.0f);
+    Tick(520); /* Late request is consumed on the following update. */
     assert(lift_speed == -50.0f && Lifter_GetState() == LIFTER_STATE_AUTO_ADJUST);
     assert(g_app.g_system_report_state == REPORT_DUMPING_START);
-    Tick(2125); assert(lift_speed == 0.0f && Lifter_GetCurrentHeight_cm() == 9.0f);
-    Tick(10000); assert(lift_speed == 0.0f && Lifter_GetCurrentHeight_cm() == 9.0f);
+    Tick(875); assert(lift_speed == 0.0f && Lifter_GetCurrentHeight_cm() == 7.0f);
+    Tick(10000); assert(lift_speed == 0.0f && Lifter_GetCurrentHeight_cm() == 7.0f);
     Lifter_User_Init(); Tick(10020); assert(lift_speed == -50.0f);
     Lifter_SetTargetLevel(2); Tick(11020);
     assert(lift_speed == 50.0f && Lifter_GetState() == LIFTER_STATE_AUTO_ADJUST);
@@ -264,47 +268,47 @@ static void TestManualInitAndTaskHandoff(void)
 
 static void TestInterruptStopAndTimeBoundaries(void)
 {
-    Reset(7.0f, true, 0);
+    Reset(6.0f, true, 0);
     Lifter_User_Init(); Lifter_SetTargetLevel(3); Tick(0);
     assert(lift_speed == 0.0f && lift_starts == 0); /* Cancel before first PWM. */
 
-    Reset(7.0f, true, 0);
+    Reset(6.0f, true, 0);
     Lifter_SetTargetLevel(5); Tick(0);
-    Lifter_SetTargetLevel(4); Tick(2125); /* pos4500-2125*0.8 = level4 exactly. */
-    assert(lift_speed == 0.0f && Lifter_GetCurrentHeight_cm() == 9.0f);
+    Lifter_SetTargetLevel(4); Tick(875); /* pos1400-875*0.8 = level4 exactly. */
+    assert(lift_speed == 0.0f && Lifter_GetCurrentHeight_cm() == 7.0f);
     assert(Lifter_GetState() == LIFTER_STATE_AUTO_ADJUST && lift_starts == 1);
-    Tick(12124); assert(!flash_saves);
-    Tick(12125); assert(flash_saves == 1 && flash_height == 9.0f);
+    Tick(10874); assert(!flash_saves);
+    Tick(10875); assert(flash_saves == 1 && flash_height == 7.0f);
 
     Reset(2.0f, true, 0);
     Lifter_SetTargetLevel(5); Tick(0);
     Lifter_SetTargetLevel(3); Tick(9999); /* Last millisecond still interrupts. */
-    assert(lift_speed == 50.0f && Lifter_GetCurrentHeight_cm() < 11.0f);
+    assert(lift_speed == 50.0f && Lifter_GetCurrentHeight_cm() == 8.0f);
     Tick(10000);
     assert(lift_speed == 50.0f && Lifter_GetState() == LIFTER_STATE_AUTO_ADJUST);
-    assert(Lifter_GetCurrentHeight_cm() < 11.0f);
+    assert(Lifter_GetCurrentHeight_cm() < 8.0f);
 
     Reset(2.0f, true, 0);
     Lifter_SetTargetLevel(5); Tick(0);
     Lifter_SetTargetLevel(3); Tick(10000); /* PWM already ran the full 10s. */
     assert(lift_speed == 50.0f && Lifter_GetState() == LIFTER_STATE_AUTO_ADJUST);
-    assert(Lifter_GetCurrentHeight_cm() == 11.0f);
-    Tick(14500); assert(lift_speed == 0.0f && Lifter_GetCurrentHeight_cm() == 7.0f);
+    assert(Lifter_GetCurrentHeight_cm() == 8.0f);
+    Tick(11400); assert(lift_speed == 0.0f && Lifter_GetCurrentHeight_cm() == 6.0f);
 
     uint32_t start = UINT32_MAX - 500U;
-    Reset(7.0f, true, start);
+    Reset(6.0f, true, start);
     Lifter_SetTargetLevel(5); Tick(start);
     Lifter_SetTargetLevel(3); Tick(start + 1000U);
     assert(lift_speed == 50.0f);
     Tick(start + 1800U);
-    assert(lift_speed == 0.0f && Lifter_GetCurrentHeight_cm() == 7.0f);
-    Tick(start + 10000U); assert(Lifter_GetCurrentHeight_cm() == 7.0f);
+    assert(lift_speed == 0.0f && Lifter_GetCurrentHeight_cm() == 6.0f);
+    Tick(start + 10000U); assert(Lifter_GetCurrentHeight_cm() == 6.0f);
     puts("[PASS] Cancel before start/at target/9999ms, lazy save and interrupt time wrap");
 }
 
 static void TestBagUnaffected(void)
 {
-    Reset(7.0f, true, 0);
+    Reset(6.0f, true, 0);
     Lifter_SetGrassBagPermission(true);
     Lifter_SetGrassBagTarget(1); assert(bag_speed == 50.0f);
     Lifter_SetTargetLevel(5); Tick(0);
@@ -317,8 +321,37 @@ static void TestBagUnaffected(void)
     puts("[PASS] Concurrent grass-bag direction, 20s timing and permission stop unchanged");
 }
 
+static void TestPermissionRevokesPendingAndRunning(void)
+{
+    Reset(6.0f, true, 0U);
+    Lifter_SetTargetLevel(5U); Tick(10U); assert(lift_speed != 0.0f);
+    Lifter_SetHeightPermission(false); assert(lift_speed == 0.0f);
+    Lifter_User_Init(); Lifter_SetTargetLevel(1U); Tick(100U);
+    assert(lift_speed == 0.0f && Lifter_GetState() == LIFTER_STATE_IDLE);
+    float stopped_height = Lifter_GetCurrentHeight_cm();
+    Lifter_SetHeightPermission(true); Tick(200U); assert(lift_speed == 0.0f);
+    assert(Lifter_GetCurrentHeight_cm() == stopped_height);
+    Lifter_SetTargetLevel(1U); Lifter_SetHeightPermission(false);
+    Lifter_SetHeightPermission(true); Tick(300U); assert(lift_speed == 0.0f);
+    Lifter_SetTargetLevel(5U); Tick(400U); assert(lift_speed != 0.0f);
+    Lifter_SetHeightPermission(false); Tick(20000U);
+    assert(lift_speed == 0.0f && !flash_saves);
+    puts("[PASS] Height permission stops PWM, clears pending/homing requests and requires a fresh target");
+}
+
 int main(void)
 {
+    saved_magic = APP_SETTINGS_LEGACY_MAGIC;
+    Reset(11.0f, true, 0); Tick(0);
+    assert(Lifter_GetCurrentHeight_cm() == 8.0f && lift_speed == 0.0f);
+    Reset(9.0f, true, 0); Tick(0);
+    assert(Lifter_GetCurrentHeight_cm() == 4.0f && lift_speed == 0.0f);
+    Lifter_SetTargetLevel(1); Tick(0); Tick(1400);
+    assert(Lifter_GetCurrentHeight_cm() == 2.0f && lift_speed == 0.0f);
+    Tick(11400); assert(flash_saves == 1 && flash_height == 2.0f);
+    saved_magic = APP_SETTINGS_MAGIC_NUMBER;
+    Reset(flash_height, true, 11400); Tick(11400);
+    assert(Lifter_GetCurrentHeight_cm() == 2.0f && lift_speed == 0.0f);
     TestImmediateHomingInterrupt();
     TestFullHomingFromSavedHeights();
     TestLatestTargetWinsDuringHoming();
@@ -328,6 +361,7 @@ int main(void)
     TestManualInitAndTaskHandoff();
     TestInterruptStopAndTimeBoundaries();
     TestBagUnaffected();
+    TestPermissionRevokesPendingAndRunning();
     puts("[PASS] Production lifter height regression");
     return 0;
 }

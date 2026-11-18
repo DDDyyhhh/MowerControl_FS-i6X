@@ -17,7 +17,6 @@
  */
 
 #include "cruise_control.h"
-#include "car_Control.h" // 需要控制电机
 #include "buzzer.h"      // 需要蜂鸣器
 #include "app_context.h"
 #include <math.h>
@@ -34,60 +33,6 @@ static uint8_t obstacle_filter_count = 0;
 
 // 外部变量引用 (根据你的项目实际情况调整)
 extern IMU_Data_t imu_data;
-
-// --- 内部辅助函数 ---
-/**
- * @brief 计算归一化的目标角度 (-180~180 的跳变)
- */
-static float Normalize_Angle(float angle)
-{
-    // 如果你的 IMU 输出是 0~360
-    /*
-    while (angle >= 360.0f) angle -= 360.0f;
-    while (angle < 0.0f)    angle += 360.0f;
-    */
-
-    // 如果你的 IMU 输出是 -180~180 (通常是这个)
-    while (angle > 180.0f)
-        angle -= 360.0f;
-    while (angle <= -180.0f)
-        angle += 360.0f;
-
-    return angle;
-}
-
-/**
- * @brief 计算角度差 (绝对值)
- */
-static float Get_Angle_Diff(float start_angle, float current_angle)
-{
-    float diff = fabsf(current_angle - start_angle);
-    if (diff > 180.0f)
-        diff = 360.0f - diff;
-    return diff;
-}
-
-/**
- * @brief 航向角 PID 计算
- */
-static float Yaw_PID_Compute(float target, float current)
-{
-    float error = target - current;
-    if (error > 180.0f)
-        error -= 360.0f;
-    if (error < -180.0f)
-        error += 360.0f;
-
-    float output = error * YAW_PID_KP;
-
-    // 限幅
-    if (output > 0.3f)
-        output = 0.3f;
-    if (output < -0.3f)
-        output = -0.3f;
-
-    return output;
-}
 
 // --- 接口函数实现 ---
 

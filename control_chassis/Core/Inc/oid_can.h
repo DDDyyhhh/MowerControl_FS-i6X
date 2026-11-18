@@ -150,7 +150,6 @@ void OID_Heartbeat(uint8_t node_id);
 /**
  * @brief 解析 CAN 接收报文 (在 CAN RX 任务中调用)
  */
-void OID_Parse_Rx_Message(uint32_t can_id, uint8_t *data, uint8_t dlc);
 void OID_Parse_Rx_MessageAt(uint32_t can_id, uint8_t *data, uint8_t dlc, uint32_t rx_tick);
 
 #endif /* __OID_CAN_H */

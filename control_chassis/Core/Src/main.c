@@ -39,9 +39,7 @@
 
 #include "pairing_receiver.h"
 #include "BladeMotor.h"
-#include "car_Control.h"
 #include "connet_check.h"
-#include "car_Control.h"
 #include "EG2104.h"
 
 #include "read_adc.h"

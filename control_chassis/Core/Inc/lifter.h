@@ -59,6 +59,8 @@ void Lifter_Stop(void);
 // 设置目标档位 (1=最低, 5=最高)。请求由周期任务处理；进入5档完整归位10秒。
 // 重复5档不重启计时；归位期间切换1~4档，下一次周期更新立即执行新目标。
 void Lifter_SetTargetLevel(uint8_t level);
+/* Motion revokes synchronously; pending height/homing never survives revocation. */
+void Lifter_SetHeightPermission(bool permitted);
 
 // 获取当前高度 (cm) - 用于发送给遥控器
 float Lifter_GetCurrentHeight_cm(void);

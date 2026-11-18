@@ -6,7 +6,7 @@
 #define MOWER_BATTERY_WARNING       0x0800U
 #define MOWER_BATTERY_BLADE_INHIBIT 0x1000U /* LOW latch; never limits travel */
 #define MOWER_BATTERY_STOP          0x2000U
-/* E0 bit14 is reserved; no calibration status is published. */
+/* E0 bits14/15 carry ultrasonic setting/front obstacle, not battery faults. */
 #define MOWER_BATTERY_STATUS_MASK   0x3800U
 /* Diagnostic words use only idle E1/addr9 polls. Addresses 13..15/E6..E8
  * belong exclusively to fast completion. Never interrupt a result/session.

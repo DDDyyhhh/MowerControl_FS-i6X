@@ -5,19 +5,16 @@ import os
 import re
 import subprocess
 import tempfile
+import sys
+sys.dont_write_bytecode = True  # keep tools/ free of __pycache__
+from _harness_util import c_function
 
 ROOT = Path(__file__).resolve().parents[1]
 CORE = ROOT / 'control_chassis/Core'
 
 
 def function(text, signature):
-    start = text.index(signature + '\n{')
-    opened = text.index('{', start)
-    end, depth = opened + 1, 1
-    while depth:
-        depth += (text[end] == '{') - (text[end] == '}')
-        end += 1
-    return text[start:end]
+    return c_function(text, signature + '\n{')
 
 
 HEADER = r'''

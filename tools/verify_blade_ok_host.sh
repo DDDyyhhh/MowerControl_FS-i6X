@@ -48,6 +48,8 @@ cc "${flags[@]}" -DMOWER_GRASS_BAG_CH6_ENABLED=1 \
   "$root/control_chassis/Core/UserDev/sens_ibus_responder.c" -o "$work/bag-sens"
 ASAN_OPTIONS=detect_leaks=0 "$work/bag-sens"
 python3 "$root/tools/test_blade_ok_ui.py"
+python3 "$root/tools/test_ultrasonic_control.py"
+python3 "$root/tools/test_ultrasonic_obstacle.py"
 python3 "$root/tools/test_trim_key_lock.py"
 python3 "$root/tools/test_fast_completion.py"
 python3 "$root/tools/test_bag_connection_source.py"
@@ -56,7 +58,7 @@ python3 "$root/tools/test_remote_stop_diagnostics.py"
 python3 "$root/tools/test_remote_stop_reader.py"
 
 cc "${flags[@]}" "$p/test_vectors.c" "$p/exp3.c" -o "$work/vectors"
-ASAN_OPTIONS=detect_leaks=0 python3 "$p/check_vectors.py" "$work/vectors" 0x36
+ASAN_OPTIONS=detect_leaks=0 python3 "$p/check_vectors.py" "$work/vectors" 0x39
 
 cc "${flags[@]}" -DREMOTE_BACKEND_A28_E34=0 -DREMOTE_BACKEND_FLYSKY_IBUS=1 \
   -I"$root/control_chassis/Core/Inc" "$root/control_chassis/host/remote_unlock_ok_harness.c" \
@@ -96,3 +98,36 @@ done
 
 cc "${flags[@]}" "$p/test_session_version.c" "$p/exp3_auto_session.c" -o "$work/session-version"
 ASAN_OPTIONS=detect_leaks=0 "$work/session-version"
+
+# Protocol core, transport and adapter checks (formerly run by experiments/ticket03/run_host.sh).
+cc "${flags[@]}" "$p/test_exp3.c" "${core[@]}" -o "$work/exp3"
+ASAN_OPTIONS=detect_leaks=0 "$work/exp3"
+cc "${flags[@]}" "$p/test_probe.c" "$p/exp3.c" "$p/exp3_probe.c" -o "$work/probe"
+ASAN_OPTIONS=detect_leaks=0 "$work/probe"
+cc "${flags[@]}" "$p/test_ui_event.c" -o "$work/ui-event"
+"$work/ui-event"
+cc "${flags[@]}" "$p/test_auto_session.c" "${core[@]}" -o "$work/auto-session"
+ASAN_OPTIONS=detect_leaks=0 "$work/auto-session"
+cc "${flags[@]}" "$p/test_auto_radio.c" "${core[@]}" "$p/openi6x_adapter.c" -o "$work/auto-radio"
+ASAN_OPTIONS=detect_leaks=0 "$work/auto-radio"
+for blade_driver in 1U 2U; do
+cc "${flags[@]}" -DBLADE_MOTOR_DRIVER_USED="$blade_driver" \
+  -DREMOTE_BACKEND_A28_E34=0 -DREMOTE_BACKEND_FLYSKY_IBUS=1 -I"$root/control_chassis/Core/Inc" \
+  "$p/test_blade_adapter.c" "$p/exp3.c" "$p/exp3_probe.c" "$p/exp3_blade_adapter.c" \
+  "$root/control_chassis/Core/UserApp/blade_manual_control.c" -o "$work/blade"
+ASAN_OPTIONS=detect_leaks=0 "$work/blade"
+done
+cc "${flags[@]}" -DREMOTE_BACKEND_A28_E34=0 -DREMOTE_BACKEND_FLYSKY_IBUS=1 \
+  -I"$root/control_chassis/Core/Inc" "$p/test_servo_transport_gate.c" \
+  "$root/control_chassis/Core/UserDev/flysky_ibus_servo.c" -o "$work/servo-gate"
+ASAN_OPTIONS=detect_leaks=0 "$work/servo-gate"
+# With EXP3 disabled the protocol sources must not export any symbol.
+for source in exp3.c exp3_probe.c exp3_blade_adapter.c; do
+  cc -std=c99 -Wall -Wextra -Werror -I"$p" -c "$p/$source" -o "$work/disabled.o"
+  test -z "$(nm -g --defined-only "$work/disabled.o")"
+done
+# The removed 0x31 bench profile (EXP3 without MOWER_BLADE_OK) must be rejected.
+if cc -std=c99 -DEXP3_ENABLED=1 -c "$p/exp3.c" -o "$work/bench.o" 2>/dev/null; then
+  echo "EXP3_ENABLED without MOWER_BLADE_OK_ENABLED must not compile" >&2
+  exit 1
+fi

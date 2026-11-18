@@ -4,19 +4,15 @@ from pathlib import Path
 import os
 import subprocess
 import tempfile
+import sys
+sys.dont_write_bytecode = True  # keep tools/ free of __pycache__
+from _harness_util import c_function
 
 ROOT = Path(__file__).resolve().parents[1]
 CORE = ROOT / 'control_chassis/Core'
 
 
-def function(source, signature):
-    start = source.index(signature)
-    end = source.index('{', start) + 1
-    depth = 1
-    while depth:
-        depth += (source[end] == '{') - (source[end] == '}')
-        end += 1
-    return source[start:end]
+function = c_function
 
 
 env = dict(os.environ, ASAN_OPTIONS='detect_leaks=0')

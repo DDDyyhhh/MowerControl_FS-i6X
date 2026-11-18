@@ -4,7 +4,6 @@
 #include "battery_status.h"
 #if EXP3_ENABLED
 Exp3Hil g_exp3_hil;
-#if MOWER_BLADE_OK_ENABLED
 bool exp3_board_defer_result(const Exp3Message *result) { (void)result; return false; }
 static uint16_t authority_word;
 static struct {
@@ -163,9 +162,11 @@ static void receive_runtime(uint32_t snapshot, uint32_t now) {
         runtime.value = (uint16_t)((runtime.value & MOWER_FAST_HEARTBEAT_WORD_MASK) | MOWER_FAST_VALID | flags | run | blade);
     }
 }
-#endif
 volatile Exp3Mailbox g_exp3_mailbox;
 volatile uint32_t g_exp3_uplink_channels;
+#if MOWER_ULTRASONIC_AVOIDANCE_ENABLED
+volatile uint16_t g_mower_ultrasonic_request = MOWER_ULTRASONIC_ON_US;
+#endif
 volatile uint32_t g_exp3_capture_overflow;
 #if EXP3_AUTO_SESSION_ENABLED
 static Exp3AutoSession auto_session;
@@ -178,23 +179,19 @@ void exp3_board_auto_start(uint32_t seed, uint32_t now) {
     auto_seed_at = now;
 }
 static void receive_word(uint16_t word, uint32_t now) {
-#if MOWER_BLADE_OK_ENABLED
     if ((word & MOWER_BATTERY_DIAG_KIND) == MOWER_BATTERY_DIAG_MIN ||
         (word & MOWER_BATTERY_DIAG_KIND) == MOWER_BATTERY_DIAG_REASON) {
         receive_battery(word, now);
         return;
     }
-#endif
     if (auto_started && exp3_auto_is_word(word)) {
         if (exp3_auto_receive(&auto_session, word, now, 5000U) == 1) {
             exp3_auto_hmi_settled(&auto_pace);
             g_exp3_mailbox.command = 0U;
-#if MOWER_BLADE_OK_ENABLED
             runtime.state=0U;
             bag.state=bag_full.state=height.state=0U;
             completion_rx = (Exp3CompletionRx){0};
             battery.seen=battery.pending=battery.valid=0U;
-#endif
             exp3_hil_bind_session(&g_exp3_hil, NULL, auto_session.peer,
                                   auto_session.self, now);
         }
@@ -203,13 +200,11 @@ static void receive_word(uint16_t word, uint32_t now) {
 }
 #else
 static void receive_word(uint16_t word, uint32_t now) {
-#if MOWER_BLADE_OK_ENABLED
     if ((word & MOWER_BATTERY_DIAG_KIND) == MOWER_BATTERY_DIAG_MIN ||
         (word & MOWER_BATTERY_DIAG_KIND) == MOWER_BATTERY_DIAG_REASON) {
         receive_battery(word, now);
         return;
     }
-#endif
     exp3_hil_receive(&g_exp3_hil, NULL, word, now);
 }
 #endif
@@ -235,17 +230,14 @@ void exp3_board_status(Exp3BoardStatus *status) {
                       g_exp3_hil.link.tx_active;
     status->cancel_ready = 0U;
     status->cancel_failed = 0U;
-#if MOWER_BLADE_OK_ENABLED
     status->cancel_ready = g_exp3_hil.bound && !g_exp3_mailbox.command &&
                           !g_exp3_hil.link.tx_active &&
                           (!g_exp3_hil.waiting || g_exp3_hil.pending.kind == EXP3_CONFIRM);
     status->cancel_failed = g_exp3_hil.cancel_failed;
-#endif
 }
 bool exp3_board_submit(const Exp3Message *message) {
     if (!message || !g_exp3_hil.bound || g_exp3_mailbox.command)
         return false;
-#if MOWER_BLADE_OK_ENABLED
     if (g_exp3_hil.waiting && message->kind == EXP3_CANCEL &&
         g_exp3_hil.pending.kind == EXP3_CONFIRM && !g_exp3_hil.link.tx_active) {
         uint8_t encoded[EXP3_MESSAGE_BYTES];
@@ -257,11 +249,8 @@ bool exp3_board_submit(const Exp3Message *message) {
             message->target != old->target) return false;
         g_exp3_hil.waiting = 0U; // supersede response wait, never truncate outgoing frame
     }
-#endif
     if (g_exp3_hil.waiting || g_exp3_hil.link.tx_active) return false;
-#if MOWER_BLADE_OK_ENABLED
     completion_rx = (Exp3CompletionRx){0};
-#endif
     g_exp3_mailbox.message = *message;
     g_exp3_mailbox.command = EXP3_SEND;
     return true;
@@ -280,7 +269,6 @@ void exp3_board_capture_rf(const uint8_t *p, unsigned n, uint32_t now) {
         capture[slot].bytes[i] = p[i];
     ++capture_write;
 }
-#if MOWER_BLADE_OK_ENABLED
 void exp3_board_restart_session(uint32_t now) {
     (void)now;
     g_exp3_hil.bound = 0U;
@@ -303,14 +291,11 @@ static void restart_session_now(uint32_t now) {
     (void)now;
 #endif
 }
-#endif
 void exp3_board_poll(uint32_t now) {
-#if MOWER_BLADE_OK_ENABLED
     if (g_exp3_hil.restart_requested) restart_session_now(now);
     if (g_exp3_hil.bound && g_exp3_hil.waiting &&
         (uint32_t)(now-g_exp3_hil.request_started) >= MOWER_AUTH_LIFETIME_MS)
         restart_session_now(now);
-#endif
     uint16_t a, b;
 #if EXP3_AUTO_SESSION_ENABLED
     if (!auto_started && auto_seed) {
@@ -338,13 +323,9 @@ void exp3_board_poll(uint32_t now) {
         uint16_t word = g_exp3_hil.published_word;
 #if EXP3_AUTO_SESSION_ENABLED
         if (auto_started && !g_exp3_hil.link.tx_active) {
-#if MOWER_BLADE_OK_ENABLED
             uint16_t runtime_word;
             uint32_t interval = exp3_auto_hmi_interval(&auto_pace, g_exp3_hil.bound,
                                                        exp3_board_runtime(now, &runtime_word));
-#else
-            uint32_t interval = EXP3_AUTO_ROUND_MS;
-#endif
             word = exp3_auto_word(&auto_session, now, 20U, interval);
         }
         if (word) {
@@ -374,23 +355,20 @@ void exp3_board_rf(const uint8_t *p, unsigned n, uint32_t now) {
         const uint8_t *value=p+i+header;
         if (size == 2U) {
             uint16_t word=(uint16_t)(value[0] | ((uint16_t)value[1]<<8));
-#if MOWER_BLADE_OK_ENABLED
             /* A legacy two-byte E9 cannot establish profile-3 authority. */
             if (p[i] == MOWER_HEIGHT_SENS_TYPE && p[i+1] == MOWER_HEIGHT_SENS_ADDRESS)
                 receive_height(word, now);
             if (p[i] == MOWER_BAG_SENS_TYPE && p[i+1] == MOWER_BAG_SENS_ADDRESS)
                 receive_bag_connection(word, now);
-#endif
-            if (p[i] == 0xe1 && p[i+1] == 9U) receive_word(word, now);
+            if (p[i] == EXP3_DOWNLINK_SENS_TYPE && p[i+1] == EXP3_DOWNLINK_SENS_ADDRESS) receive_word(word, now);
         }
-#if MOWER_BLADE_OK_ENABLED
         else if (size == 4U) {
             uint32_t word=(uint32_t)value[0] | ((uint32_t)value[1]<<8) |
                 ((uint32_t)value[2]<<16) | ((uint32_t)value[3]<<24);
             if (p[i] >= EXP3_COMPLETION_TYPE && p[i] < EXP3_COMPLETION_TYPE+EXP3_COMPLETION_PARTS &&
                 p[i+1] == EXP3_COMPLETION_ADDRESS+p[i]-EXP3_COMPLETION_TYPE)
                 receive_completion(p[i]-EXP3_COMPLETION_TYPE, word, now);
-            if (p[i] == MOWER_FAST_STATUS_TYPE && p[i+1] == 10U)
+            if (p[i] == MOWER_FAST_STATUS_TYPE && p[i+1] == MOWER_FAST_STATUS_ADDRESS)
                 receive_runtime(word, now);
             if (p[i] == MOWER_BAG_SENS_TYPE && p[i+1] == MOWER_BAG_SENS_ADDRESS) {
                 uint16_t connection=(uint16_t)word, flags=(uint16_t)(word>>16);
@@ -400,7 +378,6 @@ void exp3_board_rf(const uint8_t *p, unsigned n, uint32_t now) {
                 }
             }
         }
-#endif
         i+=header+size;
     }
 }

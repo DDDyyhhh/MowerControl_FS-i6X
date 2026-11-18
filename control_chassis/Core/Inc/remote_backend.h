@@ -77,6 +77,7 @@ typedef struct
     uint32_t confirm_request_sequence;
     uint32_t confirm_event_sequence;
     uint32_t frame_sequence;
+    uint32_t control_source_events;
     /* Comm-observed timeout count; may lag Motion's independent watchdog. */
     uint32_t timeout_sequence;
     uint32_t ch5_stop_sequence;

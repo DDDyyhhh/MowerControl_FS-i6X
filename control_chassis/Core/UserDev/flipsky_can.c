@@ -1,6 +1,8 @@
 #include "flipsky_can.h"
 #include "blade_motor_config.h"
 #include "can_tx_scheduler.h"
+#include "crc16_modbus.h"
+#include "byte_order.h"
 #if defined(FLIPSKY_HOST_TEST)
 extern uint32_t HAL_GetTick(void);
 #else
@@ -23,46 +25,6 @@ extern uint32_t HAL_GetTick(void);
 static FlipskyCanFeedback_t s_feedback;
 static FlipskyCanStats_t s_stats;
 static volatile uint32_t s_feedback_sequence;
-
-static uint16_t Flipsky_Crc16_Modbus(const uint8_t *data, uint32_t length)
-{
-    /* Reflected 0xA001 polynomial, four bits per lookup (two per byte). */
-    static const uint16_t crc_table[16] = {
-        0x0000U, 0xCC01U, 0xD801U, 0x1400U,
-        0xF001U, 0x3C00U, 0x2800U, 0xE401U,
-        0xA001U, 0x6C00U, 0x7800U, 0xB401U,
-        0x5000U, 0x9C01U, 0x8801U, 0x4400U
-    };
-    uint16_t crc = 0xFFFFU;
-    while (length-- != 0U)
-    {
-        crc ^= *data++;
-        crc = (uint16_t)((crc >> 4) ^ crc_table[crc & 0x0FU]);
-        crc = (uint16_t)((crc >> 4) ^ crc_table[crc & 0x0FU]);
-    }
-    return crc;
-}
-
-static void Flipsky_WriteI32BE(uint8_t *data, int32_t value)
-{
-    data[0] = (uint8_t)((uint32_t)value >> 24);
-    data[1] = (uint8_t)((uint32_t)value >> 16);
-    data[2] = (uint8_t)((uint32_t)value >> 8);
-    data[3] = (uint8_t)value;
-}
-
-static int32_t Flipsky_ReadI32BE(const uint8_t *data)
-{
-    return (int32_t)(((uint32_t)data[0] << 24) |
-                     ((uint32_t)data[1] << 16) |
-                     ((uint32_t)data[2] << 8) |
-                     data[3]);
-}
-
-static int16_t Flipsky_ReadI16BE(const uint8_t *data)
-{
-    return (int16_t)(((uint16_t)data[0] << 8) | data[1]);
-}
 
 static uint32_t Flipsky_ExtId(uint8_t command)
 {
@@ -88,8 +50,8 @@ uint8_t Flipsky_CAN_SetCurrentPercent(float percent)
     }
 
     scaled = (int32_t)((percent / 100.0f) * 100000.0f);
-    Flipsky_WriteI32BE(data, scaled);
-    crc = Flipsky_Crc16_Modbus(data, 4U);
+    ByteOrder_PutU32BE(data, (uint32_t)scaled);
+    crc = Crc16_Modbus(data, 4U);
     data[4] = (uint8_t)(crc >> 8);
     data[5] = (uint8_t)crc;
 
@@ -133,7 +95,7 @@ void Flipsky_CAN_ProcessRx(uint32_t ext_id, const uint8_t *data, uint8_t dlc)
     }
 
     received_crc = (uint16_t)(((uint16_t)data[6] << 8) | data[7]);
-    calculated_crc = Flipsky_Crc16_Modbus(data, 6U);
+    calculated_crc = Crc16_Modbus(data, 6U);
     s_feedback_sequence++;
     FLIPSKY_COMPILER_BARRIER();
     if (received_crc != calculated_crc)
@@ -156,23 +118,23 @@ void Flipsky_CAN_ProcessRx(uint32_t ext_id, const uint8_t *data, uint8_t dlc)
     {
     case FLIPSKY_CMD_REALTIME_0:
         s_stats.rx_realtime_0_count++;
-        s_feedback.motor_current_a = Flipsky_ReadI32BE(data) * 0.001f;
-        s_feedback.battery_current_a = Flipsky_ReadI16BE(data + 4) * 0.001f;
+        s_feedback.motor_current_a = (int32_t)ByteOrder_GetU32BE(data) * 0.001f;
+        s_feedback.battery_current_a = (int16_t)ByteOrder_GetU16BE(data + 4) * 0.001f;
         break;
 
     case FLIPSKY_CMD_REALTIME_1:
         s_stats.rx_realtime_1_count++;
-        s_feedback.erpm = Flipsky_ReadI32BE(data);
-        s_feedback.duty = Flipsky_ReadI16BE(data + 4) * 0.001f;
+        s_feedback.erpm = (int32_t)ByteOrder_GetU32BE(data);
+        s_feedback.duty = (int16_t)ByteOrder_GetU16BE(data + 4) * 0.001f;
         s_feedback.erpm_valid = 1U;
         s_feedback.erpm_last_rx_tick = now;
         break;
 
     case FLIPSKY_CMD_REALTIME_2:
         s_stats.rx_realtime_2_count++;
-        s_feedback.battery_voltage_v = Flipsky_ReadI16BE(data) * 0.01f;
-        s_feedback.motor_temp_c = Flipsky_ReadI16BE(data + 2) * 0.01f;
-        s_feedback.mosfet_temp_c = Flipsky_ReadI16BE(data + 4) * 0.01f;
+        s_feedback.battery_voltage_v = (int16_t)ByteOrder_GetU16BE(data) * 0.01f;
+        s_feedback.motor_temp_c = (int16_t)ByteOrder_GetU16BE(data + 2) * 0.01f;
+        s_feedback.mosfet_temp_c = (int16_t)ByteOrder_GetU16BE(data + 4) * 0.01f;
         break;
 
     default:
@@ -223,8 +185,6 @@ uint8_t Flipsky_CAN_IsOnline(void)
     }
     return s_feedback.online;
 }
-// 定义占空比控制指令码 (0x02)
-#define FLIPSKY_CAN_CMD_DUTY_GEAR_CRC16 0x02U
 
 /**
  * @brief 发送占空比控制指令 (0x02)
@@ -246,13 +206,13 @@ uint8_t Flipsky_CAN_SetDutyCycle(float duty_percent)
     scaled = (int32_t)((duty_percent / 100.0f) * 1000000.0f);
 
     // 1. 写入前 4 字节大端序 int32 数值
-    Flipsky_WriteI32BE(data, scaled);
+    ByteOrder_PutU32BE(data, (uint32_t)scaled);
 
     // 2. 第 5 字节 (data[4])：0x00 代表无挡位限制
     data[4] = 0x00U;
 
     // 3. 计算前 5 字节 (data[0] ~ data[4]) 的 CRC16 校验码
-    crc = Flipsky_Crc16_Modbus(data, 5U);
+    crc = Crc16_Modbus(data, 5U);
     // 【修正高低字节位置】：低字节放 data[5]，高字节放 data[6]
     data[5] = (uint8_t)(crc & 0xFFU); // 发送 0x36
     data[6] = (uint8_t)(crc >> 8U);   // 发送 0xCE
@@ -270,8 +230,6 @@ uint8_t Flipsky_CAN_SetDutyCycle(float duty_percent)
 }
 
 
-// 定义转速控制指令码 (0x18)
-#define FLIPSKY_CAN_CMD_ERPM_GEAR 0x18U
 
 /**
  * @brief 发送转速控制指令 (0x18，不带 CRC)
@@ -292,7 +250,7 @@ uint8_t Flipsky_CAN_SetSpeedErpm(float erpm)
     scaled_erpm = (int32_t)erpm * BLADE_FTESC_ERPM_DIRECTION;
 
     // 1. 写入 4 字节大端序 ERPM 数值
-    Flipsky_WriteI32BE(data, scaled_erpm);
+    ByteOrder_PutU32BE(data, (uint32_t)scaled_erpm);
 
     // 2. 第 5 字节：0x00 代表无挡位限制
     data[4] = 0x00U;
@@ -300,4 +258,29 @@ uint8_t Flipsky_CAN_SetSpeedErpm(float erpm)
     // 3. 发送指令 0x18 (EID = 0x00009A18)
     return CAN_Enqueue_BladeControl_Message(Flipsky_ExtId(FLIPSKY_CAN_CMD_ERPM_GEAR),
                                  data, 5U, scaled_erpm == 0);
+}
+
+/**
+ * @brief 发送零电流释放指令 (0x15 CAN_SET_CURRENT_GEAR，不带 CRC)
+ * @note  电流0使电调停止驱动、电机惯性滑行；只提供零电流，不提供非零电流动力路径。
+ * @return 1: 调度器接纳（不代表电调已释放）, 0: 拒绝
+ */
+uint8_t Flipsky_CAN_Release(void)
+{
+    static const uint8_t data[5] = {0U, 0U, 0U, 0U, 0U}; /* current 0, gear 0x00 */
+
+    return CAN_Enqueue_BladeControl_Message(Flipsky_ExtId(FLIPSKY_CAN_CMD_CURRENT_GEAR),
+                                            data, sizeof(data), true);
+}
+
+/**
+ * @brief 发送零占空比释放指令 (0x02 CAN_SET_DUTY_GEAR_CRC16，带 CRC)
+ * @note  配合 ESC Tool 的 Zero Duty Mode = Release Motor，占空比 0 会让
+ *        电调松开输出级；0x15 电流 0 只把电流环目标设为零，输出级仍可能
+ *        保持使能，升降/推杆的 EMI 会让电流环抖一下。
+ * @return 1: 调度器接纳（不代表电调已释放）, 0: 拒绝
+ */
+uint8_t Flipsky_CAN_ReleaseMotor(void)
+{
+    return Flipsky_CAN_SetDutyCycle(0.0f);
 }

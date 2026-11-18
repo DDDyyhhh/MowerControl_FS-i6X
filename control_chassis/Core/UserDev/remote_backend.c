@@ -6,6 +6,9 @@
 #if REMOTE_BACKEND_FLYSKY_IBUS
 #include "blade_confirm_ch6_adapter.h"
 #include "../../../experiments/ticket03/exp3.h"
+#if EXP3_ENABLED && !defined(REMOTE_BACKEND_HOST)
+#include "../../../experiments/ticket03/exp3_board.h"
+#endif
 #include "flysky_ibus_servo.h"
 #endif
 
@@ -384,6 +387,7 @@ static void RemoteBackend_CopyFlySkySnapshot(const FlySkyIbusSnapshot_t *snapsho
     g_command.blade_height_configured = snapshot->blade_height_configured;
     g_command.travel_speed_configured = snapshot->travel_speed_configured;
     g_command.frame_sequence = snapshot->frame_sequence;
+    g_command.control_source_events = snapshot->control_source_events;
     g_command.timeout_sequence = snapshot->timeout_sequence;
     g_command.ch5_stop_sequence = snapshot->ch5_stop_sequence;
     g_command.command_invalidation_sequence = authorization.command_invalidation_sequence;
@@ -470,10 +474,51 @@ void RemoteBackend_GetJoystickOutput(uint16_t joystick[4])
 }
 
 #if !defined(REMOTE_BACKEND_HOST)
+#if EXP3_ENABLED && MOWER_BLADE_OK_ENABLED
+/* Motion owns the setting; Comm only publishes the session and channel frame. */
+static void RemoteBackend_ApplyUltrasonic(void)
+{
+#if MOWER_ULTRASONIC_AVOIDANCE_ENABLED
+    static uint32_t controller, hmi, frame, applied_at;
+    static bool on_baseline;
+    Exp3BoardStatus status;
+    exp3_board_status(&status);
+    if (!status.bound || controller != status.controller || hmi != status.hmi) {
+        controller = status.controller;
+        hmi = status.hmi;
+        frame = g_command.frame_sequence;
+        applied_at = g_now_ms;
+        on_baseline = false;
+        g_app.cfg_ultrasonic_en = 1U;
+    }
+    if (!status.bound || !g_command.connected || !g_command.link_fresh ||
+        !g_command.stable_online || frame == g_command.frame_sequence ||
+        (int32_t)(g_command.last_valid_ms - applied_at) <= 0) return;
+    frame = g_command.frame_sequence;
+    applied_at = g_command.last_valid_ms;
+    const uint16_t pulse = g_command.channels[MOWER_ULTRASONIC_CHANNEL];
+    if (pulse >= 900U && pulse <= 1120U) {
+        g_app.cfg_ultrasonic_en = 1U;
+        on_baseline = true;
+    } else if (pulse >= 1880U && pulse <= 2100U) {
+        if (on_baseline) g_app.cfg_ultrasonic_en = 0U;
+    } else {
+        g_app.cfg_ultrasonic_en = 1U;
+        on_baseline = false;
+    }
+#else
+    g_app.cfg_ultrasonic_en = 0U;
+#endif
+}
+#endif
+
 static void RemoteBackend_ApplyCommand(void)
 {
     RemoteBackend_GetJoystickOutput(g_app.Joystick);
 #if REMOTE_BACKEND_FLYSKY_IBUS
+#if EXP3_ENABLED && MOWER_BLADE_OK_ENABLED
+    RemoteBackend_ApplyUltrasonic();
+#endif
     /* FlySky CH7 selects blade gear, not the legacy travel gear. */
     if (g_command.run_permitted)
     {

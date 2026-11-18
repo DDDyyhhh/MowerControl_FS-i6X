@@ -6,16 +6,22 @@ are fixtures. No HMI/controller generation or result is invented by this test.
 """
 from pathlib import Path
 import re, subprocess, tempfile, os
+import sys
+sys.dont_write_bytecode = True  # keep tools/ free of __pycache__
+from _harness_util import c_function
 root=Path(__file__).resolve().parents[1]
 p=root/'experiments/ticket03'; core=root/'control_chassis/Core'
 view=(root/'OpenI6X/FS-I6X/opentx/radio/src/gui/128x64/view_main.cpp').read_text()
 motion=(core/'UserApp/app_Motion.c').read_text()
-def function(text,signature):
- a=text.index(signature); o=text.index('{',a);e=o+1;d=1
- while d: d+=(text[e]=='{')-(text[e]=='}');e+=1
- return text[a:e]
+function = c_function
 controller=r'''
 #include "remote_backend.h"
+#include "control_source.h"
+static ControlSource_t g_control_source;
+static HostControlSnapshot_t g_host_snapshot;
+static unsigned api_lockout;
+static uint16_t test_ch8 = 1500U;
+static void chassis_control_read_host_snapshot(HostControlSnapshot_t *out) { *out=(HostControlSnapshot_t){0}; }
 #include "exp3_board.h"
 #include "blade_manual_control.h"
 #include "exp3_blade_adapter.h"
@@ -30,7 +36,7 @@ extern uint32_t test_now;
 static uint32_t clock_now(void *ctx){(void)ctx;return test_now;}
 static struct {BatteryMonitor_t battery;unsigned lock,physical_safety_latched,cfg_collision_en,cfg_tilt_sensor_en;
  unsigned collision_reason_latched,emergency_reason_latched,g_collision_latched;
- unsigned g_system_report_state,receiver_status[16],knob_height;
+ unsigned g_system_report_state,receiver_status[16],knob_height,cfg_ultrasonic_en;
  uint16_t Joystick[4];uint32_t last_receive_timestamp;bool communication_connected;} g_app;
 static struct {float pitch,roll;} imu_data;
 static unsigned last_host_cmd_tick;
@@ -55,8 +61,9 @@ static unsigned HAL_GPIO_ReadPin(unsigned port,unsigned pin){(void)port;(void)pi
 static void RefreshBatteryMonitor(uint32_t now){(void)now;}
 static void ApplyBatteryAuthorization(void){SafetyOwnershipGate_SetBatteryPolicy(false,g_app.battery.blade_inhibited);}
 static void RefreshTelemetrySnapshot(const RemoteCommand_t *c,const RemoteSafetyInput_t *s,bool a,uint32_t now){(void)c;(void)s;(void)a;(void)now;}
-'''+function(motion,'static void RefreshRemoteIntent(')+'\n'+function(motion,'static void RecordUnlockDecision(')+'\n'+function(motion,'static void DispatchRemoteConfirmation(')+'\n'+function(motion,'static void RefreshSafetyOwnershipGate(void)\n{')+r'''
+'''+function(motion,'static void RefreshRemoteIntent(')+'\n'+function(motion,'static void RecordUnlockDecision(')+'\n'+function(motion,'static void DispatchRemoteConfirmation(')+'\n'+function(motion,'static void RefreshControlSource(')+'\n'+function(motion,'static void RefreshSafetyOwnershipGate(void)\n{')+r'''
 void test_controller_init(void){
+ ControlSource_Reset(&g_control_source);
  FlySkyIbusConfig_t cfg=RemoteBackend_DefaultFlySkyConfig();
  RemoteBackend_InitWithFlySkyConfig((RemoteBackendClock_t){clock_now,0},&cfg);
  BladeManualControl_Init(&g_blade_manual_control,0);g_app.lock=1U;
@@ -69,12 +76,12 @@ unsigned test_permitted(void){return command.run_permitted;}
 unsigned test_timeout_history(void){return command.timeout_latched;}
 unsigned test_faults(void){TelemetrySnapshot_t s;assert(TelemetrySnapshot_Read(&s));return s.values[TELEMETRY_VALUE_DETAILED_FAULT];}
 unsigned test_blade(void){return BladeManualControl_GetState(&g_blade_manual_control)==BLADE_STATE_RUNNING;}
-void test_mode(unsigned mode){Ctrl_Mode=mode;}
+void test_mode(unsigned mode){test_ch8=mode==0U?1500U:2000U;}
 void test_reboot(void){test_controller_init();exp3_board_restart_session(test_now);}
 void test_receive(uint16_t ch4,uint32_t packed){
  uint16_t channels[14];uint8_t bytes[32]={32,64};uint16_t sum=0U;
  for(unsigned i=0;i<14U;i++)channels[i]=1500U;
- channels[3]=ch4;channels[4]=2000U;channels[5]=1000U;channels[6]=2000U;
+ channels[7]=test_ch8;channels[3]=ch4;channels[4]=2000U;channels[5]=1000U;channels[6]=2000U;
  channels[10]=packed?(uint16_t)packed:1500U;
  channels[11]=packed?(uint16_t)(packed>>16):1500U;
  for(unsigned i=0;i<14U;i++){bytes[2+i*2]=(uint8_t)channels[i];bytes[3+i*2]=(uint8_t)(channels[i]>>8);}
@@ -132,7 +139,7 @@ controller=controller.replace('src.ibus_timeout_latched=command.timeout_latched;
 # Enable the same two production ApplyCommand blocks as the dedicated physical
 # recovery regression. Board hardware includes/ISR controls remain fakes.
 backend=(core/'UserDev/remote_backend.c').read_text()
-for original in ['#if !defined(REMOTE_BACKEND_HOST)\nstatic void RemoteBackend_ApplyCommand(void)',
+for original in ['#if !defined(REMOTE_BACKEND_HOST)\n#if EXP3_ENABLED && MOWER_BLADE_OK_ENABLED',
                  '#if !defined(REMOTE_BACKEND_HOST)\n    g_app.communication_connected = g_command.connected;']:
  assert backend.count(original)==1
  backend=backend.replace(original,original.replace('#if !defined(REMOTE_BACKEND_HOST)','#if 1'))
@@ -193,7 +200,7 @@ struct FakeSysTick{uint32_t VAL;};extern struct FakeSysTick fake_systick;
  (core/'UserDev/sens_ibus_responder.c',aliases)]
  files += [(p/n,[]) for n in ['exp3.c','exp3_link.c','exp3_hil.c','exp3_auto_session.c','exp3_probe.c','openi6x_adapter.c','exp3_blade_adapter.c']]
  files += [(core/'UserDev'/n,aliases) for n in ['remote_authorization.c','flysky_ibus_servo.c','blade_confirm_ch6_adapter.c']]
- files += [(core/'UserApp'/n,[]) for n in ['telemetry_snapshot.c','blade_manual_control.c','safety_ownership_gate.c']]
+ files += [(core/'UserApp'/n,[]) for n in ['telemetry_snapshot.c','blade_manual_control.c','safety_ownership_gate.c','control_source.c']]
  for i,(file,extra) in enumerate(files):
   obj=w/(str(i)+'.o');subprocess.run(['cc','-std=c99',*flags,*extra,'-c',str(file),'-o',str(obj)],check=True);objects.append(obj)
  subprocess.run(['c++','-std=c++11',*flags,'-DPCBI6X_MOWER_BLADE_OK=1',str(w/'ui.cpp'),*map(str,objects),'-lm','-o',str(w/'test')],check=True)

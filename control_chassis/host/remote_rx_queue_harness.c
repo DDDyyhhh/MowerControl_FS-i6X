@@ -1,14 +1,14 @@
 /* Included after the production queue adapters by test_remote_rx_queue.py. */
-static uint16_t selected_ch4=1500U, selected_ch5=2000U;
+static uint16_t selected_ch4=1500U, selected_ch5=2000U, selected_ch8=1500U;
 static uint32_t Clock(void *context){(void)context;return clock_ms;}
 static void Reset(void){
- protocol_last_ms=0;clock_ms=0;qread=qwrite=qcount=protocol_calls=pairing_calls=0;selected_ch4=1500;selected_ch5=2000;
+ protocol_last_ms=0;clock_ms=0;qread=qwrite=qcount=protocol_calls=pairing_calls=0;selected_ch4=1500;selected_ch5=2000;selected_ch8=1500;
  RemoteBackend_Init((RemoteBackendClock_t){Clock,NULL});SafetyOwnershipGate_Reset();
 }
 static unsigned Frame(uint8_t *bytes,uint16_t pulse){
 #if REMOTE_BACKEND_FLYSKY_IBUS
  memset(bytes,0,32);bytes[0]=0x20;bytes[1]=0x40;uint16_t checksum=0xffff;
- for(unsigned i=0;i<14;i++){uint16_t p=i==0?pulse:i==3?selected_ch4:i==4?selected_ch5:1500;bytes[2+i*2]=(uint8_t)p;bytes[3+i*2]=(uint8_t)(p>>8);}
+ for(unsigned i=0;i<14;i++){uint16_t p=i==0?pulse:i==3?selected_ch4:i==4?selected_ch5:i==7?selected_ch8:1500;bytes[2+i*2]=(uint8_t)p;bytes[3+i*2]=(uint8_t)(p>>8);}
  for(unsigned i=0;i<30;i++)checksum-=bytes[i];
  bytes[30]=(uint8_t)checksum;bytes[31]=(uint8_t)(checksum>>8);return 32;
 #else
@@ -73,6 +73,25 @@ static void TestInvalidMessages(void){
  RemoteBackend_ProcessRxMessage(&msg);assert(Diagnostics().invalid_messages==2);
 }
 #if REMOTE_BACKEND_FLYSKY_IBUS
+static void TestCh8ExcursionsSurviveSnapshots(void){
+ Reset();ReceiveFrame(10,1500);RemoteBackend_Process();RemoteCommand_t before=Read();
+ assert(before.control_source_events==1 && before.channels[7]==1500);
+ selected_ch8=2000;ReceiveFrame(20,1500);RemoteBackend_Process();
+ selected_ch8=1500;ReceiveFrame(30,1500);RemoteBackend_Process();
+ /* Motion did not run during this round trip; the latest command remembers it. */
+ RemoteCommand_t after=Read();
+ assert(after.control_source_events==before.control_source_events+2 && after.channels[7]==1500);
+ selected_ch8=1000;ReceiveFrame(40,1500);RemoteBackend_Process();
+ assert(Read().control_source_events==after.control_source_events); /* same RC selection */
+ for(unsigned value=0;value<2;value++) {
+  selected_ch8=value?65535:899;ReceiveFrame(50+value*10,1500);RemoteBackend_Process();
+  RemoteCommand_t invalid=Read();
+  assert(invalid.channels[7]==selected_ch8 && invalid.last_valid_ms==50+value*10);
+  assert(invalid.control_source_events==after.control_source_events+1);
+ }
+ selected_ch8=2000;ReceiveFrame(70,1500);RemoteBackend_Process();
+ assert(Read().control_source_events==after.control_source_events+2);
+}
 static void TestFragmentsAndGaps(void){
  uint8_t bytes[64];unsigned n;
  Reset();n=Frame(bytes,1500);ReceiveBytes(10,bytes,7);RemoteBackend_Process();
@@ -170,7 +189,7 @@ int main(void){
  TestExpiredQueueDoesNotRefresh();TestAgeBoundariesAndZero();TestWrapAndSequenceWrap();
  TestOldQueueAndMixedQueue();TestInvalidMessages();TestDmaBufferReuse();
 #if REMOTE_BACKEND_FLYSKY_IBUS
- TestFragmentsAndGaps();TestOverflowIsBoundedAndBreaksFragments();
+ TestCh8ExcursionsSurviveSnapshots();TestFragmentsAndGaps();TestOverflowIsBoundedAndBreaksFragments();
  TestStabilityUsesReceptionTime();TestArmedBacklogStopsAndNeedsNewUnlock();
 #else
  TestLegacyButtonsCannotRefreshAndExpiredConfigIsIgnored();

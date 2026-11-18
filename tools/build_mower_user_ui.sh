@@ -13,7 +13,7 @@ cmake -S "$source_dir" -B "$build_dir" \
   -DPython3_EXECUTABLE="$(command -v "$python_bin")" -DDISABLE_COMPANION=ON \
   -DPCB=I6X -DTRANSLATIONS=EN -DPCBI6X_MOWER_UI_SHELL=YES \
   -DPCBI6X_MOWER_UI_MOCK=NO -DPCBI6X_TICKET03_HIL_MODEL=NO \
-  -DPCBI6X_MOWER_BLADE_OK=ON -DPCBI6X_EXP3=OFF -DPCBI6X_EXP3_PWM_HIL=OFF
+  -DPCBI6X_MOWER_BLADE_OK=ON
 cmake --build "$build_dir" --target firmware -j8
 arm-none-eabi-size "$build_dir/firmware.elf"
 shasum -a 256 "$build_dir/firmware.bin"

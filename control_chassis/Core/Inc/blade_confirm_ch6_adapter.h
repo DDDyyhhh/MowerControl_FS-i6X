@@ -73,7 +73,6 @@ typedef struct
 BladeConfirmCh6Config_t BladeConfirmCh6Adapter_DefaultConfig(void);
 void BladeConfirmCh6Adapter_Init(BladeConfirmCh6Adapter_t *adapter,
                                  const BladeConfirmCh6Config_t *config);
-void BladeConfirmCh6Adapter_Reset(BladeConfirmCh6Adapter_t *adapter);
 void BladeConfirmCh6Adapter_Advance(BladeConfirmCh6Adapter_t *adapter,
                                     const BladeConfirmCh6Input_t *input);
 

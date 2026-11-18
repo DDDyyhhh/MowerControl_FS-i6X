@@ -33,7 +33,26 @@ deterministic 0% duty. PE5 is not part of the PWM blade chain.
 - DLC: 5.
 - Data bytes 0..3: signed big-endian integer ERPM.
 - Data byte 4: gear limit `0x00`.
-- ERPM `0` is the normal stop request; stop is sent explicitly.
+- ERPM `0` is the brake phase of a stop; stop is sent explicitly.
+- Idle release command: command `0x15` (`CAN_SET_CURRENT_GEAR`), extended ID
+  `0x00009A15`, DLC 5, bytes 0..3 signed big-endian current x100000 (always 0),
+  byte 4 gear `0x00`, no CRC. The firmware only ever sends current 0.
+
+### Stop sequence: brake, then release
+
+The first zero intent after the blade may be turning (power-up, or any accepted
+nonzero ERPM frame) opens a brake window. For `BLADE_FTESC_STOP_BRAKE_MS`
+(default 3000 ms) the adapter sends ERPM `0`. After that it sends the `0x15`
+zero-current release while the blade stays off, so the ESC stops driving the
+motor and the blade coasts. Repeated zeros do not restart the window; only a newly
+accepted nonzero frame re-arms it. Both frames use the 200 ms keepalive. A change
+of frame kind (brake to release, release to run) is sent at once, and a rejected
+frame is retried on the next call.
+
+Reason: holding a sensorless ESC in its ERPM 0 speed loop let lifter H-bridge
+noise and deck jolts twitch an "off" blade. See `docs/adr/0005-blade-idle-release.md`.
+`BLADE_FTESC_IDLE_RELEASE_ENABLED=0` restores the legacy ERPM 0 hold. Hardware
+must confirm that the FTESC actually releases on `0x15` current 0.
 
 The existing hardware-validated ERPM levels remain 14,000, 15,500, and 16,000.
 These are electrical RPM setpoints, not measured mechanical blade RPM. CH7
@@ -41,7 +60,8 @@ These are electrical RPM setpoints, not measured mechanical blade RPM. CH7
 matching remote OK confirmation and `SafetyOwnershipGate` authorization remain
 required. An unchanged command is refreshed every 200 ms; a changed command,
 including zero after denied authorization, is sent immediately on the next
-adapter call. `BladeMotor_Stop()` sends an explicit zero unconditionally.
+adapter call. `BladeMotor_Stop()` sends an explicit zero unconditionally (ERPM 0
+inside the brake window, the `0x15` release after it).
 
 ## Reliable blade transmission
 
@@ -53,8 +73,10 @@ ordinary FIFO traffic use mailboxes 0/1 with their existing priority order.
 ERPM/current/duty commands all use the dedicated blade interface; the ordinary
 extended-frame enqueue rejects these IDs for this ESC. Wire formats are unchanged.
 
-A zero request replaces queued nonzero intent and stays pending until its own
-TXOK. Repeated zeros keep its original identity and age. While it is pending,
+A zero request (ERPM 0 or the `0x15` release) replaces queued nonzero intent and
+stays pending until its own TXOK. Repeated zeros, including a release arriving
+while an ERPM 0 stop is pending, keep the pending stop's identity and age; the
+release then goes out on a later keepalive (at most 200 ms later). While it is pending,
 nonzero submissions fail and are not saved for automatic replay. `BladeMotor`
 updates its suppression cache only after acceptance. The 200ms keepalive is not
 the retry mechanism: submission errors, arbitration loss and transmission errors

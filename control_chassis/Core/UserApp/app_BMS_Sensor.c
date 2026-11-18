@@ -115,6 +115,7 @@
 #include "odrive_can.h" // 必须包含此头文件以使用 CAN_Enqueue_Message
 #include "chassis_control.h"
 #include "telemetry_snapshot.h"
+#include "byte_order.h"
 #include <string.h>
 #include <math.h>
 #include "mssd_can.h"
@@ -254,10 +255,8 @@ static void Send_Telemetry_Core_Frame(void)
     int16_t scaled_w = (int16_t)(cur_w * 1000.0f);
 
     // 字节填充 (大端序，方便上位机查看原始报文)
-    tx_buf[0] = (uint8_t)(scaled_vx >> 8);
-    tx_buf[1] = (uint8_t)(scaled_vx & 0xFF);
-    tx_buf[2] = (uint8_t)(scaled_w >> 8);
-    tx_buf[3] = (uint8_t)(scaled_w & 0xFF);
+    ByteOrder_PutU16BE(&tx_buf[0], (uint16_t)scaled_vx);
+    ByteOrder_PutU16BE(&tx_buf[2], (uint16_t)scaled_w);
 
     tx_buf[4] = Ctrl_Mode;
     tx_buf[5] = g_app.voltage_int;
@@ -279,7 +278,7 @@ static void Send_Telemetry_Core_Frame(void)
     tx_buf[7] = status_flags;
 
     // 入队待发
-    CAN_Enqueue_Message(0x507, tx_buf, 8, 0);
+    CAN_Enqueue_Message(CHASSIS_ODOM_CAN_ID, tx_buf, 8, 0);
 }
 
 /**
@@ -325,12 +324,12 @@ static void Send_Telemetry_Odom_Frames(void)
     // --- 0x508: 右侧轮位置 ---
     memcpy(&tx_buf[0], &pos_fr, 4);
     memcpy(&tx_buf[4], &pos_rr, 4);
-    CAN_Enqueue_Message(0x508, tx_buf, 8, 0);
+    CAN_Enqueue_Message(CHASSIS_ENC_RIGHT_CAN_ID, tx_buf, 8, 0);
 
     // --- 0x509: 左侧轮位置 ---
     memcpy(&tx_buf[0], &pos_fl, 4);
     memcpy(&tx_buf[4], &pos_rl, 4);
-    CAN_Enqueue_Message(0x509, tx_buf, 8, 0);
+    CAN_Enqueue_Message(CHASSIS_ENC_LEFT_CAN_ID, tx_buf, 8, 0);
 }
 
 /**
@@ -348,56 +347,24 @@ static void Send_Telemetry_Wheel_Speed_Frame(void)
     last_speed_tick = now_tick;
 
     uint8_t tx_buf[8] = {0};
-    int16_t speed_fl;
-    int16_t speed_fr;
-    int16_t speed_rl;
-    int16_t speed_rr;
-    float speed_fl_f;
-    float speed_fr_f;
-    float speed_rl_f;
-    float speed_rr_f;
-    uint8_t stale_fl;
-    uint8_t stale_fr;
-    uint8_t stale_rl;
-    uint8_t stale_rr;
-
+    uint32_t stale_count = 0U;
     ChassisWheelFeedback_t wheels[4] = {0};
+
     (void)chassis_control_read_wheel_feedback(wheels);
     now_tick = HAL_GetTick(); /* after the atomic data copies */
-    stale_fl = !wheels[0].valid || now_tick-wheels[0].last_good_tick > TELEMETRY_WHEEL_FRESHNESS_MS;
-    stale_fr = !wheels[1].valid || now_tick-wheels[1].last_good_tick > TELEMETRY_WHEEL_FRESHNESS_MS;
-    stale_rl = !wheels[2].valid || now_tick-wheels[2].last_good_tick > TELEMETRY_WHEEL_FRESHNESS_MS;
-    stale_rr = !wheels[3].valid || now_tick-wheels[3].last_good_tick > TELEMETRY_WHEEL_FRESHNESS_MS;
-    speed_fl_f = stale_fl ? 0.0f : (float)wheels[0].speed_mm_per_s;
-    speed_fr_f = stale_fr ? 0.0f : (float)wheels[1].speed_mm_per_s;
-    speed_rl_f = stale_rl ? 0.0f : (float)wheels[2].speed_mm_per_s;
-    speed_rr_f = stale_rr ? 0.0f : (float)wheels[3].speed_mm_per_s;
+    /* Order FL, FR, RL, RR; a stale wheel is reported as 0 mm/s. */
+    for (uint8_t i = 0U; i < 4U; ++i)
+    {
+        uint8_t stale = !wheels[i].valid ||
+                        now_tick - wheels[i].last_good_tick > TELEMETRY_WHEEL_FRESHNESS_MS;
+        float speed = stale ? 0.0f : (float)wheels[i].speed_mm_per_s;
 
-
-    g_wheel_speed_feedback_stale_count += stale_fl + stale_fr + stale_rl + stale_rr;
-
-    if (speed_fl_f > 32767.0f) speed_fl_f = 32767.0f;
-    if (speed_fl_f < -32768.0f) speed_fl_f = -32768.0f;
-    if (speed_fr_f > 32767.0f) speed_fr_f = 32767.0f;
-    if (speed_fr_f < -32768.0f) speed_fr_f = -32768.0f;
-    if (speed_rl_f > 32767.0f) speed_rl_f = 32767.0f;
-    if (speed_rl_f < -32768.0f) speed_rl_f = -32768.0f;
-    if (speed_rr_f > 32767.0f) speed_rr_f = 32767.0f;
-    if (speed_rr_f < -32768.0f) speed_rr_f = -32768.0f;
-
-    speed_fl = (int16_t)speed_fl_f;
-    speed_fr = (int16_t)speed_fr_f;
-    speed_rl = (int16_t)speed_rl_f;
-    speed_rr = (int16_t)speed_rr_f;
-
-    tx_buf[0] = (uint8_t)((uint16_t)speed_fl >> 8);
-    tx_buf[1] = (uint8_t)((uint16_t)speed_fl & 0xFFU);
-    tx_buf[2] = (uint8_t)((uint16_t)speed_fr >> 8);
-    tx_buf[3] = (uint8_t)((uint16_t)speed_fr & 0xFFU);
-    tx_buf[4] = (uint8_t)((uint16_t)speed_rl >> 8);
-    tx_buf[5] = (uint8_t)((uint16_t)speed_rl & 0xFFU);
-    tx_buf[6] = (uint8_t)((uint16_t)speed_rr >> 8);
-    tx_buf[7] = (uint8_t)((uint16_t)speed_rr & 0xFFU);
+        stale_count += stale;
+        if (speed > 32767.0f) speed = 32767.0f;
+        if (speed < -32768.0f) speed = -32768.0f;
+        ByteOrder_PutU16BE(&tx_buf[2U * i], (uint16_t)(int16_t)speed);
+    }
+    g_wheel_speed_feedback_stale_count += stale_count;
 
     if (!CAN_Enqueue_Telemetry_Message(CHASSIS_WHEEL_SPEED_CAN_ID, tx_buf, sizeof(tx_buf), 0))
     {

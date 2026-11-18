@@ -3,6 +3,8 @@
 #include "exp3_hil.h"
 #include <assert.h>
 #include <stdio.h>
+#include "exp3_board.h"
+bool exp3_board_defer_result(const Exp3Message *m) { (void)m; return false; }
 
 static void exchange(Exp3AutoSession *hmi, Exp3AutoSession *controller,
                      uint32_t start_ms, uint32_t until_ms, int drop_downlink)

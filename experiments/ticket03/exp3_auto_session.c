@@ -5,7 +5,7 @@
 
 static uint8_t checksum(const uint8_t bytes[4], uint8_t role)
 {
-    uint8_t value = (uint8_t)(0x5aU ^ role ^ (MOWER_BLADE_OK_ENABLED ? EXP3_WIRE_VERSION : 0U));
+    uint8_t value = (uint8_t)(0x5aU ^ role ^ EXP3_WIRE_VERSION);
     unsigned i, bit;
     for (i = 0U; i < 4U; ++i) {
         value ^= bytes[i];
@@ -117,10 +117,7 @@ int exp3_auto_receive(Exp3AutoSession *session, uint16_t word, uint32_t now,
     session->rx_next = 0U;
     if ((uint8_t)word != checksum(session->rx_bytes, peer_role))
         return 0;
-    peer = (uint32_t)session->rx_bytes[0] |
-           ((uint32_t)session->rx_bytes[1] << 8) |
-           ((uint32_t)session->rx_bytes[2] << 16) |
-           ((uint32_t)session->rx_bytes[3] << 24);
+    peer = exp3_get32_le(session->rx_bytes);
     if (!peer || peer == session->peer)
         return 0;
     session->peer = peer;

@@ -23,6 +23,16 @@ nm=subprocess.check_output(['arm-none-eabi-nm','-C',str(a.elf)],text=True)
 symbols={parts[2]:int(parts[0],16) for line in nm.splitlines() if len(parts:=line.split(maxsplit=2))==3 and re.fullmatch('[0-9a-fA-F]+',parts[0])}
 dis=subprocess.check_output(['arm-none-eabi-objdump','-d','-C',str(a.elf)],text=True)
 menu=re.search(r'^[0-9a-f]+ <menuMainView\(unsigned char\)>:\n(.*?)(?=\n[0-9a-f]+ <|\Z)',dis,re.M|re.S)[1]
+# Size-constrained production keeps the renderer out of menuMainView. Verify the
+# real menu still calls it, then emulate the same accessor/consumer boundary.
+render=re.search(r'^[0-9a-f]+ <mowerUserRender\(\)>:\n(.*?)(?=\n[0-9a-f]+ <|\Z)',dis,re.M|re.S)
+if render:
+ assert re.search(r'\bbl\s+[0-9a-f]+ <mowerUserRender\(\)>',menu), 'Main view must reach the production renderer'
+ menu=render[1]
+provider=re.search(r'^[0-9a-f]+ <mowerUiReadLive\(MowerUiSnapshot&\)>:\n(.*?)(?=\n[0-9a-f]+ <|\Z)',dis,re.M|re.S)
+if provider:
+ assert re.search(r'\bbl\s+[0-9a-f]+ <mowerUiReadLive\(MowerUiSnapshot&\)>',menu), 'Renderer must reach the live provider'
+ menu=provider[1]
 call=re.search(r'^\s*([0-9a-f]+):.*\bbl\s+[0-9a-f]+ <mowerSensor\(',menu,re.M)
 assert call, 'Live telemetry accessor must remain available for target regression'
 address=int(call[1],16)

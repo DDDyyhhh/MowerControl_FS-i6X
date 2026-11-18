@@ -10,6 +10,9 @@ import os
 from pathlib import Path
 import subprocess
 import tempfile
+import sys
+sys.dont_write_bytecode = True
+from _harness_util import c_function
 
 root = Path(__file__).resolve().parents[1]
 dispatcher_test = root / 'tools/test_unlock_dispatch.py'
@@ -32,7 +35,7 @@ static struct {
     uint16_t Joystick[4];
     unsigned lock, physical_safety_latched, g_collision_latched;
     unsigned collision_reason_latched, emergency_reason_latched, cfg_collision_en, cfg_tilt_sensor_en;
-    unsigned g_system_report_state, receiver_status[16], knob_height;
+    unsigned g_system_report_state, receiver_status[16], knob_height, cfg_ultrasonic_en;
     uint32_t last_receive_timestamp;
     bool communication_connected;
 } g_app;
@@ -72,6 +75,16 @@ fixture = fixture.replace('safety = (RemoteSafetyInput_t){0}; now = 0U; epoch = 
     g_app.lock = g_app.g_collision_latched = g_app.cfg_collision_en = 1U;
     raw_emergency = raw_collision = false; stops = blade_stops = 0U;''')
 
+fixture += r'''
+#include "ultrasonic_control.h"
+#if MOWER_ULTRASONIC_AVOIDANCE_ENABLED
+typedef struct { uint32_t controller,hmi; uint8_t bound; } Exp3BoardStatus;
+static void exp3_board_status(Exp3BoardStatus *status) {
+    status->controller=g_exp3_hil.controller;status->hmi=g_exp3_hil.hmi;status->bound=1U;
+}
+#endif
+'''
+
 motion = namespace['motion']
 scan_start = motion.index('    // === 2. 安全检测')
 scan_end = motion.index('#if REMOTE_BACKEND_A28_E34', scan_start)
@@ -80,7 +93,9 @@ refresh_start = motion.index('static void RefreshSafetyOwnershipGate(void)\n{')
 refresh_end = motion.index('\nstatic void RefreshTelemetrySnapshot(', refresh_start)
 refresh = r'''
 static struct { float pitch, roll; } imu_data;
-static unsigned last_host_cmd_tick;
+static unsigned last_host_cmd_tick, api_lockout;
+static HostControlSnapshot_t g_host_snapshot;
+static void chassis_control_read_host_snapshot(HostControlSnapshot_t *out) { *out=(HostControlSnapshot_t){0}; }
 #define API_TIMEOUT_MS 100U
 static uint16_t g_blade_ok_runtime_word;
 static uint32_t HAL_GetTick(void) { return now; }
@@ -92,7 +107,7 @@ static void RefreshTelemetrySnapshot(const RemoteCommand_t *current,
     (void)available; (void)at;
     command = *current; safety = *inputs;
 }
-''' + motion[refresh_start:refresh_end]
+''' + c_function(motion, 'static void RefreshControlSource(') + motion[refresh_start:refresh_end]
 telemetry_start = motion.index('  sources.emergency_active =')
 telemetry_end = motion.index('  sources.tilt_active_or_latched =', telemetry_start)
 telemetry = r'''
@@ -109,7 +124,7 @@ static uint16_t physical_faults(void) {
 
 backend = (root / 'control_chassis/Core/UserDev/remote_backend.c').read_text()
 for original in [
-        '#if !defined(REMOTE_BACKEND_HOST)\nstatic void RemoteBackend_ApplyCommand(void)',
+        '#if !defined(REMOTE_BACKEND_HOST)\n#if EXP3_ENABLED && MOWER_BLADE_OK_ENABLED',
         '#if !defined(REMOTE_BACKEND_HOST)\n    g_app.communication_connected = g_command.connected;']:
     assert backend.count(original) == 1
     backend = backend.replace(original, original.replace('#if !defined(REMOTE_BACKEND_HOST)', '#if 1'))
@@ -196,6 +211,6 @@ with tempfile.TemporaryDirectory(prefix='mower-single-unlock-') as directory:
                     '-I'+str(core/'Inc'), '-I'+str(root/'experiments/ticket03'), str(source),
                     *[str(core/'UserDev'/name) for name in ['remote_authorization.c',
                         'flysky_ibus_servo.c', 'blade_confirm_ch6_adapter.c']],
-                    str(core/'UserApp/telemetry_snapshot.c'), str(core/'UserApp/safety_ownership_gate.c'),
+                    str(core/'UserApp/control_source.c'), str(core/'UserApp/telemetry_snapshot.c'), str(core/'UserApp/safety_ownership_gate.c'),
                     '-lm', '-o', str(work/'test')], check=True)
     subprocess.run([str(work/'test')], check=True)

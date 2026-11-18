@@ -50,7 +50,8 @@ void EG2104_HBridge_Stop(EG2104_HBridge_t *bridge) {
     }
 }
 bool FlashStorage_LoadSettings(AppSettings_t *s) {
-    s->lifter_current_height_cm = 11.0f; return true;
+    s->magic_number = APP_SETTINGS_MAGIC_NUMBER;
+    s->lifter_current_height_cm = 8.0f; return true;
 }
 bool FlashStorage_SaveSettings(const AppSettings_t *s) { (void)s; return true; }
 void Suspend_Heartbeat_Check(unsigned char suspend) { (void)suspend; }
@@ -83,9 +84,10 @@ int main(void)
     now_ms = 110000;
     Lifter_Task_Update(); assert(!g_app.grass_bag_status);
     /* Command arrives during delayed height persistence before bag update. */
+    Lifter_SetHeightPermission(true);
     Lifter_SetTargetLevel(4);
     Lifter_Task_Update();
-    now_ms += 2800;
+    now_ms += 700;
     Lifter_Task_Update();
     now_ms += 10000;
     inject_target = true;

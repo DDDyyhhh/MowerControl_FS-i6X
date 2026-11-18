@@ -1,18 +1,8 @@
 #include "exp3.h"
 #if EXP3_ENABLED
 #include <string.h>
-#if MOWER_BLADE_OK_ENABLED
 #include "exp3_completion.h"
 #include "exp3_probe.h"
-#endif
-static void put32(uint8_t *p, uint32_t v) {
-    unsigned i;
-    for (i = 0; i < 4; ++i)
-        p[i] = (uint8_t)(v >> (8 * i));
-}
-static uint32_t get32(const uint8_t *p) {
-    return (uint32_t)p[0] | ((uint32_t)p[1] << 8) | ((uint32_t)p[2] << 16) | ((uint32_t)p[3] << 24);
-}
 /* CRC-32/ISO-HDLC: corruption detection, NOT authentication. */
 static uint32_t crc32(const uint8_t *p, size_t n) {
     uint32_t crc = 0xffffffffU;
@@ -38,33 +28,33 @@ bool exp3_encode(const Exp3Message *m, uint8_t out[EXP3_MESSAGE_BYTES]) {
     out[1] = EXP3_WIRE_VERSION;
     out[2] = m->kind;
     out[3] = m->sender;
-    put32(out + 4, m->controller);
-    put32(out + 8, m->hmi);
-    put32(out + 12, m->request);
-    put32(out + 16, m->action);
-    put32(out + 20, m->context);
-    put32(out + 24, m->generation);
+    exp3_put32_le(out + 4, m->controller);
+    exp3_put32_le(out + 8, m->hmi);
+    exp3_put32_le(out + 12, m->request);
+    exp3_put32_le(out + 16, m->action);
+    exp3_put32_le(out + 20, m->context);
+    exp3_put32_le(out + 24, m->generation);
     out[28] = (uint8_t)m->target;
     out[29] = (uint8_t)(m->target >> 8);
     out[30] = m->status;
     out[31] = m->command;
-    put32(out + 32, crc32(out, 32));
+    exp3_put32_le(out + 32, crc32(out, 32));
     return true;
 }
 bool exp3_decode(const uint8_t *b, size_t n, Exp3Message *m) {
     Exp3Message v;
     if (!b || !m || n != EXP3_MESSAGE_BYTES || b[0] != 0xe3 || b[1] != EXP3_WIRE_VERSION ||
-        get32(b + 32) != crc32(b, 32))
+        exp3_get32_le(b + 32) != crc32(b, 32))
         return false;
     memset(&v, 0, sizeof v);
     v.kind = b[2];
     v.sender = b[3];
-    v.controller = get32(b + 4);
-    v.hmi = get32(b + 8);
-    v.request = get32(b + 12);
-    v.action = get32(b + 16);
-    v.context = get32(b + 20);
-    v.generation = get32(b + 24);
+    v.controller = exp3_get32_le(b + 4);
+    v.hmi = exp3_get32_le(b + 8);
+    v.request = exp3_get32_le(b + 12);
+    v.action = exp3_get32_le(b + 16);
+    v.context = exp3_get32_le(b + 20);
+    v.generation = exp3_get32_le(b + 24);
     v.target = (uint16_t)(b[28] | ((uint16_t)b[29] << 8));
     v.status = b[30];
     v.command = b[31];
@@ -74,7 +64,6 @@ bool exp3_decode(const uint8_t *b, size_t n, Exp3Message *m) {
     return true;
 }
 
-#if MOWER_BLADE_OK_ENABLED
 bool exp3_completion_encode(const Exp3Message *m, uint8_t bytes[EXP3_COMPLETION_BYTES]) {
     uint8_t full[EXP3_MESSAGE_BYTES];
     if (!bytes || !m || m->kind != EXP3_RESULT || m->request != m->action ||
@@ -96,9 +85,9 @@ bool exp3_completion_decode(const uint8_t bytes[EXP3_COMPLETION_BYTES], uint32_t
     if (!bytes || !m || (bytes[4] & 0xC0U)) return false;
     full[0] = 0xE3U; full[1] = EXP3_WIRE_VERSION;
     full[2] = EXP3_RESULT; full[3] = 2U;
-    put32(full + 4, controller); put32(full + 8, hmi);
+    exp3_put32_le(full + 4, controller); exp3_put32_le(full + 8, hmi);
     memcpy(full + 12, bytes, 2U); memcpy(full + 16, bytes, 2U);
-    put32(full + 20, bytes[4] & 0x20U ? EXP3_UNLOCK_CONTEXT : EXP3_PWM_CONTEXT);
+    exp3_put32_le(full + 20, bytes[4] & 0x20U ? EXP3_UNLOCK_CONTEXT : EXP3_PWM_CONTEXT);
     memcpy(full + 24, bytes + 2, 2U); full[28] = 1U;
     full[30] = (bytes[4] >> 2) & 7U; full[31] = bytes[4] & 3U;
     memcpy(full + 32, bytes + 5, 4U);
@@ -132,7 +121,6 @@ int exp3_completion_receive(Exp3CompletionRx *rx, unsigned part, uint32_t word,
     if (rx->mask != 7U) return EXP3_MORE;
     return exp3_completion_decode(rx->bytes, controller, hmi, m) ? EXP3_COMPLETE : EXP3_REJECT;
 }
-#endif
 
 bool exp3_fragment(const uint8_t b[EXP3_MESSAGE_BYTES], uint32_t transfer, unsigned index,
                    uint8_t f[EXP3_FRAGMENT_BYTES]) {
@@ -140,14 +128,14 @@ bool exp3_fragment(const uint8_t b[EXP3_MESSAGE_BYTES], uint32_t transfer, unsig
     if (!b || !f || !transfer || index >= EXP3_FRAGMENT_COUNT)
         return false;
     memset(f, 0, EXP3_FRAGMENT_BYTES);
-    put32(f, transfer);
+    exp3_put32_le(f, transfer);
     f[4] = (uint8_t)index;
     f[5] = EXP3_FRAGMENT_COUNT;
     count = EXP3_MESSAGE_BYTES - offset;
     if (count > 8)
         count = 8;
     memcpy(f + 6, b + offset, count);
-    put32(f + 14, crc32(f, 14));
+    exp3_put32_le(f + 14, crc32(f, 14));
     return true;
 }
 bool exp3_expire(Exp3Rx *r, uint32_t now, uint32_t timeout) {
@@ -164,12 +152,12 @@ int exp3_receive(Exp3Rx *r, const uint8_t *f, size_t n, uint32_t now, uint32_t t
     if (!r || !f || !out)
         return EXP3_REJECT;
     (void)exp3_expire(r, now, timeout);
-    if (n != EXP3_FRAGMENT_BYTES || !timeout || get32(f + 14) != crc32(f, 14) ||
+    if (n != EXP3_FRAGMENT_BYTES || !timeout || exp3_get32_le(f + 14) != crc32(f, 14) ||
         f[5] != EXP3_FRAGMENT_COUNT || f[4] >= EXP3_FRAGMENT_COUNT) {
         r->active = 0;
         return EXP3_REJECT;
     }
-    transfer = get32(f);
+    transfer = exp3_get32_le(f);
     index = f[4];
     if (!transfer || transfer < r->transfer)
         return EXP3_REJECT;
@@ -209,11 +197,6 @@ void exp3_bind(Exp3Endpoint *e, uint32_t controller, uint32_t hmi) {
     e->controller = controller;
     e->hmi = hmi;
 }
-static bool identity_equal(const Exp3Message *a, const Exp3Message *b) {
-    return a->controller == b->controller && a->hmi == b->hmi && a->request == b->request &&
-           a->action == b->action && a->target == b->target && a->context == b->context &&
-           a->generation == b->generation;
-}
 bool exp3_decide(Exp3Endpoint *e, const Exp3Message *m, Exp3Message *result) {
     unsigned i;
     uint8_t status = EXP3_UNKNOWN;
@@ -229,7 +212,7 @@ bool exp3_decide(Exp3Endpoint *e, const Exp3Message *m, Exp3Message *result) {
                 break;
             }
         if (record) {
-            if (!identity_equal(record, m))
+            if (!exp3_same_identity(record, m))
                 status = EXP3_CONFLICT;
             else {
                 if (m->kind == EXP3_CANCEL)

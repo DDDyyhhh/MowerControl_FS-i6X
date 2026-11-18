@@ -5,5 +5,7 @@
 
 void Flipsky_CAN_Init(void);
 uint8_t Flipsky_CAN_SetSpeedErpm(float erpm);
+uint8_t Flipsky_CAN_Release(void);
+uint8_t Flipsky_CAN_ReleaseMotor(void);
 
 #endif

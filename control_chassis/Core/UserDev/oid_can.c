@@ -7,6 +7,7 @@
  */
 
 #include "oid_can.h"
+#include "byte_order.h"
 #include <string.h>
 #include "odrive_can.h"
 
@@ -47,11 +48,7 @@ static void oid_send_cmd_int32(uint8_t node_id, uint8_t cmd, int32_t value)
 {
     uint8_t tx_data[8] = {0};
     tx_data[0] = cmd;
-    // 大端序: 高字节在前
-    tx_data[1] = (uint8_t)((uint32_t)value >> 24);
-    tx_data[2] = (uint8_t)((uint32_t)value >> 16);
-    tx_data[3] = (uint8_t)((uint32_t)value >> 8);
-    tx_data[4] = (uint8_t)((uint32_t)value >> 0);
+    ByteOrder_PutU32BE(&tx_data[1], (uint32_t)value); /* 大端序: 高字节在前 */
 
     if (cmd == OID_CMD_SPEED)
     {
@@ -61,20 +58,6 @@ static void oid_send_cmd_int32(uint8_t node_id, uint8_t cmd, int32_t value)
     {
         CAN_Enqueue_Message(node_id, tx_data, 5, 0);
     }
-}
-
-/**
- * @brief 发送 3 字节 CAN 帧 (DATA[0]=cmd, DATA[1~2]=int16 大端)
- *        用于电流/占空比等控制指令
- */
-static void oid_send_cmd_int16(uint8_t node_id, uint8_t cmd, int16_t value)
-{
-    uint8_t tx_data[8] = {0};
-    tx_data[0] = cmd;
-    tx_data[1] = (uint8_t)((uint16_t)value >> 8);
-    tx_data[2] = (uint8_t)((uint16_t)value >> 0);
-
-    CAN_Enqueue_Message(node_id, tx_data, 3, 0);
 }
 
 /* ==================================================================== */
@@ -161,11 +144,6 @@ uint8_t OID_Req_Actual_Speed(uint8_t node_id)
 /* ==================================================================== */
 /*              CAN 接收解析                                              */
 /* ==================================================================== */
-
-void OID_Parse_Rx_Message(uint32_t can_id, uint8_t *data, uint8_t dlc)
-{
-    OID_Parse_Rx_MessageAt(can_id, data, dlc, HAL_GetTick());
-}
 
 void OID_Parse_Rx_MessageAt(uint32_t can_id, uint8_t *data, uint8_t dlc, uint32_t rx_tick)
 {

@@ -42,4 +42,9 @@ uint8_t Flipsky_CAN_IsOnline(void);
 uint8_t Flipsky_CAN_SetDutyCycle(float duty_percent);
 // 在 flipsky_can.h 中添加声明
 uint8_t Flipsky_CAN_SetSpeedErpm(float erpm);
+/* Zero-current release (0x15, current 0): ESC stops driving, motor coasts. */
+uint8_t Flipsky_CAN_Release(void);
+/* Zero-duty release (0x02, duty 0, CRC16): with Zero Duty Mode = Release
+ * Motor the ESC drops its output stage instead of holding a current loop. */
+uint8_t Flipsky_CAN_ReleaseMotor(void);
 #endif

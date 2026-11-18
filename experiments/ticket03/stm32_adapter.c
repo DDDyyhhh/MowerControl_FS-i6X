@@ -6,7 +6,6 @@ Exp3Hil g_exp3_hil;
 volatile Exp3Mailbox g_exp3_mailbox;
 volatile uint16_t g_exp3_downlink_word;
 static Exp3Endpoint endpoint;
-#if MOWER_BLADE_OK_ENABLED
 static Exp3Message release_result;
 /* Task_Comm produces; Task_Motion consumes and publishes completion last. */
 static volatile uint8_t release_pending, release_done, release_accepted;
@@ -16,7 +15,6 @@ static uint32_t completion_parts[2][EXP3_COMPLETION_PARTS];
 static volatile uint8_t completion_index;
 volatile uint16_t g_blade_ok_runtime_word;
 
-#endif
 #if EXP3_AUTO_SESSION_ENABLED
 static Exp3AutoSession auto_session;
 static uint8_t auto_started;
@@ -24,11 +22,9 @@ static Exp3AutoPace auto_pace;
 #endif
 #if EXP3_PWM_PROBE_ENABLED
 static Exp3PwmProbe pwm_probe;
-#if MOWER_BLADE_OK_ENABLED
 static Exp3PwmProbe unlock_probe;
 static volatile uint32_t unlock_ch4_epoch;
 static uint8_t unlock_center_seen, unlock_ch4_full;
-#endif
 static uint32_t pwm_controller, pwm_hmi;
 static volatile uint32_t pwm_ch4_epoch;
 static uint8_t pwm_ch4_center_seen, pwm_ch4_start;
@@ -37,7 +33,6 @@ static volatile uint8_t pwm_event_ready;
 static volatile uint32_t pwm_diag_sequence;
 static volatile Exp3PwmDiag pwm_diag;
 #endif
-#if MOWER_BLADE_OK_ENABLED
 static void reset_completions(void);
 void exp3_board_restart_session(uint32_t now) {
     (void)now;
@@ -106,11 +101,6 @@ bool exp3_board_check_intent(const Exp3Message *m, uint32_t now) {
     h->token_active = 0U; /* Consume before checking/performing the actual operation. */
     return true;
 }
-static bool same_request(const Exp3Message *a, const Exp3Message *b) {
-    return a->controller == b->controller && a->hmi == b->hmi &&
-        a->request == b->request && a->action == b->action && a->context == b->context &&
-        a->generation == b->generation && a->target == b->target;
-}
 static void reset_completions(void) {
     release_pending = release_done = slow_ready = 0U;
     completion_sequence = 0U;
@@ -134,7 +124,7 @@ static void publish_completion(const Exp3Message *result) {
         (result->action < completed_result.action ||
          (result->action == completed_result.action &&
           completed_result.command == EXP3_CANCEL && result->command != EXP3_CANCEL))) return;
-    if (same_request(result, &completed_result) &&
+    if (exp3_same_identity(result, &completed_result) &&
         result->command == completed_result.command && result->status == completed_result.status) {
         slow_result = *result; slow_ready = 1U;
         return;
@@ -175,7 +165,6 @@ bool exp3_board_defer_result(const Exp3Message *result) {
     pwm_event_ready = 1U;
     return true;
 }
-#endif
 volatile uint32_t g_exp3_capture_overflow;
 static volatile struct { uint32_t tick, request, low, high; } capture[4];
 static volatile uint8_t capture_write, capture_read;
@@ -212,9 +201,7 @@ void exp3_board_sens(const uint8_t *req, const uint8_t *rsp, unsigned n) {
     ++capture_write;
 }
 void exp3_board_poll(uint32_t now) {
-#if MOWER_BLADE_OK_ENABLED
     if (g_exp3_hil.restart_requested) restart_session_now(now);
-#endif
     unsigned budget = 4;
     while (capture_read != capture_write && budget--) {
         uint8_t slot = capture_read % 4;
@@ -223,12 +210,11 @@ void exp3_board_poll(uint32_t now) {
                        capture[slot].high);
         ++capture_read;
     }
-#if MOWER_BLADE_OK_ENABLED
     if (release_pending && release_done) {
         unsigned i;
         if (!release_accepted) release_result.status = EXP3_UNKNOWN;
         for (i=0U; i<EXP3_CACHE_SIZE; ++i)
-            if (same_request(&endpoint.records[i], &release_result))
+            if (exp3_same_identity(&endpoint.records[i], &release_result))
                 endpoint.records[i].status = release_result.status;
         g_exp3_hil.last_result = release_result;
         publish_completion(&release_result);
@@ -237,7 +223,6 @@ void exp3_board_poll(uint32_t now) {
     }
     if (slow_ready && !g_exp3_hil.link.tx_active &&
         exp3_link_send_result(&g_exp3_hil.link, &slow_result, now)) slow_ready = 0U;
-#endif
     exp3_hil_poll(&g_exp3_hil, &g_exp3_mailbox, &endpoint, now, 250);
     g_exp3_downlink_word = g_exp3_hil.published_word;
 #if EXP3_AUTO_SESSION_ENABLED
@@ -248,11 +233,7 @@ void exp3_board_poll(uint32_t now) {
 }
 void exp3_board_channels(uint32_t now, uint16_t ch4, uint16_t a, uint16_t b) {
 #if EXP3_PWM_PROBE_ENABLED
-#if !MOWER_BLADE_OK_ENABLED
-    uint8_t center, start;
-#else
     (void)ch4;
-#endif
     if (pwm_controller != g_exp3_hil.controller || pwm_hmi != g_exp3_hil.hmi) {
         pwm_controller = g_exp3_hil.controller;
         pwm_hmi = g_exp3_hil.hmi;
@@ -260,43 +241,11 @@ void exp3_board_channels(uint32_t now, uint16_t ch4, uint16_t a, uint16_t b) {
         pwm_ch4_center_seen = 0U;
         pwm_ch4_start = 0U;
         exp3_pwm_probe_init(&pwm_probe);
-#if MOWER_BLADE_OK_ENABLED
         exp3_pwm_probe_init(&unlock_probe);
         unlock_ch4_epoch = 0U;
         unlock_center_seen = unlock_ch4_full = 0U;
         reset_completions();
-#endif
     }
-#if !MOWER_BLADE_OK_ENABLED
-    /* A bootstrap word still carries a real CH4 sample. Track the edge before
-     * the auto-session parser consumes CH11/12 and returns early. */
-    center = ch4 >= 1400U && ch4 <= 1600U;
-    start = ch4 >= 900U && ch4 <= 1100U;
-    if (center) {
-        pwm_ch4_center_seen = 1U;
-        pwm_ch4_start = 0U;
-    } else if (start) {
-        if (pwm_ch4_center_seen && !pwm_ch4_start) {
-            ++pwm_ch4_epoch;
-            if (pwm_ch4_epoch == 0U)
-                ++pwm_ch4_epoch;
-            pwm_ch4_center_seen = 0U;
-        }
-        pwm_ch4_start = 1U;
-    } else {
-        pwm_ch4_start = 0U;
-    }
-#if MOWER_BLADE_OK_ENABLED
-    if (center) unlock_center_seen = 1U;
-    if (start) {
-        if (unlock_center_seen && !unlock_ch4_full) {
-            if (++unlock_ch4_epoch == 0U) ++unlock_ch4_epoch;
-            unlock_center_seen = 0U;
-        }
-        unlock_ch4_full = 1U;
-    } else unlock_ch4_full = 0U;
-#endif
-#endif
 #else
     (void)ch4;
 #endif
@@ -316,10 +265,8 @@ void exp3_board_channels(uint32_t now, uint16_t ch4, uint16_t a, uint16_t b) {
         if (exp3_auto_receive(&auto_session, raw_word, now, 5000U) == 1) {
             exp3_auto_controller_bound(&auto_pace, now);
             g_exp3_mailbox.command = 0U;
-#if MOWER_BLADE_OK_ENABLED
             reset_completions();
             g_blade_ok_runtime_word = 0U;
-#endif
             exp3_hil_bind_session(&g_exp3_hil, &endpoint, auto_session.self,
                                   auto_session.peer, now);
 #if EXP3_PWM_PROBE_ENABLED
@@ -334,19 +281,8 @@ void exp3_board_channels(uint32_t now, uint16_t ch4, uint16_t a, uint16_t b) {
     }
 #endif
     exp3_hil_channels(&g_exp3_hil, &endpoint, a, b, now);
-#if EXP3_PWM_PROBE_ENABLED && !MOWER_BLADE_OK_ENABLED
-    {
-        Exp3PwmEvent event = exp3_pwm_probe_observe(&pwm_probe, &g_exp3_hil.last_result);
-        if (event.kind != EXP3_PWM_NONE && !pwm_event_ready) {
-            event.ch4_epoch = pwm_ch4_epoch;
-            pwm_event = event;
-            pwm_event_ready = 1U;
-        }
-    }
-#endif
 }
 #if EXP3_PWM_PROBE_ENABLED
-#if MOWER_BLADE_OK_ENABLED
 void exp3_board_complete_pwm_event(const Exp3PwmEvent *event, bool accepted) {
     if (!release_pending || !event || event->message.controller != release_result.controller ||
         event->message.hmi != release_result.hmi || event->message.action != release_result.action ||
@@ -358,20 +294,11 @@ void exp3_board_complete_pwm_event(const Exp3PwmEvent *event, bool accepted) {
     release_accepted = accepted;
     release_done = 1U;
 }
-#endif
 uint32_t exp3_board_ch4_epoch(void) {
-#if MOWER_BLADE_OK_ENABLED
     return g_exp3_hil.token;
-#else
-    return pwm_ch4_epoch;
-#endif
 }
 uint32_t exp3_board_unlock_epoch(void) {
-#if MOWER_BLADE_OK_ENABLED
     return g_exp3_hil.token;
-#else
-    return 0U;
-#endif
 }
 bool exp3_board_take_pwm_event(Exp3PwmEvent *event) {
     if (!event || !pwm_event_ready) return false;

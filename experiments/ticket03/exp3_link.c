@@ -2,8 +2,8 @@
 #if EXP3_ENABLED
 #include <string.h>
 #include "exp3_probe.h"
-#define FAST_RESULT_WORDS (MOWER_BLADE_OK_ENABLED ? 18U : 17U)
-#define FAST_RESULT_CRC_OFFSET (MOWER_BLADE_OK_ENABLED ? 14U : 13U)
+#define FAST_RESULT_WORDS 18U
+#define FAST_RESULT_CRC_OFFSET 14U
 void exp3_link_init(Exp3Link *l) { memset(l, 0, sizeof *l); }
 bool exp3_link_send(Exp3Link *l, const Exp3Message *m, uint32_t now) {
     if (l->tx_active || l->transfer == UINT32_MAX || !exp3_encode(m, l->tx))
@@ -13,7 +13,6 @@ bool exp3_link_send(Exp3Link *l, const Exp3Message *m, uint32_t now) {
     l->tx_active = 1U;
     l->tx_fast = 0U;
     l->sent_at = l->word_at = now;
-#if MOWER_BLADE_OK_ENABLED
     if (m->kind >= EXP3_CONFIRM && m->kind <= EXP3_QUERY &&
         (m->context == EXP3_PWM_CONTEXT || m->context == EXP3_UNLOCK_CONTEXT) &&
         m->target == EXP3_PWM_TARGET && m->request == m->action &&
@@ -28,15 +27,13 @@ bool exp3_link_send(Exp3Link *l, const Exp3Message *m, uint32_t now) {
         l->tx_fast = 2U;
         return true;
     }
-#endif
     return exp3_fragment(l->tx, l->transfer, 0, l->fragment);
 }
 
 bool exp3_link_send_result(Exp3Link *l, const Exp3Message *m, uint32_t now) {
     uint8_t full[EXP3_MESSAGE_BYTES];
     if (!m || m->kind != EXP3_RESULT ||
-        (m->context != EXP3_PWM_CONTEXT &&
-         (!MOWER_BLADE_OK_ENABLED || m->context != EXP3_UNLOCK_CONTEXT)) ||
+        (m->context != EXP3_PWM_CONTEXT && m->context != EXP3_UNLOCK_CONTEXT) ||
         m->target != EXP3_PWM_TARGET || m->request != m->action ||
         m->action > 65535U || m->generation > 65535U)
         return exp3_link_send(l, m, now);
@@ -48,8 +45,7 @@ bool exp3_link_send_result(Exp3Link *l, const Exp3Message *m, uint32_t now) {
     memcpy(l->tx + 8, full + 16, 2U);
     memcpy(l->tx + 10, full + 24, 2U);
     l->tx[12] = (uint8_t)(m->status | (m->command << 4));
-    if (MOWER_BLADE_OK_ENABLED)
-        l->tx[13] = m->context == EXP3_UNLOCK_CONTEXT ? 1U : 0U;
+    l->tx[13] = m->context == EXP3_UNLOCK_CONTEXT ? 1U : 0U;
     memcpy(l->tx + FAST_RESULT_CRC_OFFSET, full + 32, 4U);
     ++l->transfer;
     l->tx_index = 0U;
@@ -127,19 +123,8 @@ static int receive_fast_result(Exp3Link *l, uint16_t w, uint32_t now,
     memcpy(full + 4, l->raw, 8U);
     memcpy(full + 12, l->raw + 8, 2U);
     memcpy(full + 16, l->raw + 8, 2U);
-    full[20] = (uint8_t)EXP3_PWM_CONTEXT;
-    full[21] = (uint8_t)(EXP3_PWM_CONTEXT >> 8);
-    full[22] = (uint8_t)(EXP3_PWM_CONTEXT >> 16);
-    full[23] = (uint8_t)(EXP3_PWM_CONTEXT >> 24);
-    if (MOWER_BLADE_OK_ENABLED) {
-        uint32_t context;
-        if (l->raw[13] > 1U) return EXP3_REJECT;
-        context = l->raw[13] ? EXP3_UNLOCK_CONTEXT : EXP3_PWM_CONTEXT;
-        full[20] = (uint8_t)context;
-        full[21] = (uint8_t)(context >> 8);
-        full[22] = (uint8_t)(context >> 16);
-        full[23] = (uint8_t)(context >> 24);
-    }
+    if (l->raw[13] > 1U) return EXP3_REJECT;
+    exp3_put32_le(full + 20, l->raw[13] ? EXP3_UNLOCK_CONTEXT : EXP3_PWM_CONTEXT);
     memcpy(full + 24, l->raw + 10, 2U);
     full[28] = EXP3_PWM_TARGET;
     full[30] = l->raw[12] & 15U;
@@ -152,8 +137,7 @@ int exp3_link_receive(Exp3Link *l, uint16_t w, uint32_t now, uint32_t timeout, E
     unsigned slot = (w >> 8) & 31;
     int result;
     (void)exp3_expire(&l->rx, now, timeout);
-    if ((w & 0xe000U) == 0xe000U ||
-        (MOWER_BLADE_OK_ENABLED && (w & 0xe000U) == 0x8000U))
+    if ((w & 0xe000U) == 0xe000U || (w & 0xe000U) == 0x8000U)
         return receive_fast_result(l, w, now, timeout, out);
     if (l->raw_active && l->rx_fast)
         l->raw_active = 0U;
@@ -199,8 +183,7 @@ bool exp3_channel_raw_word(uint16_t a, uint16_t b, uint16_t *w) {
 bool exp3_channel_word(uint16_t a, uint16_t b, uint16_t *w) {
     if (!exp3_channel_raw_word(a, b, w))
         return false;
-    return (((*w & 0xe000U) == 0xa000U) ||
-            (MOWER_BLADE_OK_ENABLED && (*w & 0xe000U) == 0x8000U)) &&
+    return (((*w & 0xe000U) == 0xa000U) || (*w & 0xe000U) == 0x8000U) &&
            ((*w >> 8) & 31) < 18;
 }
 #endif

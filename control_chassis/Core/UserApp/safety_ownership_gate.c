@@ -27,6 +27,13 @@ static bool SafetyOwnershipGate_InputAllowsNonzero(void)
            (g_gate.input.selected_owner != EXECUTION_OWNER_NONE);
 }
 
+/* True while the gate still waits for a command newer than the invalidated one. */
+static bool SafetyOwnershipGate_CommandIsStale(void)
+{
+    return g_gate.fresh_command_required &&
+           (g_gate.input.command_sequence == g_gate.invalidated_sequence);
+}
+
 static void SafetyOwnershipGate_InvalidateCurrentCommand(void)
 {
     g_gate.invalidated_sequence = g_gate.input.command_sequence;
@@ -97,8 +104,7 @@ bool SafetyOwnershipGate_Authorize(ExecutionOwner_t intent_owner,
 
     if (!SafetyOwnershipGate_InputAllowsNonzero() ||
         (intent_owner != g_gate.input.selected_owner) ||
-        (g_gate.fresh_command_required &&
-         (g_gate.input.command_sequence == g_gate.invalidated_sequence)))
+        SafetyOwnershipGate_CommandIsStale())
     {
         g_gate.stop_requested = true;
         return false;
@@ -114,8 +120,7 @@ bool SafetyOwnershipGate_IsOwnerPermitted(ExecutionOwner_t owner)
     return g_gate.initialized &&
            SafetyOwnershipGate_InputAllowsNonzero() &&
            (owner == g_gate.input.selected_owner) &&
-           !(g_gate.fresh_command_required &&
-             (g_gate.input.command_sequence == g_gate.invalidated_sequence));
+           !SafetyOwnershipGate_CommandIsStale();
 }
 
 SafetyOwnershipGateReason_t SafetyOwnershipGate_GetReason(ExecutionOwner_t owner)
@@ -153,8 +158,7 @@ SafetyOwnershipGateReason_t SafetyOwnershipGate_GetReason(ExecutionOwner_t owner
     {
         return SAFETY_GATE_REJECT_OWNER;
     }
-    if (g_gate.fresh_command_required &&
-        (g_gate.input.command_sequence == g_gate.invalidated_sequence))
+    if (SafetyOwnershipGate_CommandIsStale())
     {
         return SAFETY_GATE_REJECT_STALE_COMMAND;
     }

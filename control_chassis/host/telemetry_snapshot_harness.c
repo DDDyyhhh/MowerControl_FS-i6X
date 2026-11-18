@@ -96,6 +96,23 @@ static TelemetrySnapshot_t PublishAndRead(const TelemetrySources_t *sources,
     return snapshot;
 }
 
+static void TestControlSourceModesAndPermission(void)
+{
+    TelemetrySources_t sources = FreshSources(1000U);
+    sources.control_mode_valid = true;
+    sources.final_manual_run_permitted = false;
+    for (unsigned mode=0; mode<=4; ++mode) {
+        sources.control_mode = (uint8_t)mode;
+        for (unsigned permit=0; permit<2; ++permit) {
+            sources.final_owner_run_permitted = permit != 0;
+            TelemetrySnapshot_t result = PublishAndRead(&sources, 1000U);
+            assert(result.values[TELEMETRY_VALUE_WORK_MODE] == mode);
+            assert(result.values[TELEMETRY_VALUE_RUN_PERMISSION] == permit);
+            assert(result.values[TELEMETRY_VALUE_DETAILED_FAULT] == 0U);
+        }
+    }
+}
+
 static void TestScaledValuesAndModes(void)
 {
     TelemetrySources_t sources = FreshSources(1000U);
@@ -337,6 +354,7 @@ int main(void)
     TestBagConnection();
     TestHeightProducerHeartbeat();
     TelemetrySnapshot_Reset();
+    TestControlSourceModesAndPermission();
     TestScaledValuesAndModes();
     TestBmsBoundariesAndFreshness();
     TestCurrentMagnitudeAndSaturation();

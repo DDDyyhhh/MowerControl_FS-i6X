@@ -1,4 +1,5 @@
 #include "telemetry_snapshot.h"
+#include "../../../experiments/ticket03/ultrasonic_control.h"
 #include "../../../experiments/ticket03/battery_status.h"
 #include "../../../experiments/ticket03/bag_connection.h"
 
@@ -245,9 +246,15 @@ void TelemetrySnapshot_Update(const TelemetrySources_t *sources, uint32_t now_ms
     snapshot.values[TELEMETRY_VALUE_RUN_PERMISSION] =
         (sources->manual_remote_available &&
          sources->final_manual_run_permitted) ? 1U : 0U;
+    if (sources->control_mode_valid) {
+        snapshot.values[TELEMETRY_VALUE_WORK_MODE] = sources->control_mode;
+        snapshot.values[TELEMETRY_VALUE_RUN_PERMISSION] = sources->final_owner_run_permitted ? 1U : 0U;
+    }
     snapshot.values[TELEMETRY_VALUE_DETAILED_FAULT] =
         TelemetrySnapshot_BuildFaults(sources, bms_fresh, wheels_fresh,
-                                      blade_fresh);
+                                      blade_fresh) |
+        (sources->ultrasonic_enabled ? MOWER_ULTRASONIC_ENABLED : 0U) |
+        (sources->ultrasonic_obstacle ? MOWER_ULTRASONIC_NEAR : 0U);
     snapshot.generated_at_ms = now_ms;
     snapshot.values[TELEMETRY_VALUE_BAG_CONNECTION] = (uint16_t)(
         (((now_ms / MOWER_BAG_HEARTBEAT_MS) & MOWER_BAG_HEARTBEAT_MASK) << 2) |

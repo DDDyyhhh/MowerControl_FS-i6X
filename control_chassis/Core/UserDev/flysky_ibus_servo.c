@@ -1,4 +1,5 @@
 #include "flysky_ibus_servo.h"
+#include "control_source.h"
 
 #include "../../../experiments/ticket03/exp3_board.h"
 
@@ -127,7 +128,9 @@ static bool FlySkyIbusServo_MappedChannelsValid(
     mapped[count++] = ibus->config.throttle.channel_index;
     mapped[count++] = ibus->config.run_enable_index;
     mapped[count++] = ibus->config.blade_gear_index;
+#if !MOWER_CH8_CONTROL_ENABLED
     mapped[count++] = ibus->config.unlock_index;
+#endif
     mapped[count++] = ibus->config.blade_height_index;
     mapped[count++] = ibus->config.travel_speed_index;
 
@@ -261,6 +264,13 @@ static bool FlySkyIbusServo_HandleFrame(FlySkyIbusServo_t *ibus,
         memset(&snapshot, 0, sizeof(snapshot));
     }
 
+#if MOWER_CH8_CONTROL_ENABLED
+    uint8_t source = ControlSource_DecodeCh8(channels[7]);
+    if (source != ibus->control_source_position) {
+        ibus->control_source_position = source;
+        ++snapshot.control_source_events;
+    }
+#endif
     memcpy(snapshot.channels, channels, sizeof(channels));
     snapshot.steering = FlySkyIbusServo_MapAxis(
         channels[ibus->config.steering.channel_index], &ibus->config.steering);

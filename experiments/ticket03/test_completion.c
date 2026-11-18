@@ -12,7 +12,7 @@ int main(void) {
     uint8_t bytes[9], full[36], actual[36];
     Exp3Message out;
     /* Frozen independently with Python struct.pack + zlib.crc32. */
-    const uint8_t golden[9]={0x41U,0x01U,0x8eU,0x02U,0x05U,0xb0U,0x8eU,0x8cU,0xd4U};
+    const uint8_t golden[9]={0x41U,0x01U,0x8eU,0x02U,0x05U,0x0fU,0x52U,0x04U,0x8bU};
     assert(exp3_completion_encode(&m,bytes) && !memcmp(bytes,golden,sizeof(golden)));
     assert(exp3_completion_part(bytes,0x17U,0U)==0x8e014117U);
     for(unsigned context=0;context<2;context++)

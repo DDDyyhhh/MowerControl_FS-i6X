@@ -25,6 +25,7 @@
 
 #include "stdint.h"
 #include "safety_ownership_gate.h"
+#include "control_source.h"
 #include "serial_port.h"
 
 // 遥控模式配置参数
@@ -46,7 +47,7 @@
 #define HOST_STATUS_PAYLOAD_LEN 5
 
 
-#define API_TIMEOUT_MS 500 // 500ms 没收到上位机指令则停车
+#define API_TIMEOUT_MS 500 // Kept equal to CONTROL_API_TIMEOUT_MS (host regression checked).
 
 // 定义新增的反馈帧 CAN ID
 #define CHASSIS_STATUS_CAN_ID    0x506  // 系统状态反馈
@@ -104,26 +105,21 @@ typedef struct
 
 bool chassis_control_read_wheel_feedback(ChassisWheelFeedback_t wheels[4]);
 /**
- * @brief 初始化底盘控制
- */
-void chassis_control_init(void);
-
-/**
  * @brief 使用遥控器输入控制底盘运动（遥控模式）
  * @param ly 左摇杆Y轴值 (0-4095)
  * @param rx 右摇杆X轴值 (0-4095)
  */
 void set_chassis_rc_control(uint16_t ly, uint16_t rx);
 void set_chassis_velocity(ExecutionOwner_t owner, float vx, float vy, float omega);
-void chassis_control_parse_host_frame(uint8_t frame_id, const uint8_t *payload, uint8_t len);
+void chassis_control_parse_host_frame(uint32_t frame_id, const uint8_t *payload, uint8_t len, uint32_t received_at_ms);
+void chassis_control_read_host_snapshot(HostControlSnapshot_t *out);
+void chassis_control_apply_host_snapshot(const HostControlSnapshot_t *command);
 void chassis_control_clear_cached_intents(void);
-void chassis_control_send_status_feedback(void);
 void Send_Motor_speed(uint8_t axis_id, float speed_rpm, float torque_ff, uint8_t reset_integrator);
 void Control_Update(void);
 #if MOTOR_DRIVER_USED == DRIVER_TYPE_OID
 void chassis_control_poll_oid_actual_speed(uint8_t phase);
 #endif
-void chassis_control_send_odom_feedback(void);
 void chassis_control_req_odrive_data(void);
 
 /**

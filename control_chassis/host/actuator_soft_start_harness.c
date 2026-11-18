@@ -32,7 +32,7 @@ HAL_StatusTypeDef EG2104_HBridge_SetSpeed(EG2104_HBridge_t *bridge, float speed)
 void EG2104_HBridge_Stop(EG2104_HBridge_t *bridge) {
     if (bridge->left_timer == &htim2) bag_speed = 0.0f; else lift_speed = 0.0f;
 }
-bool FlashStorage_LoadSettings(AppSettings_t *s) { s->lifter_current_height_cm = 11.0f; return true; }
+bool FlashStorage_LoadSettings(AppSettings_t *s) { s->magic_number = APP_SETTINGS_MAGIC_NUMBER; s->lifter_current_height_cm = 8.0f; return true; }
 bool FlashStorage_SaveSettings(const AppSettings_t *s) { (void)s; return true; }
 void Suspend_Heartbeat_Check(unsigned char suspend) { (void)suspend; }
 
@@ -42,6 +42,7 @@ static void Near(float a, float b) { assert(fabsf(a - b) < 0.01f); }
 int main(void)
 {
     Lifter_Init();
+    Lifter_SetHeightPermission(true);
     Lifter_SetGrassBagPermission(true);
 
     /* Opening starts low, ramps linearly, reaches and never exceeds the target. */
@@ -79,11 +80,23 @@ int main(void)
     t += 200U; Tick(t); Near(lift_speed, 30.0f);
     t += 200U; Tick(t); Near(lift_speed, 50.0f);
     /* Ramp delivers 240ms-equivalent travel in 400ms: 160ms behind a hard start. */
-    uint32_t hard_stop_ms = 2800U - 100U;
+    uint32_t hard_stop_ms = 700U - 30U;
     while (t < start + hard_stop_ms + 150U) { t += 10U; Tick(t); Near(lift_speed, 50.0f); }
     while (t < start + hard_stop_ms + 180U) { t += 10U; Tick(t); }
     assert(lift_speed == 0.0f);
 
+    const unsigned levels[] = {3, 2, 1, 2, 3, 4, 5};
+    const unsigned expected_mm[] = {60, 40, 20, 40, 60, 70, 80};
+    for (unsigned i = 0; i < sizeof(levels)/sizeof(levels[0]); ++i) {
+        Lifter_SetTargetLevel(levels[i]);
+        for (unsigned step = 0; step < 550; ++step) {
+            t += 20U;
+            Tick(t);
+        }
+        assert(lift_speed == 0.0f);
+        assert((Lifter_GetHeightFeedback() & 0xffU) == (0x80U | expected_mm[i]));
+    }
+    puts("[PASS] Calibrated millimetre feedback at all five levels with the production soft start");
     puts("[PASS] Actuator soft start (ramp, reversal, immediate stops, run time, height compensation)");
     return 0;
 }

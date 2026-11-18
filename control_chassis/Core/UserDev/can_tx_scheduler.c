@@ -82,8 +82,8 @@ static bool CAN_IsBladeControlId(uint32_t id)
     uint32_t command = id & 0xFFU;
     id &= 0x1FFFFFFFU;
     return (id >> 8) == FLIPSKY_ESC_ID &&
-           (command == 0x18U || command == 0x02U ||
-            command == FLIPSKY_CAN_CMD_CURRENT_PERCENT);
+           (command == FLIPSKY_CAN_CMD_ERPM_GEAR || command == FLIPSKY_CAN_CMD_DUTY_GEAR_CRC16 ||
+            command == FLIPSKY_CAN_CMD_CURRENT_PERCENT || command == FLIPSKY_CAN_CMD_CURRENT_GEAR);
 }
 
 static void CAN_Build_Message(CAN_TxMsg_t *msg, uint32_t id, uint8_t ide,
@@ -270,7 +270,9 @@ uint8_t CAN_Enqueue_BladeControl_Message(uint32_t ext_id, const uint8_t *data,
 {
     CAN_TxMsg_t msg;
     uint32_t command = ext_id & 0xFFU;
-    uint8_t expected_length = command == 0x18U ? 5U : (command == 0x02U ? 7U : 6U);
+    uint8_t expected_length = (command == FLIPSKY_CAN_CMD_ERPM_GEAR ||
+                               command == FLIPSKY_CAN_CMD_CURRENT_GEAR) ? 5U :
+                              (command == FLIPSKY_CAN_CMD_DUTY_GEAR_CRC16 ? 7U : 6U);
     bool zero;
     if (!CAN_IsBladeControlId(ext_id) || !data || len != expected_length) return 0U;
     zero = (data[0] | data[1] | data[2] | data[3]) == 0U;

@@ -76,8 +76,5 @@ static inline uint8_t mowerUiBagCommand(int32_t pulse)
       pulse >= 1880 && pulse <= 2100 ? 2 : 0;
 }
 
-// Provider may be substituted for a display demo; it cannot authorize a command.
-typedef void (*MowerUiProvider)(MowerUiSnapshot &snapshot);
 void mowerUiReadLive(MowerUiSnapshot &snapshot);
-void mowerUiSetProvider(MowerUiProvider provider); // nullptr restores live provider
 #endif

@@ -1,7 +1,7 @@
 #ifndef EXP3_COMPLETION_H
 #define EXP3_COMPLETION_H
 #include "exp3.h"
-#if EXP3_ENABLED && MOWER_BLADE_OK_ENABLED
+#if EXP3_ENABLED
 #ifdef __cplusplus
 extern "C" {
 #endif

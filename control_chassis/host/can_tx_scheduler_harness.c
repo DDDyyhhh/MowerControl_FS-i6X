@@ -138,7 +138,7 @@ static void TestStopCancelsRunWithoutTouchingOtherMailboxes(void)
     assert(!Diagnostics().stop_pending && attempts == 4);
     assert(!Step(6)); /* Rejected run was not cached for replay. */
     assert(Flipsky_CAN_SetSpeedErpm(16000)); assert(Step(7));
-    assert(sent[4].data[2] == 0xc1 && sent[4].data[3] == 0x80);
+    assert(sent[4].data[2] == 0x3e && sent[4].data[3] == 0x80);
 }
 
 static void TestOldResultCannotClearNewStop(void)
@@ -198,10 +198,10 @@ static void TestLatestRunAndProtocolGuards(void)
     assert(!CAN_Enqueue_BladeControl_Message(0x9a18, zero, 5, false));
     assert(Flipsky_CAN_SetSpeedErpm(14000));
     assert(Flipsky_CAN_SetSpeedErpm(16000)); assert(Step(0));
-    assert(sent[0].data[2] == 0xc1 && sent[0].data[3] == 0x80);
+    assert(sent[0].data[2] == 0x3e && sent[0].data[3] == 0x80);
     /* Newer run survives failure of the older mailbox generation. */
     assert(Flipsky_CAN_SetSpeedErpm(15500)); results[2] = CAN_TX_TRANSMIT_ERROR;
-    assert(Step(1)); assert(sent[1].data[2] == 0xc3 && sent[1].data[3] == 0x74);
+    assert(Step(1)); assert(sent[1].data[2] == 0x3c && sent[1].data[3] == 0x8c);
     results[2] = CAN_TX_SUCCESS; assert(Step(2)); /* unrelated FIFO uses mailbox 0 */
     assert(sent_mailbox[2] == 0 && sent[2].extId == 0x9b18);
     results[0] = CAN_TX_SUCCESS; assert(!Step(3));
@@ -213,6 +213,17 @@ static void TestLatestRunAndProtocolGuards(void)
     assert(Flipsky_CAN_Stop()); assert(!Step(7)); assert(aborts[2] == 1);
     results[2] = CAN_TX_ABORTED; assert(Step(8));
     assert(sent[5].extId == 0x9a03 && !sent[5].data[2]);
+    /* Release is a blade stop: rejected by the ordinary queue, 5 zero bytes only. */
+    assert(!CAN_Enqueue_Ext_Message(0x9a15, zero, 5, 0));
+    assert(!CAN_Enqueue_BladeControl_Message(0x9a15, zero, 6, true));
+    assert(!CAN_Enqueue_BladeControl_Message(0x9a15, zero, 5, false));
+    /* A pending stop keeps its identity and age; release is not swapped in. */
+    assert(Flipsky_CAN_Release()); assert(Diagnostics().stop_pending);
+    results[2] = CAN_TX_SUCCESS; assert(!Step(9)); assert(!Diagnostics().stop_pending);
+    assert(Flipsky_CAN_Release()); assert(Step(10));
+    assert(sent[6].extId == 0x9a15 && sent[6].dlc == 5 && sent_mailbox[6] == 2);
+    assert(Diagnostics().stop_pending);
+    results[2] = CAN_TX_SUCCESS; assert(!Step(11)); assert(!Diagnostics().stop_pending);
 }
 static void AdvanceClock(void) { now_ms += 300U; }
 static void QueueFreshRun(void) { now_ms = 100U; assert(Flipsky_CAN_SetSpeedErpm(14000)); }
@@ -242,7 +253,7 @@ static void TestActualBladeMotorAndSafetyGate(void)
     results[2] = CAN_TX_SUCCESS; assert(!Step(2));
     assert(!Step(3)); /* Hardware recovery alone cannot replay rejected start. */
     assert(BladeMotor_SetSpeed(14000) == HAL_OK); assert(Step(3));
-    assert(sent[2].data[2] == 0xc9 && sent[2].data[3] == 0x50);
+    assert(sent[2].data[2] == 0x36 && sent[2].data[3] == 0xb0);
     input.software_locked = true; SafetyOwnershipGate_Update(&input);
     assert(BladeMotor_SetSpeed(16000) == HAL_OK); /* gate forces zero */
     assert(!Step(4) && aborts[2] == 1);

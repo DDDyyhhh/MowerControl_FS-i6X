@@ -352,7 +352,7 @@ static void CAN_Process_Rx_Message(const CAN_RxMsg_t *msg)
             return;
         }
 
-        chassis_control_parse_host_frame(msg->stdId, msg->data, msg->dlc);
+        chassis_control_parse_host_frame(msg->stdId, msg->data, msg->dlc, msg->rx_tick);
         return;
     }
 
@@ -465,113 +465,6 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
         g_can_rx_queue_full++;
     }
     return;
-
-#if 0
-
-    // 格式校验
-    if (RxHeader.IDE == CAN_ID_STD) {
-        g_can_rx_std++;
-    } else {
-        g_can_rx_ext++;
-        return;
-    }
-
-    if (RxHeader.RTR != CAN_RTR_DATA) {
-        g_can_rx_rtr++;
-        return;
-    }
-
-    // ============================================================
-    // 1. 上位机 (API Host) 命令解析 (各平台通用)
-    // ============================================================
-    if (RxHeader.StdId == HOST_CMD_FRAME_ID)
-    {
-        g_can_rx_host_cmd++;
-        if (RxHeader.DLC < HOST_CMD_PAYLOAD_LEN)
-        {
-            g_can_rx_host_bad_dlc++;
-            return;
-        }
-
-        chassis_control_parse_host_frame(RxHeader.StdId, rx_data, RxHeader.DLC);
-        return;
-    }
-
-    // ============================================================
-    // 2. 底层驱动器反馈解析 (按宏隔离)
-    // ============================================================
-#if MOTOR_DRIVER_USED == DRIVER_TYPE_ODRIVE
-
-    // ODrive 协议解析 (Node_ID << 5 | CMD_ID)
-    uint8_t node_id = RxHeader.StdId >> 5;
-    uint8_t cmd_id = RxHeader.StdId & 0x1F;
-
-    if (node_id >= ODRIVE_MAX_MOTORS)
-    {
-        g_can_rx_node_oob++;
-        return;
-    }
-
-    volatile ODrive_Data_t *motor = &g_odrive_motors[node_id];
-    motor->is_connected = 1;
-
-    switch (cmd_id)
-    {
-    case ODRIVE_MSG_HEARTBEAT:
-        if (RxHeader.DLC >= 4)
-        {
-            uint32_t error;
-            uint8_t state;
-            memcpy(&error, rx_data, 4);
-            memcpy(&state, rx_data + 4, 1);
-            motor->axis_error = error;
-            motor->axis_state = state;
-        }
-        break;
-
-    case ODRIVE_MSG_GET_ENCODER_ESTIMATES:
-        if (RxHeader.DLC >= 8)
-        {
-            memcpy((void *)&motor->encoder_pos, rx_data, 4);
-            memcpy((void *)&motor->encoder_vel, rx_data + 4, 4);
-        }
-        break;
-
-    case ODRIVE_MSG_GET_BUS_VOLTAGE_CURRENT:
-        if (RxHeader.DLC >= 8)
-        {
-            memcpy((void *)&motor->vbus_voltage, rx_data, 4);
-            memcpy((void *)&motor->vbus_current, rx_data + 4, 4);
-        }
-        break;
-
-    case ODRIVE_MSG_GET_IQ:
-        if (RxHeader.DLC >= 8)
-        {
-            memcpy((void *)&motor->iq_setpoint, rx_data, 4);
-            memcpy((void *)&motor->iq_measured, rx_data + 4, 4);
-        }
-        break;
-
-    case ODRIVE_MSG_GET_MOTOR_ERROR:
-        if (RxHeader.DLC >= 4)
-            memcpy((void *)&motor->motor_error, rx_data, 4);
-        break;
-
-    case ODRIVE_MSG_GET_ENCODER_ERROR:
-        if (RxHeader.DLC >= 4)
-            memcpy((void *)&motor->encoder_error, rx_data, 4);
-        break;
-    }
-
-#elif MOTOR_DRIVER_USED == DRIVER_TYPE_MSSD
-
-    // 美思固 MSSD 协议解析
-    // 美思固的 CAN ID 直接就是 Node ID，因此把 StdId 直接传进去即可
-    MSSD_Parse_Rx_Message(RxHeader.StdId, rx_data, RxHeader.DLC);
-
-#endif
-#endif
 }
 
 // =================================================================

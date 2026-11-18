@@ -42,7 +42,6 @@
 #include "heartbeat.h"
 #include "bsp_imu_solver.h"
 #include "icm42688.h"
-#include "car_Control.h"
 #include "BladeMotor.h"
 #include "connet_check.h"
 #include "app_context.h"

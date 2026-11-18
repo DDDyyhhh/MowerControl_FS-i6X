@@ -3,10 +3,11 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include "../../../experiments/ticket03/blade_gear_presets.h"
 
 #define TELEMETRY_BMS_FRESHNESS_MS       3000U
 #define TELEMETRY_WHEEL_FRESHNESS_MS      150U
-#define TELEMETRY_BLADE_POLE_PAIRS          4U
+#define TELEMETRY_BLADE_POLE_PAIRS          BLADE_FTESC_POLE_PAIRS
 
 #define TELEMETRY_FAULT_EMERGENCY_ACTIVE     (1U << 0)
 #define TELEMETRY_FAULT_COLLISION             (1U << 1)
@@ -43,7 +44,10 @@ typedef enum
 typedef enum
 {
     TELEMETRY_WORK_MODE_UNAVAILABLE = 0,
-    TELEMETRY_WORK_MODE_MANUAL_REMOTE = 1
+    TELEMETRY_WORK_MODE_MANUAL_REMOTE = 1,
+    TELEMETRY_WORK_MODE_API_STANDBY = 2,
+    TELEMETRY_WORK_MODE_API_RUN = 3,
+    TELEMETRY_WORK_MODE_REMOTE_TAKEOVER = 4
 } TelemetryWorkMode_t;
 
 typedef struct
@@ -94,6 +98,9 @@ typedef struct
     TelemetryBladeSource_t blade;
     bool manual_remote_available;
     bool final_manual_run_permitted;
+    bool control_mode_valid;
+    uint8_t control_mode;
+    bool final_owner_run_permitted;
     bool emergency_active; /* Display cause: active input or latched emergency. */
     bool system_locked;
     bool collision_active_or_latched;
@@ -101,6 +108,8 @@ typedef struct
     bool ibus_timeout_latched; /* Current timeout stop, not lifetime RX history. */
     bool remote_stop_latched;
     bool ownership_transition_latched;
+    bool ultrasonic_enabled; /* Actual Motion setting, E0 status bit14. */
+    bool ultrasonic_obstacle; /* Fresh front sample <40cm, E0 status bit15. */
     bool bag_connection_valid;
     bool bag_connected;
     bool bag_full_valid;

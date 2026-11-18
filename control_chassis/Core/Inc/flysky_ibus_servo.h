@@ -29,6 +29,7 @@ typedef struct
     bool stable_online;
     bool timeout_latched;
     uint32_t frame_sequence;
+    uint32_t control_source_events;
     uint32_t timeout_sequence;
     /* Cumulative production CH5 stop events survive overwritten snapshots. */
     uint32_t ch5_stop_sequence;
@@ -49,6 +50,7 @@ typedef struct
     uint8_t consecutive_valid_frames;
     uint8_t timed_out;
     uint8_t ch5_position;
+    uint8_t control_source_position;
     bool ch5_baseline_valid;
     uint32_t stability_started_ms;
     uint32_t crc_errors;

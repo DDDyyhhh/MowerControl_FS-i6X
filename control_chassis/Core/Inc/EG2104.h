@@ -16,11 +16,6 @@ typedef struct
     uint8_t is_moving;       // 是否正在移动
 } EG2104_HBridge_t;
 
-// 只声明函数，不定义变量
-extern EG2104_HBridge_t front_bridge;
-// 全局后桥实例
-extern EG2104_HBridge_t behind_bridge;
-
 // 新增高度控制函数
 float EG2104_HBridge_GetCurrentHeight(EG2104_HBridge_t *bridge);
 void EG2104_HBridge_HeightControlUpdate(EG2104_HBridge_t *bridge, float target_height);

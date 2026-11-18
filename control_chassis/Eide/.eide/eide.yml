@@ -38,12 +38,13 @@ virtualFolder:
               folders:
                 - name: UserDev
                   files:
+                    - path: ../Core/UserDev/can_tx_port.c
+                    - path: ../Core/UserDev/can_tx_scheduler.c
                     - path: ../Core/UserDev/cruise_control.c
                     - path: ../Core/UserDev/lifter.c
                     - path: ../Core/UserDev/grass_bag_control.c
                     - path: ../Core/UserDev/sr04_uart.c
                     - path: ../Core/UserDev/AXEBMS_RS485.c
-                    - path: ../Core/UserDev/car_Control.c
                     - path: ../Core/UserDev/icm42688.c
                     - path: ../Core/UserDev/pairing_receiver.c
                     - path: ../Core/UserDev/BladeMotor.c
@@ -81,6 +82,7 @@ virtualFolder:
                     - path: ../Core/UserApp/app_BMS_Sensor.c
                     - path: ../Core/UserApp/app_Report.c
                     - path: ../Core/UserApp/app_SerialTX.c
+                    - path: ../Core/UserApp/control_source.c
                     - path: ../Core/UserApp/safety_ownership_gate.c
                     - path: ../Core/UserApp/telemetry_snapshot.c
                     - path: ../Core/UserApp/battery_monitor.c

@@ -6,7 +6,6 @@
 #include "height_feedback.h"
 #include "battery_status.h"
 
-#if MOWER_BLADE_OK_ENABLED
 static void battery_packet(uint16_t word, uint32_t now, bool extended, unsigned length) {
     uint8_t packet[37]; memset(packet,0xff,sizeof(packet));
     packet[0]=extended?0xacU:0xaaU; packet[9]=0xe1U; packet[10]=9U;
@@ -332,7 +331,6 @@ static void test_bag_full(void)
     g_exp3_hil.bound=1U;
     puts("PASS bag full four-byte AC, legacy unknown, full-wins, disconnect, replay/timeout/recovery, wraps");
 }
-#endif
 
 static void run_pair(Exp3AutoSession *controller, uint32_t start, uint32_t end)
 {
@@ -359,7 +357,6 @@ static void run_pair(Exp3AutoSession *controller, uint32_t start, uint32_t end)
     }
 }
 
-#if MOWER_BLADE_OK_ENABLED
 static void test_bag_rebind(Exp3AutoSession *controller)
 {
     uint32_t old_controller=g_exp3_hil.controller, now;
@@ -401,7 +398,6 @@ static void test_bag_rebind(Exp3AutoSession *controller)
     assert(exp3_board_height(now+110U,&mm) && mm==42U);
     puts("PASS new binding clears fresh grass bag cache and waits for new heartbeat");
 }
-#endif
 
 int main(void)
 {
@@ -433,7 +429,6 @@ int main(void)
     run_pair(&controller, 10000U, 20000U);
     exp3_board_status(&status);
     assert(status.bound && status.controller == controller.self && status.hmi == first_hmi);
-#if MOWER_BLADE_OK_ENABLED
     {
         uint8_t packet[37];
         uint16_t runtime;
@@ -466,13 +461,10 @@ int main(void)
         exp3_board_rf(packet,sizeof(packet),300240U);
         assert(exp3_board_runtime(300240U,&runtime) && (runtime&7U)==5U);
     }
-#endif
-#if MOWER_BLADE_OK_ENABLED
     test_bag_connection();
     test_bag_full();
     test_height_feedback();
     test_battery_diagnostics();
-#endif
     {
         Exp3Message cancel = {0};
         g_exp3_mailbox.command=0U;
@@ -514,10 +506,8 @@ int main(void)
                g_exp3_hil.hmi!=cancel.hmi && !g_exp3_hil.waiting);
 
     }
-#if MOWER_BLADE_OK_ENABLED
     test_bag_rebind(&controller);
     test_completion_rejection();
-#endif
     puts("PASS OpenI6X RF adapter auto binds and replaces rebooted controller session");
     return 0;
 }

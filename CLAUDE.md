@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 遥控割草机的双端固件。代码同时放在两处：公司 **SVN**（`^/branches/MowerControl_FS-i6X`，主版本库）和 GitHub `DDDyyhhh/MowerControl_FS-i6X` 的 `main` 分支（镜像）。
 
-- 本目录是 SVN 工作副本，没有 `.git`，日常提交走 SVN。
+- 公司 SVN 工作副本用于日常提交。GitHub main 保留镜像和发布记录。
 - 同步 GitHub 时，在另外的 git 克隆里覆盖内容后再提交，不要强推。
 - GitHub 的 `.gitignore` 不收 `Eide/build`、`*.uvguix.*` 等本地产物。OpenTX 文件在 SVN 中是 CRLF，在 git 中是 LF，只是换行符不同。
 - 旧的 CH8 控制源开发线（协议 0x33）只保存在 GitHub 标签 `ch8-mode-import`，SVN 里没有。
@@ -77,7 +77,7 @@ FS-i6X ──RF──> FS-iA10B ──SERVO i-BUS──> USART1 ──> Task_Com
    └──RF── 接收机 <──SENS i-BUS── USART2 (sens_ibus_responder) <── telemetry_snapshot <─┘
 ```
 
-RK3588 上位机经 CAN 接入（`0x005` 控制，`0x507` 状态，见 `control_chassis/RK3588_CAN协议手册.md`），与遥控器竞争控制权，由 SafetyOwnershipGate 仲裁。
+RK3588 上位机经 CAN 接入（`0x005` 控制，`0x507` 状态）。CH8 选择遥控或 API，Motion 负责控制源交接，SafetyOwnershipGate 仲裁动力许可。见 [CAN 协议手册](control_chassis/RK3588_CAN协议手册.md)。
 
 **底盘任务**（`Core/Src/freertos.c` 建立，实现在 `Core/UserApp/`）：Motion、CANTx、CANRx 为 High；Comm、WirelessTx 为 AboveNormal；BMS_Sensor 为 Normal；Report 为 Low。分层上 `Core/Src` 是 CubeMX 外设代码，`Core/UserDev` 是设备驱动，`Core/UserApp` 是任务和策略。
 
@@ -85,7 +85,7 @@ RK3588 上位机经 CAN 接入（`0x005` 控制，`0x507` 状态，见 `control_
 
 **动力许可**：`Task_Motion` 每周期调用 `RefreshSafetyOwnershipGate`，所有动力输出都由 `safety_ownership_gate.c` 放行，任何拒绝都强制零输出。安全锁存只能由合法解锁序列清除，不能重放旧命令。
 
-**双端双向协议**（`experiments/ticket03/`）：上行把编码字放在 CH11/CH12，下行走 SENS 私有地址（9 为分字回执，10 为 E9 快速状态，12 为高度，13～15 为快速完成回执）。`EXP3_WIRE_VERSION` 当前是 **0x36**，以 `docs/protocols/startup-authorization-v36.md` 为准；它建立在 v35 的安全条件上，`CONTEXT.md` 和部分协议文档仍写 0x35。协议改动后两端必须配套刷写。界面或 Accepted 回执都不授予动力权限，CAN TXOK 也不等于电机已停，这些是分别验收的状态。
+**双端双向协议**（`experiments/ticket03/`）使用版本 `0x39`。上行采用 CH11/CH12，下行采用 SENS 私有地址。跨板修改时查阅 [v39 协议](docs/protocols/ultrasonic-control-v39.md) 和 [高度反馈](docs/protocols/sens-height-feedback.md)。协议版本变化时配套刷写两端。界面确认、动力许可和电机停机分别验证。
 
 **编译期配置**决定了构建形态，非法组合由 `#error` 拒绝，`verify.sh` 还用负向编译测试锁定这些守卫：
 

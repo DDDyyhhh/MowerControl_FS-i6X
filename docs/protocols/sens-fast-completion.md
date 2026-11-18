@@ -1,4 +1,4 @@
-# 割刀与解锁快速完成回执（0x35 配套版）
+# 割刀与解锁快速完成回执（0x36 配套版）
 
 新增 SENS 地址 13、14、15，类型 E6、E7、E8，测量值均为 4 字节。发现响应仍为 4 字节，类型响应仍为 6 字节并声明长度 4，测量响应为 8 字节（含原 i-BUS 校验和）。地址 1～12 的含义和帧长不变。接收机须转发 AFHDS2A AC 的四字节传感值；AA 两字节值不用于本回执。
 
@@ -11,7 +11,7 @@
 | 4 | bit0～1 command，bit2～4 status，bit5 为 UNLK（0 为 BLAD），bit6～7 必须为 0 |
 | 5～8 | 原始 36 字节 RESULT 的 CRC32，LE32 |
 
-还原时采用当前 controller/hmi 会话、协议版本 0x35、RESULT/sender=2、target=1，执行现有 `exp3_decode` 的完整消息校验。随后进入 `exp3_hil_apply_result`，逐项匹配 pending 的会话、request/action、上下文、代次、目标和命令。CRC 用于差错检测，不是身份认证。普通 E5 运行状态不能结束通信事务，也不能授权启动。
+还原时采用当前 controller/hmi 会话、协议版本 0x36、RESULT/sender=2、target=1，执行现有 `exp3_decode` 的完整消息校验。随后进入 `exp3_hil_apply_result`，逐项匹配 pending 的会话、request/action、上下文、代次、目标和命令。CRC 用于差错检测，不是身份认证。普通 E5 运行状态不能结束通信事务，也不能授权启动。
 
 只有 Motion 完成状态机处理后，才能发布 ACCEPTED 或 CANCELLED。拒绝结果沿用现有状态码；非 CANCELLED 不能清除取消忙状态。接收端只在当前命令已完整发送后处理快速回执，不截断命令帧，不缓存忙碌时按下的 OK。
 

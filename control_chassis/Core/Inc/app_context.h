@@ -197,7 +197,6 @@ typedef struct
     uint8_t is_on_slope;        // 原: is_on_slope
 
     // 超声波避障使能标志 (true:开启, false:关闭)
-    bool ultrasonic_enabled;
 
     // --- 传感器数据 ---
     float d1, d2, d3, d4; // 原: d1, d2, d3, d4 (超声波)
@@ -219,7 +218,6 @@ typedef struct
 
     // --- 驱动/任务内部变量 (不建议放在全局，但为了兼容暂时保留) ---
     uint32_t last_imu_tick;                  // 原: last_imu_tick
-    uint8_t g_lifter_enable_key_was_pressed; // 原: g_lifter_enable_key_was_pressed
 
     // --- ODrive/MSSD   4 个轴的 FET 温度 ---
     // 索引映射: [0]右前(UART1_Ax0), [1]右后(UART1_Ax1), [2]左前(UART2_Ax0), [3]左后(UART2_Ax1)

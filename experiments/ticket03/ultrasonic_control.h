@@ -1,0 +1,23 @@
+#ifndef MOWER_ULTRASONIC_CONTROL_H
+#define MOWER_ULTRASONIC_CONTROL_H
+
+/* Temporary release setting shared by the FlySky chassis and FS-i6X. */
+#ifndef MOWER_ULTRASONIC_AVOIDANCE_ENABLED
+#define MOWER_ULTRASONIC_AVOIDANCE_ENABLED 0
+#endif
+#if MOWER_ULTRASONIC_AVOIDANCE_ENABLED != 0 && MOWER_ULTRASONIC_AVOIDANCE_ENABLED != 1
+#error "MOWER_ULTRASONIC_AVOIDANCE_ENABLED must be 0 or 1"
+#endif
+
+/* v39: CH13 is a continuously transmitted setting, never a power permission. */
+#define MOWER_ULTRASONIC_CHANNEL 12U
+#define MOWER_ULTRASONIC_ON_US 1000U
+#define MOWER_ULTRASONIC_OFF_US 2000U
+#define MOWER_ULTRASONIC_ENABLED 0x4000U /* E0 bit14: status, not a fault. */
+#define MOWER_ULTRASONIC_NEAR 0x8000U /* E0 bit15: front obstacle, not a fault. */
+#define MOWER_ULTRASONIC_NEAR_CM 40U
+#define MOWER_ULTRASONIC_ESCAPE_CM 50U
+#define MOWER_ULTRASONIC_ESCAPE_MPS 0.2f
+#define MOWER_ULTRASONIC_CONFIRM_MS 3000U
+
+#endif

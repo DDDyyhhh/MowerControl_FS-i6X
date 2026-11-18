@@ -43,11 +43,7 @@ static void make_command(const Exp3UiProbe *probe, uint8_t kind, Exp3UiOutput *o
 
 static uint8_t matching_result(const Exp3Message *a, const Exp3Message *b)
 {
-    return b->kind == EXP3_RESULT && b->command == EXP3_CONFIRM &&
-           a->controller == b->controller && a->hmi == b->hmi &&
-           a->request == b->request && a->action == b->action &&
-           a->context == b->context && a->generation == b->generation &&
-           a->target == b->target;
+    return b->kind == EXP3_RESULT && b->command == EXP3_CONFIRM && exp3_same_identity(a, b);
 }
 
 Exp3UiOutput exp3_ui_probe_step(Exp3UiProbe *probe, const Exp3UiInput *input)
@@ -65,7 +61,6 @@ Exp3UiOutput exp3_ui_probe_step(Exp3UiProbe *probe, const Exp3UiInput *input)
     }
     bool in_flight = probe->state == EXP3_UI_WAIT || probe->state == EXP3_UI_ACCEPTED ||
         probe->state == EXP3_UI_TIMEOUT;
-#if MOWER_BLADE_OK_ENABLED
     unsigned phase = mower_auth_phase(input->authority);
     uint16_t generation = input->authority & MOWER_AUTH_TOKEN_MASK;
     bool known = input->bound && input->authority_valid &&
@@ -103,25 +98,6 @@ Exp3UiOutput exp3_ui_probe_step(Exp3UiProbe *probe, const Exp3UiInput *input)
             probe->state = EXP3_UI_IDLE;
     }
     if (!start) probe->start_armed = 0U;
-#else
-    /* Count physical center-to-start edges even while a Cancel is pending.
-     * Prompt rendering must not be the source of the wire generation. */
-    if (in_range(input->ch4_us, 1500U, 100U))
-        probe->center_seen = 1U;
-    if (start && !probe->ch4_start && probe->center_seen) {
-        probe->prompt_generation = probe->next_generation++;
-        if (probe->next_generation == 0U)
-            ++probe->next_generation;
-        probe->center_seen = 0U;
-        probe->start_armed = !input->start_inhibited;
-    }
-    if (!start || (input->start_inhibited &&
-        probe->state != EXP3_UI_WAIT && probe->state != EXP3_UI_ACCEPTED &&
-        probe->state != EXP3_UI_TIMEOUT))
-        probe->start_armed = 0U;
-    probe->ch4_start = start;
-
-#endif
     probe->ch4_start = start;
 
     if (probe->cancel_pending || (!start && in_flight)) {
@@ -148,10 +124,8 @@ Exp3UiOutput exp3_ui_probe_step(Exp3UiProbe *probe, const Exp3UiInput *input)
     } else if (!probe->start_armed) {
         probe->state = EXP3_UI_IDLE;
     } else if (probe->state == EXP3_UI_IDLE) {
-#if MOWER_BLADE_OK_ENABLED
         if (probe->prompt_generation && known && phase == MOWER_AUTH_CONFIRM &&
             generation == probe->prompt_generation)
-#endif
             probe->state = input->transport_waiting ? EXP3_UI_CANCEL_WAIT : EXP3_UI_PROMPT;
     } else if (probe->state == EXP3_UI_UNBOUND && input->bound) {
         probe->state = EXP3_UI_PROMPT;
@@ -191,12 +165,7 @@ Exp3UiOutput exp3_ui_probe_step(Exp3UiProbe *probe, const Exp3UiInput *input)
         probe->state = EXP3_UI_TIMEOUT;
     }
 
-    if (!MOWER_BLADE_OK_ENABLED && in_range(input->ch4_us, 1500U, 100U) && probe->state == EXP3_UI_IDLE) {
-        probe->center_seen = 1U;
-    }
-
     output.state = probe->state;
-#if MOWER_BLADE_OK_ENABLED
     if (output.state == EXP3_UI_IDLE && start) {
         if (!known) output.state = EXP3_UI_NOT_READY;
         else if (!input->start_inhibited) {
@@ -208,21 +177,12 @@ Exp3UiOutput exp3_ui_probe_step(Exp3UiProbe *probe, const Exp3UiInput *input)
                 output.state = EXP3_UI_SYNCHRONIZING;
         }
     }
-#endif
     return output;
 }
 
 void exp3_pwm_probe_init(Exp3PwmProbe *probe)
 {
     memset(probe, 0, sizeof(*probe));
-}
-
-static uint8_t same_identity(const Exp3Message *a, const Exp3Message *b)
-{
-    return a->controller == b->controller && a->hmi == b->hmi &&
-           a->request == b->request && a->action == b->action &&
-           a->context == b->context && a->generation == b->generation &&
-           a->target == b->target;
 }
 
 Exp3PwmEvent exp3_pwm_probe_observe(Exp3PwmProbe *probe, const Exp3Message *result)
@@ -243,7 +203,7 @@ Exp3PwmEvent exp3_pwm_probe_observe(Exp3PwmProbe *probe, const Exp3Message *resu
           result->action <= probe->highest_action)))
         return event;
     for (i = 0U; i < EXP3_CACHE_SIZE; ++i) {
-        if (probe->flags[i] && same_identity(&probe->records[i], result)) {
+        if (probe->flags[i] && exp3_same_identity(&probe->records[i], result)) {
             slot = (int)i;
             break;
         }

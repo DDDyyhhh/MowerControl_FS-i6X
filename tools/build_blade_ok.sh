@@ -13,11 +13,11 @@ cmake -S "$source_dir" -B "$radio_build_dir" \
   -DARM_GNU_TOOLCHAIN_ROOT="$ARM_GNU_TOOLCHAIN_ROOT" \
   -DPCB=I6X -DTRANSLATIONS=EN -DPCBI6X_MOWER_UI_SHELL=YES \
   -DPCBI6X_MOWER_UI_MOCK=NO -DPCBI6X_TICKET03_HIL_MODEL=NO \
-  -DPCBI6X_MOWER_BLADE_OK=ON -DPCBI6X_EXP3=OFF -DPCBI6X_EXP3_PWM_HIL=OFF
+  -DPCBI6X_MOWER_BLADE_OK=ON
 cmake --build "$radio_build_dir" --target firmware -j8
 python3 "$root/tools/test_i6x_sensor_arm.py" "$radio_build_dir/firmware.elf" "$radio_build_dir/firmware.bin"
 arm-none-eabi-size "$radio_build_dir/firmware.elf" \
   "$root/control_chassis/build/gcc15/mower-ok-release/control_chassis.elf"
-sha256sum "$radio_build_dir/firmware.bin" \
+shasum -a 256 "$radio_build_dir/firmware.bin" \
   "$root/control_chassis/build/gcc15/mower-ok-release/control_chassis.bin" \
   "$root/control_chassis/build/gcc15/mower-ok-release/control_chassis.hex"

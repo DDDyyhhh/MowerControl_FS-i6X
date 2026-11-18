@@ -29,7 +29,7 @@ static inline unsigned mower_auth_phase(uint16_t word) { return word >> MOWER_AU
 #define MOWER_FAST_EMERGENCY 0x8000U
 #define MOWER_FAST_STOP_MASK (MOWER_FAST_LOCKED | MOWER_FAST_COLLISION | MOWER_FAST_EMERGENCY)
 /* E0 bits6/7 remain diagnostic/data validity; neither is a display alarm. */
-#define MOWER_STATUS_ALARM_MASK 0xBF3FU /* bit14 reserved; not an alarm */
+#define MOWER_STATUS_ALARM_MASK 0x3F3FU /* E0 bits14/15: ultrasonic setting/obstacle, not faults. */
 #define MOWER_FAST_HEARTBEAT_MASK 0x3FU
 #define MOWER_FAST_HEARTBEAT_SHIFT 9U
 #define MOWER_FAST_HEARTBEAT_WORD_MASK (MOWER_FAST_HEARTBEAT_MASK << MOWER_FAST_HEARTBEAT_SHIFT)

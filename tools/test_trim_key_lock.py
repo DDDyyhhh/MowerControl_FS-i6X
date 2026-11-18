@@ -4,19 +4,15 @@ from pathlib import Path
 import os
 import subprocess
 import tempfile
+import sys
+sys.dont_write_bytecode = True  # keep tools/ free of __pycache__
+from _harness_util import c_function
 
 root = Path(__file__).resolve().parents[1]
 radio = root / 'OpenI6X/FS-I6X/opentx/radio/src'
 
 
-def function(source, signature):
-    start = source.index(signature)
-    opening = source.index('{', start)
-    end, depth = opening + 1, 1
-    while depth:
-        depth += (source[end] == '{') - (source[end] == '}')
-        end += 1
-    return source[start:end]
+function = c_function
 
 
 driver = (radio / 'targets/flysky/keys_driver.cpp').read_text()

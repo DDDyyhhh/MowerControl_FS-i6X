@@ -101,7 +101,7 @@ def run():
                     cmd=[os.environ.get('CC','cc'),'-std=c99',optimization,'-Wall','-Wextra','-Werror','-Wno-unused-variable','-fsanitize=address,undefined','-fno-sanitize-recover=all',
                          '-DREMOTE_BACKEND_HOST',f'-DREMOTE_IBUS_TIMEOUT_MS={timeout_ms}U',f'-DREMOTE_BACKEND_A28_E34={1-flysky}',f'-DREMOTE_BACKEND_FLYSKY_IBUS={flysky}',
                          f'-DMOWER_BLADE_OK_ENABLED={flysky}',f'-DMOWER_GRASS_BAG_CH6_ENABLED={flysky}',
-                         '-DEXP3_ENABLED=1','-I'+str(CORE/'Inc'),str(p/'queue.c')]
+                         f'-DEXP3_ENABLED={flysky}','-I'+str(CORE/'Inc'),str(p/'queue.c')]
                     cmd += [str(CORE/'UserDev'/n) for n in ('flysky_ibus_servo.c','remote_authorization.c','blade_confirm_ch6_adapter.c','grass_bag_control.c')]
                     cmd += [str(CORE/'UserApp/safety_ownership_gate.c'),'-lm','-o',str(p/'test')]
                     subprocess.run(cmd,check=True)
